@@ -1308,6 +1308,7 @@ const gt=()=>JSON.parse(localStorage.getItem('sd_tasks')||'{}');
 const st=v=>localStorage.setItem('sd_tasks',JSON.stringify(v));
 const gAgents=()=>JSON.parse(localStorage.getItem('sd_agents')||'null');
 const sAgents=v=>localStorage.setItem('sd_agents',JSON.stringify(v));
+{const _stored=gAgents();if(_stored&&Array.isArray(_stored)&&_stored.length)AGENTS=_stored;}
 
 let curUser=null;
 
@@ -1691,7 +1692,7 @@ function renderTasks(){
         <div class="task-action-bar">
           <button class="ta-btn ${t.done?'ta-done completed':'ta-done'}" onclick="toggleTaskDone(${i})">
             <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${t.done?'Undo':'Mark Done'}
-          </button>h
+          </button>
           <button class="ta-btn ta-remark" onclick="openRemarkModal(${i})">
             <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>${t.remark?'Edit Remark':'Add Remark'}
           </button>
@@ -2108,7 +2109,7 @@ function renderAnaHeatmap(){
   const logs=gl().filter(l=>l.action==='CHECK_IN');
   const hourCounts=Array(13).fill(0); // 6am-6pm
   logs.forEach(l=>{
-    // Estimate hour from log time — approximateh
+    // Estimate hour from log time — approximate
     const s=status[l.agentId];
     if(s?.checkInTs){const hr=new Date(s.checkInTs).getHours();const idx=hr-6;if(idx>=0&&idx<13)hourCounts[idx]++;}
   });
@@ -3192,6 +3193,7 @@ function openReassignModalByIdx(realIdx){
 
 
   function getMyTasks(){
+  if(!curUser||curUser.isAdmin)return[];
   const aid=curUser.agent.id;
   const localTasks=(gt()[aid]||[]).filter(t=>t.date===TODAY());
   const sheetTasks=(adminData?.tasks&&adminData.tasks[aid])||[];
