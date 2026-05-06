@@ -3217,8 +3217,13 @@ function toggleTaskDone(idx){
   const t=myTasks[idx];
   const aid=curUser.agent.id;
   const all=gt();const tasks=all[aid]||[];
-  const realIdx=tasks.findIndex(x=>x.task===t.task&&x.time===t.time&&x.date===t.date);
-  if(realIdx<0)return;
+  let realIdx=tasks.findIndex(x=>x.task===t.task&&x.time===t.time&&x.date===t.date);
+  if(realIdx<0){
+    // Task is from sheet only — copy it to local storage first
+    tasks.push({...t,date:t.date||TODAY()});
+    realIdx=tasks.length-1;
+    all[aid]=tasks;
+  }
   tasks[realIdx].done=!tasks[realIdx].done;
   tasks[realIdx].doneAt=tasks[realIdx].done?new Date().toLocaleTimeString('en-PK',{hour12:true}):null;
   all[aid]=tasks;st(all);
@@ -3248,6 +3253,12 @@ function saveRemark(){
     const t=myTasks[parseInt(rawIdx)];
     if(!t)return;
     idx=tasks.findIndex(x=>x.task===t.task&&x.time===t.time&&x.date===t.date);
+    if(idx<0){
+      // Task is from sheet only — copy it to local storage first
+      tasks.push({...t,date:t.date||TODAY()});
+      idx=tasks.length-1;
+      all[aid]=tasks;
+    }
   }
   if(idx<0||!tasks[idx])return;
   tasks[idx].remark=remark;
