@@ -1432,9 +1432,6 @@ function launchApp(){
     startActivityTracking();
       renderShiftPage();
       fetchAdminData();
-    });
-  }
-}
 function logout(){
   stopActivityTracking();curUser=null;sessionStorage.removeItem('sd_curUser');
   document.getElementById('appShell').style.display='none';document.getElementById('loginPage').style.display='flex';
