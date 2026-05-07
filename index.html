@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ShiftDesk — Agent Workforce</title>
+<title>ShiftDesk â Agent Workforce</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07080f;--s:#0d0f1a;--s2:#131629;--s3:#1a1e33;
+  --bg:#07080f;--s:#0d0f1a;--s2:#131629;--s3:#1a1e33; 
   --b:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.10);
   --tx:#e8ecff;--mu:#6b728e;--mu2:#3d4260;
   --ac:#6c63ff;--ac2:#8b5cf6;
@@ -336,7 +336,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 
 
-/* ── ACTIVITY MONITOR ── */
+/* ââ ACTIVITY MONITOR ââ */
 .act-status-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:6px;border:1px solid var(--b);background:var(--s2);margin-bottom:8px;font-size:11px}
 .act-dot-lg{width:8px;height:8px;border-radius:50%;flex-shrink:0;position:relative}
 .act-dot-lg.active{background:var(--gr)}
@@ -382,7 +382,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .monitor-sort{display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
 
 
-/* ── AGENT TASK ACTIONS ── */
+/* ââ AGENT TASK ACTIONS ââ */
 .task-action-bar{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
 .ta-btn{padding:3px 9px;border-radius:5px;border:none;font-size:10px;font-weight:700;cursor:pointer;transition:var(--tr);font-family:var(--font);display:flex;align-items:center;gap:3px}
 .ta-btn svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
@@ -396,7 +396,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .task-remark-txt{font-size:10px;color:var(--mu);margin-top:4px;padding:4px 8px;background:var(--s2);border-radius:5px;border-left:2px solid var(--ac);font-style:italic}
 .task-done-badge{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;color:var(--gr);background:rgba(16,185,129,.1);padding:1px 6px;border-radius:10px;margin-left:6px}
 
-/* ── PEER TASK ASSIGNMENT ── */
+/* ââ PEER TASK ASSIGNMENT ââ */
 .assign-peer-btn{display:flex;align-items:center;gap:6px;width:100%;padding:9px 12px;border-radius:var(--r);border:1px solid rgba(108,99,255,.2);background:rgba(108,99,255,.06);color:var(--ac);font-size:12px;font-weight:700;cursor:pointer;transition:var(--tr);font-family:var(--font);margin-top:8px}
 .assign-peer-btn:hover{background:rgba(108,99,255,.14);border-color:rgba(108,99,255,.4)}
 .assign-peer-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -436,7 +436,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .sp-rejected{background:rgba(244,63,94,.1);color:var(--rd)}
 .sp-direct{background:rgba(108,99,255,.1);color:var(--ac)}
 
-/* ── DEPARTMENT MANAGEMENT ── */
+/* ââ DEPARTMENT MANAGEMENT ââ */
 .dept-mgmt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px}
 .dept-card{background:var(--s);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;transition:var(--tr)}
 .dept-card:hover{border-color:var(--b2);transform:translateY(-1px)}
@@ -473,7 +473,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .admin-clock-sub{font-size:.85rem;color:#7b8fd4;margin-top:4px}
 .admin-clock-date{font-size:.8rem;color:rgba(168,180,255,.5);margin-top:2px}
 
-/* ══ ANALYTICS STYLES ══ */
+/* ââ ANALYTICS STYLES ââ */
 .analytics-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
 .analytics-title{font-size:18px;font-weight:800;letter-spacing:-.4px}
 .analytics-sub{font-size:12px;color:var(--mu);margin-top:2px}
@@ -637,10 +637,10 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
   </div>
   <div class="sb-user" id="sbUser">
     <div class="sb-av" id="sbAv"></div>
-    <div class="sb-user-info"><div class="sb-user-name" id="sbUName">—</div><div class="sb-user-dept" id="sbUDept">—</div></div>
+    <div class="sb-user-info"><div class="sb-user-name" id="sbUName">â</div><div class="sb-user-dept" id="sbUDept">â</div></div>
     <button class="sb-logout" onclick="logout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
   </div>
-  <div class="sb-clock"><div class="sb-time" id="sbTime">00:00:00</div><div class="sb-date" id="sbDate">—</div></div>
+  <div class="sb-clock"><div class="sb-time" id="sbTime">00:00:00</div><div class="sb-date" id="sbDate">â</div></div>
   <nav class="sb-nav">
     <div class="nav-sec">Navigation</div>
     <button class="nb active" onclick="showPage('shift')" id="nav-shift">
@@ -676,7 +676,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     </button>
   </nav>
   <div class="sb-foot">
-    <div class="sync-row"><div class="sync-dot" id="syncDot"></div><span class="sync-txt" id="syncTxt">Ready</span><span class="sync-time" id="syncTime">—</span></div>
+    <div class="sync-row"><div class="sync-dot" id="syncDot"></div><span class="sync-txt" id="syncTxt">Ready</span><span class="sync-time" id="syncTime">â</span></div>
     <button class="theme-btn" onclick="toggleTheme()"><span class="ti" id="themeIc"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></span><span id="themeLbl">Light mode</span></button>
   </div>
 </aside>
@@ -690,11 +690,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="tb-title" id="tbTitle">My Shift<span class="tb-sub" id="tbSub"></span></div>
     <div class="tb-pill" id="onlinePill"><div class="tp-dot"></div><span id="onlineCnt">0</span> online</div>
     <div class="tb-late-pill" id="latePill"><svg viewBox="0 0 24 24" style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="lateCnt">0</span> late</div>
-    <div class="tb-chip" id="tbDate">—</div>
+    <div class="tb-chip" id="tbDate">â</div>
   </div>
   <div class="content">
 
-    <!-- ── SHIFT PAGE ── -->
+    <!-- ââ SHIFT PAGE ââ -->
     <div class="page active" id="page-shift">
       <div class="shift-layout">
         <div class="punch-wrap">
@@ -707,7 +707,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
             <div class="shift-info">
               <div class="punch-clock" id="punchClock">00:00:00</div>
               <div class="punch-elapsed" id="punchElapsed">0h 00m on shift</div>
-              <div class="punch-date" id="punchDate">—</div>
+              <div class="punch-date" id="punchDate">â</div>
             </div>
             <div class="punch-prog"><div class="punch-prog-fill" id="progFill"></div></div>
           </div>
@@ -716,16 +716,16 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
             <span class="late-banner-txt" id="lateBannerTxt">You checked in late</span>
           </div>
           <div class="punch-stats">
-            <div class="ps"><div class="ps-v" id="mIn">—</div><div class="ps-k">Check-in</div></div>
-            <div class="ps"><div class="ps-v" id="mOut">—</div><div class="ps-k">Check-out</div></div>
-            <div class="ps"><div class="ps-v" id="mDur">—</div><div class="ps-k">Duration</div></div>
+            <div class="ps"><div class="ps-v" id="mIn">â</div><div class="ps-k">Check-in</div></div>
+            <div class="ps"><div class="ps-v" id="mOut">â</div><div class="ps-k">Check-out</div></div>
+            <div class="ps"><div class="ps-v" id="mDur">â</div><div class="ps-k">Duration</div></div>
           </div>
           <div class="punch-form">
             <div class="step-lbl"><div class="sn">1</div>Confirm department</div>
             <div class="dept-row" id="deptRow"></div>
             <div class="btn-row">
-              <button class="btn-cta bc-in" id="btnIn" onclick="checkIn()"><span class="btn-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Check In — Start Shift</button>
-              <button class="btn-cta bc-out" id="btnOut" onclick="checkOut()"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>Check Out — End Shift</button>
+              <button class="btn-cta bc-in" id="btnIn" onclick="checkIn()"><span class="btn-icon"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span>Check In â Start Shift</button>
+              <button class="btn-cta bc-out" id="btnOut" onclick="checkOut()"><span class="btn-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>Check Out â End Shift</button>
             </div>
             <div id="myShiftsList"></div>
           </div>
@@ -741,14 +741,14 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
               <div class="kpi"><div class="kv" style="color:var(--gr)" id="wkShifts">0</div><div class="kl">Shifts</div></div>
               <div class="kpi"><div class="kv" style="color:var(--ac)" id="wkTasks">0</div><div class="kl">Tasks</div></div>
               <div class="kpi"><div class="kv" style="color:var(--yl)" id="wkLate">0</div><div class="kl">Late Days</div></div>
-              <div class="kpi"><div class="kv" style="color:var(--tx)" id="wkAvgDur">—</div><div class="kl">Avg Duration</div></div>
+              <div class="kpi"><div class="kv" style="color:var(--tx)" id="wkAvgDur">â</div><div class="kl">Avg Duration</div></div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ── MY REPORT PAGE (Agent) ── -->
+    <!-- ââ MY REPORT PAGE (Agent) ââ -->
     <div class="page" id="page-myreport">
       <div class="analytics-header">
         <div><div class="analytics-title">My Performance Report</div><div class="analytics-sub">Your attendance, sessions & shift analysis</div></div>
@@ -820,7 +820,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
       </div>
     </div>
 
-    <!-- ── ADMIN DASHBOARD PAGE ── -->
+    <!-- ââ ADMIN DASHBOARD PAGE ââ -->
     <div class="page" id="page-admin">
       <div class="admin-tabs">
         <button class="atab active" onclick="switchAdminTab('overview')" id="atab-overview"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Overview</button>
@@ -842,8 +842,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
           <span style="font-size:11px;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.5px">Filter:</span>
           <button class="filter-chip active" onclick="setSwimlaneFilter('all',this)" data-swf="all">All Agents</button>
-          <button class="filter-chip gr" onclick="setSwimlaneFilter('online',this)" data-swf="online">🟢 Online Only</button>
-          <button class="filter-chip" onclick="setSwimlaneFilter('offline',this)" data-swf="offline">⚫ Offline Only</button>
+          <button class="filter-chip gr" onclick="setSwimlaneFilter('online',this)" data-swf="online">ð¢ Online Only</button>
+          <button class="filter-chip" onclick="setSwimlaneFilter('offline',this)" data-swf="offline">â« Offline Only</button>
           <span style="margin-left:auto;font-size:11px;color:var(--mu);font-family:var(--mono)" id="swimlaneCount"></span>
         </div>
         <div id="swimlanes"></div>
@@ -853,7 +853,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <div class="mgmt-toolbar">
           <div class="search-wrap">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="search-inp" id="agentSearch" placeholder="Search agents…" oninput="renderAgentTable()">
+            <input type="text" class="search-inp" id="agentSearch" placeholder="Search agentsâ¦" oninput="renderAgentTable()">
           </div>
           <button class="btn-add" onclick="openAgentModal(null)"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Agent</button>
         </div>
@@ -881,7 +881,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
         <div class="mgmt-toolbar" style="flex-wrap:wrap;gap:8px">
           <div class="search-wrap" style="min-width:200px">
             <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" class="search-inp" id="taskSearch" placeholder="Search tasks…" oninput="renderAdminTasksTab()">
+            <input type="text" class="search-inp" id="taskSearch" placeholder="Search tasksâ¦" oninput="renderAdminTasksTab()">
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="filter-chip active" onclick="setTaskFilter('all',this)" data-tf="all">All</button>
@@ -897,7 +897,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
     </div>
 
-    <!-- ── ANALYTICS PAGE (Admin) ── -->
+    <!-- ââ ANALYTICS PAGE (Admin) ââ -->
     <div class="page" id="page-analytics">
       <div class="analytics-header">
         <div><div class="analytics-title">Team Performance Analytics</div><div class="analytics-sub" id="anaSubtitle">Today's workforce intelligence</div></div>
@@ -966,7 +966,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <!-- ACTIVITY MONITOR PAGE (Admin) -->
     <div class="page" id="page-monitor">
       <div class="analytics-header">
-        <div><div class="analytics-title">Activity Monitor</div><div class="analytics-sub">Real-time agent activity — Active · Idle · Away · Offline</div></div>
+        <div><div class="analytics-title">Activity Monitor</div><div class="analytics-sub">Real-time agent activity â Active Â· Idle Â· Away Â· Offline</div></div>
         <div style="display:flex;gap:8px;align-items:center">
           <button onclick="fetchAdminData();renderMonitorPage()" style="padding:7px 14px;border-radius:8px;border:1px solid var(--b2);background:var(--s2);color:var(--mu);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px">
             <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Refresh
@@ -995,7 +995,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <!-- DEPARTMENTS PAGE (Admin) -->
     <div class="page" id="page-depts">
       <div class="analytics-header">
-        <div><div class="analytics-title">Manage Departments</div><div class="analytics-sub">Add, edit or remove departments — changes apply everywhere instantly</div></div>
+        <div><div class="analytics-title">Manage Departments</div><div class="analytics-sub">Add, edit or remove departments â changes apply everywhere instantly</div></div>
         <button class="btn-add" onclick="openDeptModal(null)"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add Department</button>
       </div>
       <div class="dept-mgmt-grid" id="deptMgmtGrid"></div>
@@ -1032,7 +1032,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
           <div class="form-field" style="margin-bottom:10px">
             <label class="form-lbl">Task Description</label>
-            <input type="text" class="input-fx" id="peerTaskInp" placeholder="Describe the task…">
+            <input type="text" class="input-fx" id="peerTaskInp" placeholder="Describe the taskâ¦">
           </div>
           <div class="form-field" style="margin-bottom:14px">
             <label class="form-lbl">Priority</label>
@@ -1059,12 +1059,12 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="modal-hd">
       <div class="modal-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>
       <h3>Add Remark</h3>
-      <button class="modal-x" onclick="closeModal('remarkModal')">✕</button>
+      <button class="modal-x" onclick="closeModal('remarkModal')">â</button>
     </div>
     <input type="hidden" id="rmTaskIdx">
     <div class="form-field" style="margin-bottom:14px">
       <label class="form-lbl">Your remark or progress note</label>
-      <textarea class="input-fx" id="rmText" rows="3" placeholder="e.g. Completed 40 of 80 renewals, remaining will finish by 3PM…" style="resize:vertical;min-height:80px"></textarea>
+      <textarea class="input-fx" id="rmText" rows="3" placeholder="e.g. Completed 40 of 80 renewals, remaining will finish by 3PMâ¦" style="resize:vertical;min-height:80px"></textarea>
     </div>
     <div class="modal-ft">
       <button class="btn-ok" onclick="saveRemark()">Save Remark</button>
@@ -1079,7 +1079,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="modal-hd">
       <div class="modal-ic" style="background:rgba(251,191,36,.1)"><svg viewBox="0 0 24 24" style="stroke:var(--yl)"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
       <h3>Reassign Task</h3>
-      <button class="modal-x" onclick="closeModal('reassignModal')">✕</button>
+      <button class="modal-x" onclick="closeModal('reassignModal')">â</button>
     </div>
     <div id="reassignTaskPreview" style="padding:10px 12px;background:var(--s2);border:1px solid var(--b);border-radius:var(--r);margin-bottom:14px;font-size:13px;font-weight:600"></div>
     <input type="hidden" id="raTaskIdx">
@@ -1104,8 +1104,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <!-- TASK MODAL -->
 <div class="modal-ov" id="taskModal">
   <div class="modal-box">
-    <div class="modal-hd"><div class="modal-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><h3>Assign Task</h3><button class="modal-x" onclick="closeModal('taskModal')">✕</button></div>
-    <div class="modal-agent-row"><div class="modal-av" id="mAv"></div><div><div style="font-weight:700;font-size:13px" id="mName">—</div><div style="font-size:11px;color:var(--mu)" id="mDept">—</div></div></div>
+    <div class="modal-hd"><div class="modal-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><h3>Assign Task</h3><button class="modal-x" onclick="closeModal('taskModal')">â</button></div>
+    <div class="modal-agent-row"><div class="modal-av" id="mAv"></div><div><div style="font-weight:700;font-size:13px" id="mName">â</div><div style="font-size:11px;color:var(--mu)" id="mDept">â</div></div></div>
     <div class="form-grid full"><div class="form-field"><label class="form-lbl">Task description</label><input type="text" class="input-fx" id="taskInp" placeholder="e.g. Renewals follow-up batch" onkeydown="if(event.key==='Enter')saveTask()"></div></div>
     <div class="form-grid full"><div class="form-field"><label class="form-lbl">Priority</label><div style="position:relative"><div class="sel-arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div><select class="select-fx" id="taskPrio"><option value="Normal">Normal</option><option value="High">High Priority</option><option value="Urgent">Urgent</option></select></div></div></div>
     <div class="modal-ft"><button class="btn-ok" onclick="saveTask()">Assign Task</button><button class="btn-cancel" onclick="closeModal('taskModal')">Cancel</button></div>
@@ -1118,7 +1118,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="modal-hd">
       <div class="modal-ic"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
       <h3 id="deptModalTitle">Add Department</h3>
-      <button class="modal-x" onclick="closeModal('deptModal')">✕</button>
+      <button class="modal-x" onclick="closeModal('deptModal')">â</button>
     </div>
     <div class="form-grid full" style="margin-bottom:12px">
       <div class="form-field">
@@ -1133,7 +1133,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     </div>
     <div class="form-field" style="margin-bottom:14px">
       <label class="form-lbl">Icon / Emoji (optional)</label>
-      <input type="text" class="input-fx" id="deptIcon" placeholder="e.g. 📞 or leave blank" maxlength="4">
+      <input type="text" class="input-fx" id="deptIcon" placeholder="e.g. ð or leave blank" maxlength="4">
     </div>
     <div class="modal-ft">
       <button class="btn-ok" onclick="saveDept()">Save Department</button>
@@ -1148,9 +1148,9 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="modal-hd">
       <div class="modal-ic" style="background:rgba(244,63,94,.1)"><svg viewBox="0 0 24 24" style="stroke:var(--rd)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg></div>
       <h3>Remove Department</h3>
-      <button class="modal-x" onclick="closeModal('deptDelModal')">✕</button>
+      <button class="modal-x" onclick="closeModal('deptDelModal')">â</button>
     </div>
-    <div class="del-warn">Remove <strong id="deptDelName">—</strong>? Agents in this dept will need reassigning.</div>
+    <div class="del-warn">Remove <strong id="deptDelName">â</strong>? Agents in this dept will need reassigning.</div>
     <div class="modal-ft">
       <button class="btn-ok" style="background:linear-gradient(135deg,#be123c,#f43f5e)" onclick="confirmDeptDelete()">Yes, Remove</button>
       <button class="btn-cancel" onclick="closeModal('deptDelModal')">Cancel</button>
@@ -1164,7 +1164,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="modal-hd">
       <div class="modal-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
       <h3>Assign Task</h3>
-      <button class="modal-x" onclick="closeModal('adminTaskModal')">✕</button>
+      <button class="modal-x" onclick="closeModal('adminTaskModal')">â</button>
     </div>
     <div class="form-grid full" style="margin-bottom:10px">
       <div class="form-field">
@@ -1203,7 +1203,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="modal-hd">
       <div class="modal-ic" style="background:rgba(251,191,36,.1)"><svg viewBox="0 0 24 24" style="stroke:var(--yl)"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
       <h3>Edit Task</h3>
-      <button class="modal-x" onclick="closeModal('taskEditModal')">✕</button>
+      <button class="modal-x" onclick="closeModal('taskEditModal')">â</button>
     </div>
     <input type="hidden" id="teAgentId">
     <input type="hidden" id="teTaskIdx">
@@ -1232,7 +1232,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <!-- AGENT MODAL -->
 <div class="modal-ov" id="agentModal">
   <div class="modal-box">
-    <div class="modal-hd"><div class="modal-ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><h3 id="agentModalTitle">Add Agent</h3><button class="modal-x" onclick="closeModal('agentModal')">✕</button></div>
+    <div class="modal-hd"><div class="modal-ic"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><h3 id="agentModalTitle">Add Agent</h3><button class="modal-x" onclick="closeModal('agentModal')">â</button></div>
     <input type="hidden" id="editAgentId">
     <div class="form-grid">
       <div class="form-field"><label class="form-lbl">Full Name</label><input type="text" class="input-fx" id="fName" placeholder="e.g. John Smith"></div>
@@ -1257,8 +1257,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <!-- DELETE MODAL -->
 <div class="modal-ov" id="delModal">
   <div class="modal-box" style="width:360px">
-    <div class="modal-hd"><div class="modal-ic" style="background:rgba(244,63,94,.1)"><svg viewBox="0 0 24 24" style="stroke:var(--rd)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></div><h3>Remove Agent</h3><button class="modal-x" onclick="closeModal('delModal')">✕</button></div>
-    <div class="del-warn">You are about to remove <strong id="delAgentName">—</strong>. This cannot be undone.</div>
+    <div class="modal-hd"><div class="modal-ic" style="background:rgba(244,63,94,.1)"><svg viewBox="0 0 24 24" style="stroke:var(--rd)"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg></div><h3>Remove Agent</h3><button class="modal-x" onclick="closeModal('delModal')">â</button></div>
+    <div class="del-warn">You are about to remove <strong id="delAgentName">â</strong>. This cannot be undone.</div>
     <div class="modal-ft"><button class="btn-ok" style="background:linear-gradient(135deg,#be123c,#f43f5e)" onclick="confirmDelete()">Yes, Remove Agent</button><button class="btn-cancel" onclick="closeModal('delModal')">Cancel</button></div>
   </div>
 </div>
@@ -1266,14 +1266,14 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div id="toast"></div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────
+// ââ CONFIG ââââââââââââââââââââââââââââââââââââââââââââââââ
 // Replace these two values with your Supabase project credentials.
-// Find them at: https://supabase.com → Project Settings → API
+// Find them at: https://supabase.com â Project Settings â API
 const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
 const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// Simple password hash (djb2) — obfuscates plain text in storage
+// Simple password hash (djb2) â obfuscates plain text in storage
 function hashPw(str){
   let h=5381;for(let i=0;i<str.length;i++)h=(h*33^str.charCodeAt(i))>>>0;
   return h.toString(36);
@@ -1318,7 +1318,7 @@ let curUser=null;
 
 function ini(n){return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();}
 function elapsed(ts){const d=Date.now()-ts;return `${Math.floor(d/3600000)}h ${String(Math.floor((d%3600000)/60000)).padStart(2,'0')}m`;}
-function durStr(s){if(!s?.checkInTs||!s?.checkOutTs)return '—';const d=s.checkOutTs-s.checkInTs;return `${Math.floor(d/3600000)}h ${String(Math.floor((d%3600000)/60000)).padStart(2,'0')}m`;}
+function durStr(s){if(!s?.checkInTs||!s?.checkOutTs)return 'â';const d=s.checkOutTs-s.checkInTs;return `${Math.floor(d/3600000)}h ${String(Math.floor((d%3600000)/60000)).padStart(2,'0')}m`;}
 function durMs(s){if(!s?.checkInTs||!s?.checkOutTs)return 0;return s.checkOutTs-s.checkInTs;}
 function isOnline(s){return s?.online&&s?.date===TODAY();}
 function isLate(agent,checkInTs){
@@ -1344,9 +1344,9 @@ function getSessionHistory(agentId){
       date:TODAY(),
       status:isLate(agent||{},todayStatus.checkInTs)?'late':'present',
       checkIn:todayStatus.checkIn,checkInTs:todayStatus.checkInTs,
-      checkOut:todayStatus.checkOut||(todayStatus.online?'Active':'—'),
+      checkOut:todayStatus.checkOut||(todayStatus.online?'Active':'â'),
       checkOutTs:todayStatus.checkOutTs,
-      duration:todayStatus.checkOutTs?durStr(todayStatus):(todayStatus.online?elapsed(todayStatus.checkInTs):'—')
+      duration:todayStatus.checkOutTs?durStr(todayStatus):(todayStatus.online?elapsed(todayStatus.checkInTs):'â')
     };
     if(ti>-1) hist[ti]=todayEntry; else hist.push(todayEntry);
     localStorage.setItem(key,JSON.stringify(hist));
@@ -1366,20 +1366,20 @@ function switchLoginTab(tab){
 function buildAgentDropdown(){
   const sel=document.getElementById('agentNameSel');
   const prev=sel.value; // preserve selection if re-building
-  sel.innerHTML='<option value="">— Select your name —</option>';
+  sel.innerHTML='<option value="">â Select your name â</option>';
   const knownDepts=getDeptNames();
   // Sort agents by name within each dept
   knownDepts.forEach(dept=>{
     const agents=AGENTS.filter(a=>a.dept===dept).sort((a,b)=>a.name.localeCompare(b.name));
     if(!agents.length)return;
-    const g=document.createElement('optgroup'); g.label='── '+dept+' ('+agents.length+') ──';
+    const g=document.createElement('optgroup'); g.label='ââ '+dept+' ('+agents.length+') ââ';
     agents.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;g.appendChild(o);});
     sel.appendChild(g);
   });
   // Agents with depts not in dept list
   const unknownAgents=AGENTS.filter(a=>!knownDepts.includes(a.dept)).sort((a,b)=>a.name.localeCompare(b.name));
   if(unknownAgents.length){
-    const g=document.createElement('optgroup');g.label='── Other ──';
+    const g=document.createElement('optgroup');g.label='ââ Other ââ';
     unknownAgents.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name;g.appendChild(o);});
     sel.appendChild(g);
   }
@@ -1430,8 +1430,6 @@ function launchApp(){
     selDept(a.dept,true);
     showPage('shift');
     startActivityTracking();
-    // Fetch sheet status first to prevent duplicate check-in across devices
-    fetchSheetStatusForAgent(a.id, ()=>{
       renderShiftPage();
       fetchAdminData();
     });
@@ -1471,9 +1469,7 @@ setInterval(tick,1000);tick();
 document.addEventListener('visibilitychange',()=>{
   if(!document.hidden){
     tick();
-    // Re-check sheet status when tab regains focus (agent switched browser/device)
     if(curUser&&!curUser.isAdmin&&!adminLoading){
-      fetchSheetStatusForAgent(curUser.agent.id,()=>renderShiftPage());
     }
   }
 });
@@ -1505,7 +1501,7 @@ function switchAdminTab(tab){
   document.getElementById('tab-'+tab).classList.add('active');
   document.getElementById('atab-'+tab).classList.add('active');
   if(tab==='agents')renderAgentTable();
-  if(tab==='log'){if(adminData?.logs?.length>0)renderTimelineFromSheet();else renderTimeline();}
+  if(tab==='log'){if(adminData?.logs?.length>0)else renderTimeline();}
   if(tab==='tasks'){renderAdminTasksTab();}
 }
 
@@ -1530,8 +1526,8 @@ function renderShiftPage(){
     const minsLate=Math.round((s.checkInTs-shiftMs)/60000);
     document.getElementById('lateBannerTxt').textContent=`You checked in ${minsLate} min late (shift started at ${fmtTime(a.shiftStart)})`;
   }else{banner.classList.remove('on');}
-  document.getElementById('mIn').textContent=(s?.date===TODAY()&&s.checkIn)?fmt12(s.checkIn):'—';
-  document.getElementById('mOut').textContent=(s?.date===TODAY()&&s.checkOut)?fmt12(s.checkOut):(on?'Active':'—');
+  document.getElementById('mIn').textContent=(s?.date===TODAY()&&s.checkIn)?fmt12(s.checkIn):'â';
+  document.getElementById('mOut').textContent=(s?.date===TODAY()&&s.checkOut)?fmt12(s.checkOut):(on?'Active':'â');
   updateDur();
   // Render multi-shift list on My Shift page
   renderMyShifts(s);
@@ -1557,7 +1553,7 @@ function buildDeptButtons(activeDept){
     const bg=hexToRgba(c,0.08);
     const activeStyle=isActive?`border-color:${c};background:${bg};color:${c}`:'';
     return `<button class="dt" onclick="selDept('${d.name}')" style="${activeStyle}">
-      <div class="dt-icon" style="${isActive?'background:'+hexToRgba(c,0.15):''};font-size:14px">${d.icon||'🏢'}</div>
+      <div class="dt-icon" style="${isActive?'background:'+hexToRgba(c,0.15):''};font-size:14px">${d.icon||'ð¢'}</div>
       <span>${d.name}</span>
     </button>`;
   }).join('');
@@ -1574,7 +1570,7 @@ function updateDur(){
   if(!curUser||curUser.isAdmin)return;
   const s=gs()[curUser.agent.id];
   const on=isOnline(s);
-  document.getElementById('mDur').textContent=on&&s?.checkInTs?elapsed(s.checkInTs):(s?.checkOutTs?durStr(s):'—');
+  document.getElementById('mDur').textContent=on&&s?.checkInTs?elapsed(s.checkInTs):(s?.checkOutTs?durStr(s):'â');
 }
 function updateProgress(){
   if(!curUser||curUser.isAdmin)return;
@@ -1598,18 +1594,14 @@ function checkIn(){
   if(!curUser||curUser.isAdmin)return;
   const a=curUser.agent;
   const status=gs(),now=new Date();
-  // Block if already online in localStorage (this device) or from sheet sync
   if(status[a.id]?.online&&status[a.id]?.date===TODAY()){
-    toast('warn','Already checked in — check out first!','yellow');
+    toast('warn','Already checked in â check out first!','yellow');
     return;
   }
-  // Block if sheet says online (catches other-device check-in)
   if(adminData?.statuses&&adminData.statuses[a.id]?.status==='Online'){
-    // Sync sheet state to local so UI reflects correctly
-    const sheetS=adminData.statuses[a.id];
-    const checkInTs=status[a.id]?.checkInTs||estimateTs(sheetS.checkIn);
-    status[a.id]={online:true,date:TODAY(),checkIn:sheetS.checkIn,checkInTs,checkOut:null,checkOutTs:null,
-      shifts:status[a.id]?.shifts||[{checkIn:sheetS.checkIn,checkInTs,checkOut:null,checkOutTs:null}],_fromSheet:true};
+    const checkInTs=status[a.id]?.checkInTs||estimateTs(null.checkIn);
+    status[a.id]={online:true,date:TODAY(),checkIn:null.checkIn,checkInTs,checkOut:null,checkOutTs:null,
+      shifts:status[a.id]?.shifts||[{checkIn:null.checkIn,checkInTs,checkOut:null,checkOutTs:null}]};
     ss(status);
     renderShiftPage();
     toast('warn','Already checked in on another device!','yellow');
@@ -1628,9 +1620,9 @@ function checkIn(){
   const shiftNum=status[a.id].shifts.length;
   addLog(a.id,'CHECK_IN',dept+(late?' [LATE]':'')+(shiftNum>1?' [SHIFT '+shiftNum+']':''));
   sync('STATUS',{agentId:a.id,agentName:a.name,dept,date:TODAY(),online:true,checkIn:nowStr,checkOut:'',shiftNum});
-  sync('LOG',{agentId:a.id,agentName:a.name,dept,date:TODAY(),time:nowStr,logAction:'CHECK_IN',detail:dept+(late?' — LATE':'')+(shiftNum>1?' Shift '+shiftNum:'')});
+  sync('LOG',{agentId:a.id,agentName:a.name,dept,date:TODAY(),time:nowStr,logAction:'CHECK_IN',detail:dept+(late?' â LATE':'')+(shiftNum>1?' Shift '+shiftNum:'')});
   renderShiftPage();
-  const msg=shiftNum>1?`Shift ${shiftNum} started!`:(late?`Checked in late`:'Shift started — good luck!');
+  const msg=shiftNum>1?`Shift ${shiftNum} started!`:(late?`Checked in late`:'Shift started â good luck!');
   toast(late?'warn':'check',msg,late?'yellow':'green');
 }
 function checkOut(){
@@ -1659,7 +1651,7 @@ function checkOut(){
   if(ti>-1){hist[ti].checkOut=nowStr;hist[ti].checkOutTs=nowTs;hist[ti].duration=dur;}
   localStorage.setItem('sd_hist_'+a.id,JSON.stringify(hist));
   renderShiftPage();
-  toast('check','Shift '+shiftNum+' ended — '+dur,'green');
+  toast('check','Shift '+shiftNum+' ended â '+dur,'green');
 }
 function addLog(aid,action,detail=''){
   const logs=gl();
@@ -1671,10 +1663,8 @@ function renderTasks(){
   if(!curUser||curUser.isAdmin)return;
   const aid=curUser.agent.id;
   const localTasks=(gt()[aid]||[]).filter(t=>t.date===TODAY());
-  const sheetTasks=(adminData?.tasks&&adminData.tasks[aid])||[];
-  // Merge: prefer local (has done/remarks), supplement with sheet
   let my=[...localTasks];
-  sheetTasks.forEach(st=>{
+  [].forEach(st=>{
     const already=my.find(lt=>lt.task===st.task&&lt.time===st.time);
     if(!already) my.push(st);
   });
@@ -1684,8 +1674,8 @@ function renderTasks(){
   list.innerHTML=my.map((t,i)=>{
     const prCls=(t.priority||'Normal').toLowerCase().replace(' priority','');
     const doneBadge=t.done?`<span class="task-done-badge"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Done</span>`:'';
-    const remarkHtml=t.remark?`<div class="task-remark-txt">💬 ${t.remark}</div>`:'';
-    const assignedBy=t.assignedBy?`<span style="color:var(--mu);font-size:9px"> · from ${t.assignedBy}</span>`:'';
+    const remarkHtml=t.remark?`<div class="task-remark-txt">ð¬ ${t.remark}</div>`:'';
+    const assignedBy=t.assignedBy?`<span style="color:var(--mu);font-size:9px"> Â· from ${t.assignedBy}</span>`:'';
     return `<div class="task-row" style="${t.done?'opacity:.7':''}">
       <div class="ti2">
         <div class="td" style="${t.done?'text-decoration:line-through;color:var(--mu)':''}">
@@ -1723,13 +1713,13 @@ function renderMyShifts(s){
       <span style="margin-left:auto;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;background:rgba(108,99,255,.12);color:var(--ac)">${shifts.length}</span>
     </div>
     ${shifts.map((sh,i)=>{
-      const dur=sh.checkOut&&sh.checkOutTs&&sh.checkInTs?Math.floor((sh.checkOutTs-sh.checkInTs)/3600000)+'h '+String(Math.floor(((sh.checkOutTs-sh.checkInTs)%3600000)/60000)).padStart(2,'0')+'m':(isOnline(s)&&i===shifts.length-1?elapsed(sh.checkInTs):'—');
+      const dur=sh.checkOut&&sh.checkOutTs&&sh.checkInTs?Math.floor((sh.checkOutTs-sh.checkInTs)/3600000)+'h '+String(Math.floor(((sh.checkOutTs-sh.checkInTs)%3600000)/60000)).padStart(2,'0')+'m':(isOnline(s)&&i===shifts.length-1?elapsed(sh.checkInTs):'â');
       const lateFlag=isLate(a,sh.checkInTs)?`<span style="font-size:8px;background:rgba(251,191,36,.15);color:var(--yl);padding:1px 5px;border-radius:3px;font-weight:800">LATE</span>`:'';
       const active=isOnline(s)&&i===shifts.length-1;
       return `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--b);${i===shifts.length-1?'':''}">
         <div style="width:20px;height:20px;border-radius:50%;background:${active?'rgba(16,185,129,.15)':'rgba(108,99,255,.1)'};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:${active?'var(--gr)':'var(--ac)'}">${i+1}</div>
         <div style="flex:1">
-          <div style="font-size:12px;font-weight:600;color:var(--tx)">${fmt12(sh.checkIn)} → ${sh.checkOut?fmt12(sh.checkOut):'<span style=\'color:var(--gr)\'>Active</span>'} ${lateFlag}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--tx)">${fmt12(sh.checkIn)} â ${sh.checkOut?fmt12(sh.checkOut):'<span style=\'color:var(--gr)\'>Active</span>'} ${lateFlag}</div>
           <div style="font-size:10px;color:var(--mu);margin-top:1px">Duration: <span style="font-family:var(--mono);color:${active?'var(--gr)':'var(--tx)'}">${dur}</span></div>
         </div>
         ${active?`<span style="font-size:9px;font-weight:800;color:var(--gr);padding:2px 6px;border-radius:10px;background:rgba(16,185,129,.1)">NOW</span>`:''}
@@ -1750,10 +1740,10 @@ function renderWeekStats(){
   // avg duration
   const durs=weekHist.filter(h=>h.checkInTs&&h.checkOutTs).map(h=>h.checkOutTs-h.checkInTs);
   if(durs.length){const avg=durs.reduce((a,b)=>a+b,0)/durs.length;document.getElementById('wkAvgDur').textContent=`${Math.floor(avg/3600000)}h${String(Math.floor((avg%3600000)/60000)).padStart(2,'0')}m`;}
-  else{document.getElementById('wkAvgDur').textContent='—';}
+  else{document.getElementById('wkAvgDur').textContent='â';}
 }
 
-// ── MY REPORT PAGE ────────────────────────────────────────
+// ââ MY REPORT PAGE ââââââââââââââââââââââââââââââââââââââââ
 let mrTab='week';
 function switchMyReport(tab){
   mrTab=tab;
@@ -1799,7 +1789,7 @@ function renderMyReport(){
       const dow=d.getDay();
       const isWknd=dow===0||dow===6;
       let cls=isWknd?'absent':(entry?.status||'absent');
-      const statusLbl=isWknd?'OFF':(!entry?'—':(entry.status==='present'?'✓':entry.status==='late'?'LATE':'ABS'));
+      const statusLbl=isWknd?'OFF':(!entry?'â':(entry.status==='present'?'â':entry.status==='late'?'LATE':'ABS'));
       const statusCol=cls==='present'?'var(--gr)':cls==='late'?'var(--yl)':'var(--mu2)';
       whtml+=`<div class="wh-day ${cls}${isToday?' today':''}">
         <div class="wh-dn">${days[i]}</div>
@@ -1835,10 +1825,10 @@ function renderMyReport(){
     <div class="session-row">
       <div class="sr-date">${new Date(h.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}</div>
       <span class="sr-badge ${h.status==='present'?'sr-on':h.status==='late'?'sr-late':'sr-absent'}">${h.status==='present'?'On Time':h.status==='late'?'Late':'Absent'}</span>
-      <div class="sr-times">${h.checkIn||'—'} → ${h.checkOut||'—'}</div>
-      <div class="sr-dur">${h.duration||'—'}</div>
+      <div class="sr-times">${h.checkIn||'â'} â ${h.checkOut||'â'}</div>
+      <div class="sr-dur">${h.duration||'â'}</div>
     </div>`).join(''):'<div class="empty" style="padding:20px">No sessions yet</div>';
-  // Tasks — full interactive list same as My Shift
+  // Tasks â full interactive list same as My Shift
   const allTasks=gt()[a.id]||[];
   const myTasksAll=[...allTasks].reverse().slice(0,30);
   const mrList=document.getElementById('mrTaskList');
@@ -1849,14 +1839,14 @@ function renderMyReport(){
       const ri=allTasks.length-1-i; // real index in allTasks (for actions)
       const prCls=(t.priority||'Normal').toLowerCase().replace(' priority','');
       const doneBadge=t.done?`<span class="task-done-badge"><svg viewBox="0 0 24 24" style="width:8px;height:8px;stroke:currentColor;fill:none;stroke-width:3"><polyline points="20 6 9 17 4 12"/></svg>Done</span>`:'';
-      const remarkHtml=t.remark?`<div class="task-remark-txt">💬 ${t.remark}</div>`:'';
-      const assignedBy=t.assignedBy?`<span style="color:var(--mu);font-size:9px"> · from ${t.assignedBy}</span>`:'';
+      const remarkHtml=t.remark?`<div class="task-remark-txt">ð¬ ${t.remark}</div>`:'';
+      const assignedBy=t.assignedBy?`<span style="color:var(--mu);font-size:9px"> Â· from ${t.assignedBy}</span>`:'';
       return `<div class="task-row" style="${t.done?'opacity:.7':''}">
         <div class="ti2">
           <div class="td" style="${t.done?'text-decoration:line-through;color:var(--mu)':''}">
             ${t.task}${doneBadge}
           </div>
-          <div class="tt">${t.date} · ${t.time}${assignedBy}</div>
+          <div class="tt">${t.date} Â· ${t.time}${assignedBy}</div>
           ${remarkHtml}
           <div class="task-action-bar">
             <button class="ta-btn ${t.done?'ta-done completed':'ta-done'}" onclick="toggleTaskDoneByIdx(${ri})">
@@ -1885,11 +1875,11 @@ function renderMyReport(){
   document.getElementById('mrHourPattern').innerHTML=hourCounts.map((c,i)=>{
     const pct=Math.round(c/maxC*100);
     const color=i===3||i===4?'var(--rd)':i>=1&&i<=5?'var(--yl)':'var(--ac)';
-    return `<div class="hm-col"><div class="hm-bar" style="height:${Math.max(pct,5)}%;background:${color};opacity:${0.3+c/maxC*0.7}" data-tip="${hourLabels[i]}:00 — ${c} check-in${c!==1?'s':''}"></div><div class="hm-lbl">${i%3===0?hourLabels[i]+':00':''}</div></div>`;
+    return `<div class="hm-col"><div class="hm-bar" style="height:${Math.max(pct,5)}%;background:${color};opacity:${0.3+c/maxC*0.7}" data-tip="${hourLabels[i]}:00 â ${c} check-in${c!==1?'s':''}"></div><div class="hm-lbl">${i%3===0?hourLabels[i]+':00':''}</div></div>`;
   }).join('');
 }
 
-// ── ADMIN + ADMIN ANALYTICS ───────────────────────────────
+// ââ ADMIN + ADMIN ANALYTICS âââââââââââââââââââââââââââââââ
 let adminData={statuses:{},tasks:{},logs:[]};
 let anaFilter='all';let anaStatusFilter='';let anaTab='today';
 
@@ -1954,7 +1944,6 @@ async function fetchAdminData(){
       });
       if(changed){sAgents(AGENTS);buildAgentDropdown();refreshDeptDropdowns();}
     }
-    renderStatsFromSheet();renderSwimlanesFromSheet();
   }catch(e){
     adminLoading=false;setSyncState('err');
     console.error('fetchAdminData error:',e);
@@ -1962,63 +1951,18 @@ async function fetchAdminData(){
   }
 }
 
-// ── FETCH STATUS FOR AGENT from Supabase (cross-device duplicate prevention) ──
-async function fetchSheetStatusForAgent(agentId,callback){
-  setSyncState('syncing');
-  const btnIn=document.getElementById('btnIn');
-  const btnOut=document.getElementById('btnOut');
-  if(btnIn){btnIn.disabled=true;btnIn.textContent='Checking status…';}
-  if(btnOut){btnOut.disabled=true;}
-  try{
-    const {data:row}=await _db.from('shift_status').select('*')
-      .eq('date',TODAY()).eq('agent_id',agentId).maybeSingle();
-    setSyncState('ok');
-    if(row){
-      const localStatus=gs();
-      const today=TODAY();
-      if(row.online){
-        const existingLocal=localStatus[agentId];
-        const checkInTs=existingLocal?.checkInTs||row.check_in_ts||estimateTs(row.check_in);
-        const prevShifts=existingLocal?.date===today&&existingLocal?.shifts?existingLocal.shifts:
-          (checkInTs?[{checkIn:row.check_in,checkInTs,checkOut:null,checkOutTs:null,
-            late:isLate(AGENTS.find(a=>a.id===agentId)||{shiftStart:'09:00'},checkInTs)}]:[]);
-        localStatus[agentId]={
-          online:true,date:today,checkIn:row.check_in,checkInTs,
-          checkOut:null,checkOutTs:null,shifts:prevShifts,_fromSheet:true
-        };
-      } else if(row.check_in&&row.check_in!=='—'){
-        const existingLocal=localStatus[agentId];
-        const checkInTs=existingLocal?.checkInTs||row.check_in_ts||estimateTs(row.check_in);
-        const checkOutTs=existingLocal?.checkOutTs||row.check_out_ts||estimateTs(row.check_out)||Date.now();
-        const prevShifts=existingLocal?.date===today&&existingLocal?.shifts?existingLocal.shifts:
-          (checkInTs?[{checkIn:row.check_in,checkInTs,checkOut:row.check_out,checkOutTs,late:false}]:[]);
-        localStatus[agentId]={
-          online:false,date:today,checkIn:row.check_in,checkInTs,
-          checkOut:row.check_out,checkOutTs,totalDuration:row.total_duration,
-          shifts:prevShifts,_fromSheet:true
-        };
-      }
-      ss(localStatus);
-    }
-  }catch(e){
-    setSyncState('err');
-    console.error('fetchSheetStatusForAgent error:',e);
-  }
-  if(btnIn){btnIn.textContent='Check In — Start Shift';btnIn.disabled=false;}
-  if(btnOut){btnOut.disabled=false;}
-  if(callback)callback();
-}
+// ââ FETCH STATUS FOR AGENT from Supabase (cross-device duplicate prevention) ââ
 
 function estimateTs(timeStr){
   // Convert time string like "9:44:00 AM" to today's timestamp
-  if(!timeStr||timeStr==='—'||timeStr==='Active') return null;
+  if(!timeStr||timeStr==='â'||timeStr==='Active') return null;
   try{
     const ts=new Date(new Date().toDateString()+' '+timeStr).getTime();
     return isNaN(ts)?null:ts;
   }catch(e){return null;}
 }
 
-// ── ANALYTICS PAGE ────────────────────────────────────────
+// ââ ANALYTICS PAGE ââââââââââââââââââââââââââââââââââââââââ
 function renderAnalytics(){
   // Rebuild dept filter chips dynamically
   const chips=document.getElementById('anaDeptChips');
@@ -2032,7 +1976,7 @@ function switchAnalyticsTab(tab){
   anaTab=tab;
   ['today','week','month'].forEach(t=>{document.getElementById('ana-'+t).classList.toggle('active',t===tab);});
   document.getElementById('anaSubtitle').textContent=tab==='today'?'Today\'s workforce intelligence':tab==='week'?'This week\'s team overview':'Monthly performance summary';
-  document.getElementById('anaPerfLabel').textContent=`Agent Performance — ${tab==='today'?'Today':tab==='week'?'This Week':'This Month'}`;
+  document.getElementById('anaPerfLabel').textContent=`Agent Performance â ${tab==='today'?'Today':tab==='week'?'This Week':'This Month'}`;
   renderAnaDeptBreakdown();renderAnaTimeline();renderAnaPerfGrid();
 }
 function toggleAnaFilter(f,el){
@@ -2115,7 +2059,7 @@ function renderAnaHeatmap(){
   const logs=gl().filter(l=>l.action==='CHECK_IN');
   const hourCounts=Array(13).fill(0); // 6am-6pm
   logs.forEach(l=>{
-    // Estimate hour from log time — approximate
+    // Estimate hour from log time â approximate
     const s=status[l.agentId];
     if(s?.checkInTs){const hr=new Date(s.checkInTs).getHours();const idx=hr-6;if(idx>=0&&idx<13)hourCounts[idx]++;}
   });
@@ -2124,7 +2068,7 @@ function renderAnaHeatmap(){
   const maxC=Math.max(...hourCounts,1);
   document.getElementById('anaHourHeat').innerHTML=hourCounts.map((c,i)=>`
     <div class="hm-col">
-      <div class="hm-bar" style="height:${Math.max(c/maxC*100,5)}%;background:rgba(108,99,255,${0.15+c/maxC*0.85})" data-tip="${6+i}:00 — ${c} check-in${c!==1?'s':''}"></div>
+      <div class="hm-bar" style="height:${Math.max(c/maxC*100,5)}%;background:rgba(108,99,255,${0.15+c/maxC*0.85})" data-tip="${6+i}:00 â ${c} check-in${c!==1?'s':''}"></div>
       <div class="hm-lbl"></div>
     </div>`).join('');
 }
@@ -2142,7 +2086,7 @@ function renderAnaPerfGrid(){
     const monthLate=hist.filter(h=>h.status==='late').length;
     const onTimePct=monthPresent>0?Math.round((monthPresent-monthLate)/monthPresent*100):100;
     // Duration today
-    let durToday='—';
+    let durToday='â';
     if(s?.date===TODAY()&&s.checkInTs){durToday=s.checkOutTs?durStr(s):elapsed(s.checkInTs);}
     // Score: 100 - (late*5) + (tasks*3) + (ontime*0.3)
     const score=Math.min(100,Math.max(0,Math.round(onTimePct*0.7+(myTasks*3)+(on?10:0)-(late?8:0))));
@@ -2151,7 +2095,7 @@ function renderAnaPerfGrid(){
     return `<div class="perf-card">
       <div class="perf-card-top">
         <div class="perf-av" style="background:${DB[a.dept]};color:${DC[a.dept]}">${ini(a.name)}</div>
-        <div class="perf-info"><div class="perf-name">${a.name}</div><div class="perf-dept">${a.dept} · ${a.type}</div></div>
+        <div class="perf-info"><div class="perf-name">${a.name}</div><div class="perf-dept">${a.dept} Â· ${a.type}</div></div>
         <div>
           <div class="perf-score" style="color:${scoreColor}">${score}</div>
           <div style="font-size:9px;color:var(--mu);text-transform:uppercase;letter-spacing:.4px;text-align:center">Score</div>
@@ -2171,21 +2115,6 @@ function renderAnaPerfGrid(){
 }
 
 // ADMIN OVERVIEW RENDERS
-function renderStatsFromSheet(){
-  const statuses=adminData.statuses||{};
-  const total=AGENTS.length;
-  const online=AGENTS.filter(a=>{const s=statuses[a.id];return s&&s.status==='Online';}).length;
-  const tasks=Object.values(adminData.tasks||{}).flat().filter(t=>!t.date||t.date===TODAY()).length;
-  const late=AGENTS.filter(a=>{const s=statuses[a.id];if(!s||s.status!=='Online')return false;return isLateFromSheet(a,s.checkIn);}).length;
-  const pct=online?Math.round(online/total*100):0;
-  document.getElementById('onlineCnt').textContent=online;
-  document.getElementById('onlineBadge').textContent=online;
-  document.getElementById('latePill').style.display=late>0?'flex':'none';
-  document.getElementById('lateCnt').textContent=late;
-  const lb=document.getElementById('lateBadge');
-  if(late>0){lb.style.display='inline-flex';lb.textContent=late+' late';}else{lb.style.display='none';}
-  document.getElementById('statsGrid').innerHTML=statsHTML(online,total,tasks,late,pct);
-}
 function renderStats(){
   const status=gs(),total=AGENTS.length;
   const online=AGENTS.filter(a=>isOnline(status[a.id])).length;
@@ -2200,28 +2129,8 @@ function statsHTML(online,total,tasks,late,pct){
   <div class="stat-tile st-task"><div class="st-top"><div class="st-ic" style="background:rgba(108,99,255,.1);color:var(--ac)"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><span class="st-tr" style="background:rgba(108,99,255,.1);color:var(--ac)">Today</span></div><div class="st-num" style="color:var(--ac)">${tasks}</div><div class="st-lbl">Tasks</div></div>
   <div class="stat-tile st-late"><div class="st-top"><div class="st-ic" style="background:rgba(244,63,94,.1);color:var(--rd)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><span class="st-tr" style="background:rgba(244,63,94,.1);color:var(--rd)">Alert</span></div><div class="st-num" style="color:var(--rd)">${late}</div><div class="st-lbl">Late Arrivals</div></div>`;
 }
-function isLateFromSheet(agent,checkInStr){
-  if(!agent.shiftStart||!checkInStr||checkInStr==='—')return false;
-  try{const[sh,sm]=agent.shiftStart.split(':').map(Number);const now=new Date();const shiftMs=new Date(now.getFullYear(),now.getMonth(),now.getDate(),sh,sm,0).getTime();const ci=new Date(now.toDateString()+' '+checkInStr).getTime();if(isNaN(ci))return false;return ci>shiftMs+5*60*1000;}catch(e){return false;}
-}
-function renderSwimlanesFromSheet(){
-  const statuses=adminData.statuses||{};const tasks=adminData.tasks||{};
-  const _swTotalOnline=AGENTS.filter(a=>{const s=adminData.statuses?.[a.id];return s&&s.status==='Online';}).length;
-  const _swTotalOff=AGENTS.length-_swTotalOnline;
-  const _swCount=document.getElementById('swimlaneCount');if(_swCount)_swCount.textContent=swimlaneFilter==='online'?_swTotalOnline+' online':swimlaneFilter==='offline'?_swTotalOff+' offline':AGENTS.length+' total';
-  document.getElementById('swimlanes').innerHTML=getDeptNames().map(dept=>{
-    let agents=AGENTS.filter(a=>a.dept===dept);
-    if(swimlaneFilter==='online') agents=agents.filter(a=>{const s=adminData.statuses?.[a.id];return s&&s.status==='Online';});
-    if(swimlaneFilter==='offline') agents=agents.filter(a=>{const s=adminData.statuses?.[a.id];return !s||s.status!=='Online';});
-    const cnt=agents.filter(a=>{const s=adminData.statuses?.[a.id];return s&&s.status==='Online';}).length;
-    const pct=agents.length?Math.round(cnt/agents.length*100):0;
-    const cls='sl-dyn';
-    const fill=getDeptColor(dept);
-    return `<div class="dept-sl"><div class="sl-head"><span class="sl-pill" style="background:${hexToRgba(getDeptColor(dept),0.12)};color:${getDeptColor(dept)};border:1px solid ${hexToRgba(getDeptColor(dept),0.25)}">${dept}</span><span class="sl-cnt">${cnt}/${agents.length} online</span><div class="sl-prog"><div class="sl-pf" style="width:${pct}%;background:${fill}"></div></div><span class="sl-pct">${pct}%</span></div><div class="agents-grid">${agents.map(a=>agentCardFromSheet(a,statuses[a.id],(tasks[a.id]||[]).length)).join('')}</div></div>`;
-  }).join('');
-}
 function fmt12(t24){
-  if(!t24||t24==='—'||t24==='Active')return t24||'—';
+  if(!t24||t24==='â'||t24==='Active')return t24||'â';
   try{
     const parts=t24.match(/(\d+):(\d+)/);
     if(!parts)return t24;
@@ -2230,55 +2139,16 @@ function fmt12(t24){
     return h+':'+m+' '+ap;
   }catch(e){return t24;}
 }
-function agentCardFromSheet(a,s,taskCount){
-  const on=s&&s.status==='Online';const late=on&&isLateFromSheet(a,s?.checkIn);
-  const dur=s?.totalDuration||(on?elapsed_fromStr(s?.checkIn):'—');
-  const tMap={qa:'QA',senior:'Senior',manager:'Manager',regular:''};const tl=tMap[a.type]||'';
-  const tp=tl?`<span class="at-bdg bdg-${a.type}">${tl}</span>`:'';
-  const statusDot=on
-    ?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--gr);padding:2px 7px;border-radius:20px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2)"><span style="width:5px;height:5px;border-radius:50%;background:${late?'var(--yl)':'var(--gr)'}"></span>Online</span>`
-    :`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--mu);padding:2px 7px;border-radius:20px;background:rgba(107,114,142,.08);border:1px solid rgba(107,114,142,.15)"><span style="width:5px;height:5px;border-radius:50%;background:var(--mu2)"></span>Offline</span>`;
-  // Sheet only has one shift record — show as single shift row
-  const ci=fmt12(s?.checkIn||'');const co=fmt12(s?.checkOut||'');
-  const lateDot=late?'<span style="font-size:8px;color:var(--yl);font-weight:800;margin-left:3px">●</span>':'';
-  const shiftsBlock=(ci&&ci!='—')?`
-    <div style="margin-bottom:8px;background:var(--s2);border-radius:7px;padding:6px 8px;border:1px solid var(--b)">
-      <div style="display:grid;grid-template-columns:20px 1fr 1fr 1fr;gap:4px;margin-bottom:3px">
-        <span></span>
-        <span style="font-size:9px;color:var(--mu2);text-transform:uppercase;letter-spacing:.4px;font-weight:700">In</span>
-        <span style="font-size:9px;color:var(--mu2);text-transform:uppercase;letter-spacing:.4px;font-weight:700">Out</span>
-        <span style="font-size:9px;color:var(--mu2);text-transform:uppercase;letter-spacing:.4px;font-weight:700">Dur</span>
-      </div>
-      <div style="display:grid;grid-template-columns:20px 1fr 1fr 1fr;gap:4px;align-items:center;padding:5px 0;font-size:11px">
-        <span style="font-size:9px;color:var(--mu2);font-weight:700">#1</span>
-        <span style="font-family:var(--mono);color:var(--tx)">${ci}${lateDot}</span>
-        <span style="font-family:var(--mono);color:var(--mu)">${on?'<span style="color:var(--gr)">Active</span>':(co||'—')}</span>
-        <span style="font-family:var(--mono);color:${late?'var(--yl)':'var(--gr)'};font-weight:600">${dur}</span>
-      </div>
-    </div>`:'';
-  const progPct=on?Math.min(100,Math.round((Date.now()-new Date().setHours(...(a.shiftStart||'09:00').split(':').map(Number),0,0))/(8*3600000)*100)):0;
-  return `<div class="at ${on?'live':''}"><div class="live-bar"></div>
-    <div class="at-hd">
-      <div class="at-av" style="background:${DB[a.dept]};color:${DC[a.dept]}">${ini(a.name)}<div class="av-ring"></div></div>
-      <div class="at-inf"><div class="at-nm">${a.name}</div><div class="at-rl">${a.role}</div></div>${tp}
-    </div>
-    <div style="margin-bottom:6px">${statusDot}</div>
-    ${on?(()=>{const ad=getActivityData(a.id);const ast=ad?.status||'unknown';const lbl={active:'Active',idle:'Idle — no input',away:'Away',unknown:'—'}[ast];const since=ad?.lastSeen?timeSinceShort(ad.lastSeen):'';const activeMin=ad?.totalActiveMinutes||0;const aH=Math.floor(activeMin/60),aM=activeMin%60;return `<div class="act-status-row"><div class="act-dot-lg ${ast}"></div><span class="act-lbl ${ast}">${lbl}</span>${since?`<span class="act-since">${since}</span>`:''}<span style="margin-left:${since?'4px':'auto'};font-size:10px;color:var(--mu);font-family:var(--mono)">${activeMin>0?aH+'h '+String(aM).padStart(2,'0')+'m active':''}</span></div>`;})():''}
-    ${shiftsBlock}
-    ${on?`<div class="at-prog" style="margin-bottom:6px"><div class="at-pf" style="width:${progPct}%"></div></div>`:''}
-    <div style="display:flex;gap:5px"><button class="btn-asgn" style="flex:1" onclick="openTaskModal('${a.id}')"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Assign Task${taskCount>0?' <span class="dur-bdg">'+taskCount+' tasks</span>':''}</button>${on?`<button class="btn-asgn" style="background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.2);color:var(--rd);flex-shrink:0;padding:7px 10px" onclick="adminForceCheckout('${a.id}')" title="Force checkout"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>`:''}</div>
-  </div>`;
-}
 function elapsed_fromStr(checkInStr){
-  if(!checkInStr)return '—';
+  if(!checkInStr)return 'â';
   try{
     const now=new Date();
     const ci=new Date(now.toDateString()+' '+checkInStr);
-    if(isNaN(ci))return '—';
+    if(isNaN(ci))return 'â';
     const d=Date.now()-ci.getTime();
-    if(d<0)return '—';
+    if(d<0)return 'â';
     return Math.floor(d/3600000)+'h '+String(Math.floor((d%3600000)/60000)).padStart(2,'0')+'m';
-  }catch(e){return '—';}
+  }catch(e){return 'â';}
 }
 function renderSwimlanes(){
   const status=gs();
@@ -2293,11 +2163,11 @@ function renderSwimlanes(){
 }
 function agentCard(a,s){
   const on=isOnline(s);const late=on&&isLate(a,s?.checkInTs);
-  const activeDur=on&&s?.checkInTs?elapsed(s.checkInTs):'—';
+  const activeDur=on&&s?.checkInTs?elapsed(s.checkInTs):'â';
   const pct=on&&s?.checkInTs?Math.min(100,Math.round((Date.now()-s.checkInTs)/(8*3600000)*100)):0;
   const tMap={qa:'QA',senior:'Senior',manager:'Manager',regular:''};const tl=tMap[a.type]||'';
   const tp=tl?`<span class="at-bdg bdg-${a.type}">${tl}</span>`:'';
-  // Online/Offline dot only — late shown as subtle yellow dot on avatar
+  // Online/Offline dot only â late shown as subtle yellow dot on avatar
   const statusDot=on
     ?`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--gr);padding:2px 7px;border-radius:20px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2)"><span style="width:5px;height:5px;border-radius:50%;background:var(--gr);${late?'background:var(--yl)':''}"></span>Online</span>`
     :`<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--mu);padding:2px 7px;border-radius:20px;background:rgba(107,114,142,.08);border:1px solid rgba(107,114,142,.15)"><span style="width:5px;height:5px;border-radius:50%;background:var(--mu2)"></span>Offline</span>`;
@@ -2305,12 +2175,12 @@ function agentCard(a,s){
   const shifts=s?.date===TODAY()&&s.shifts&&s.shifts.length>0?s.shifts:
     (s?.date===TODAY()&&s.checkIn?[{checkIn:s.checkIn,checkInTs:s.checkInTs,checkOut:s.checkOut,checkOutTs:s.checkOutTs,late}]:[]);
   const shiftRows=shifts.map((sh,i)=>{
-    const shDur=sh.checkOut?(sh.checkOutTs&&sh.checkInTs?`${Math.floor((sh.checkOutTs-sh.checkInTs)/3600000)}h ${String(Math.floor(((sh.checkOutTs-sh.checkInTs)%3600000)/60000)).padStart(2,'0')}m`:'—'):(on&&i===shifts.length-1?elapsed(sh.checkInTs):'—');
-    const shLate=sh.late?'<span style="font-size:8px;color:var(--yl);font-weight:800;margin-left:3px">●</span>':'';
+    const shDur=sh.checkOut?(sh.checkOutTs&&sh.checkInTs?`${Math.floor((sh.checkOutTs-sh.checkInTs)/3600000)}h ${String(Math.floor(((sh.checkOutTs-sh.checkInTs)%3600000)/60000)).padStart(2,'0')}m`:'â'):(on&&i===shifts.length-1?elapsed(sh.checkInTs):'â');
+    const shLate=sh.late?'<span style="font-size:8px;color:var(--yl);font-weight:800;margin-left:3px">â</span>':'';
     return `<div style="display:grid;grid-template-columns:20px 1fr 1fr 1fr;gap:4px;align-items:center;padding:5px 0;border-bottom:1px solid var(--b);font-size:11px">
       <span style="font-size:9px;color:var(--mu2);font-weight:700">#${i+1}</span>
       <span style="font-family:var(--mono);color:var(--tx)">${fmt12(sh.checkIn)}${shLate}</span>
-      <span style="font-family:var(--mono);color:var(--mu)">${sh.checkOut?fmt12(sh.checkOut):(on&&i===shifts.length-1?'<span style="color:var(--gr)">Active</span>':'—')}</span>
+      <span style="font-family:var(--mono);color:var(--mu)">${sh.checkOut?fmt12(sh.checkOut):(on&&i===shifts.length-1?'<span style="color:var(--gr)">Active</span>':'â')}</span>
       <span style="font-family:var(--mono);color:${sh.late?'var(--yl)':'var(--gr)'};font-weight:600">${shDur}</span>
     </div>`;
   }).join('');
@@ -2330,7 +2200,7 @@ function agentCard(a,s){
       <div class="at-inf"><div class="at-nm">${a.name}</div><div class="at-rl">${a.role}</div></div>${tp}
     </div>
     <div style="margin-bottom:6px">${statusDot}</div>
-    ${on?(()=>{const ad=getActivityData(a.id);const ast=ad?.status||'unknown';const lbl={active:'Active',idle:'Idle — no input',away:'Away',unknown:'—'}[ast];const since=ad?.lastSeen?timeSinceShort(ad.lastSeen):'';const activeMin=ad?.totalActiveMinutes||0;const aH=Math.floor(activeMin/60),aM=activeMin%60;return `<div class="act-status-row"><div class="act-dot-lg ${ast}"></div><span class="act-lbl ${ast}">${lbl}</span>${since?`<span class="act-since">${since}</span>`:''}<span style="margin-left:${since?'4px':'auto'};font-size:10px;color:var(--mu);font-family:var(--mono)">${activeMin>0?aH+'h '+String(aM).padStart(2,'0')+'m active':''}</span></div>`;})():''}
+    ${on?(()=>{const ad=getActivityData(a.id);const ast=ad?.status||'unknown';const lbl={active:'Active',idle:'Idle â no input',away:'Away',unknown:'â'}[ast];const since=ad?.lastSeen?timeSinceShort(ad.lastSeen):'';const activeMin=ad?.totalActiveMinutes||0;const aH=Math.floor(activeMin/60),aM=activeMin%60;return `<div class="act-status-row"><div class="act-dot-lg ${ast}"></div><span class="act-lbl ${ast}">${lbl}</span>${since?`<span class="act-since">${since}</span>`:''}<span style="margin-left:${since?'4px':'auto'};font-size:10px;color:var(--mu);font-family:var(--mono)">${activeMin>0?aH+'h '+String(aM).padStart(2,'0')+'m active':''}</span></div>`;})():''}
     ${shiftsBlock}
     ${on?`<div class="at-prog" style="margin-bottom:6px"><div class="at-pf" style="width:${pct}%"></div></div>`:''}
     <div style="display:flex;gap:5px"><button class="btn-asgn" style="flex:1" onclick="openTaskModal('${a.id}')"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Assign Task</button>${on?`<button class="btn-asgn" style="background:rgba(244,63,94,.08);border-color:rgba(244,63,94,.2);color:var(--rd);flex-shrink:0;padding:7px 10px" onclick="adminForceCheckout('${a.id}')" title="Force checkout"><svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></button>`:''}</div>
@@ -2347,21 +2217,7 @@ function renderTimeline(){
     if(l.action==='CHECK_OUT'){cls='tld-out';icon='<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';lbl='Checked out';}
     if(l.action==='TASK_ASSIGN'){cls='tld-task';icon='<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>';lbl='Task assigned';}
     if(isLateLog){cls='tld-late';icon='<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>';}
-    return `<div class="tl-row"><div class="tl-dot ${cls}"><svg viewBox="0 0 24 24">${icon}</svg></div><div class="tl-bd"><div class="tl-m">${agent?.name||l.agentId} — ${lbl}</div><div class="tl-s">${agent?.dept||'—'}</div></div><div class="tl-t">${l.time}</div></div>`;
-  }).join('');
-}
-function renderTimelineFromSheet(){
-  const logs=adminData.logs||[];
-  const body=document.getElementById('tlBody');
-  if(!logs.length){body.innerHTML='<div class="empty" style="padding:28px">No activity today</div>';return;}
-  body.innerHTML=logs.map(l=>{
-    const agent=AGENTS.find(a=>a.id===l.agentId);
-    const isLateLog=l.detail&&l.detail.includes('LATE');
-    let cls='tld-in',icon='<polyline points="20 6 9 17 4 12"/>',lbl='Checked in';
-    if(l.action==='CHECK_OUT'){cls='tld-out';icon='<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';lbl='Checked out';}
-    if(l.action==='TASK_ASSIGN'){cls='tld-task';icon='<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>';lbl='Task assigned';}
-    if(isLateLog){cls='tld-late';}
-    return `<div class="tl-row"><div class="tl-dot ${cls}"><svg viewBox="0 0 24 24">${icon}</svg></div><div class="tl-bd"><div class="tl-m">${agent?.name||l.agentId} — ${lbl}</div><div class="tl-s">${l.dept||agent?.dept||'—'}</div></div><div class="tl-t">${l.time}</div></div>`;
+    return `<div class="tl-row"><div class="tl-dot ${cls}"><svg viewBox="0 0 24 24">${icon}</svg></div><div class="tl-bd"><div class="tl-m">${agent?.name||l.agentId} â ${lbl}</div><div class="tl-s">${agent?.dept||'â'}</div></div><div class="tl-t">${l.time}</div></div>`;
   }).join('');
 }
 function clearLog(){if(confirm('Clear today\'s activity?')){sl(gl().filter(l=>l.date!==TODAY()));renderTimeline();}}
@@ -2379,7 +2235,7 @@ function renderAgentTable(){
     const dcls='dd-dyn';
     return `<div class="tbl-row">
       <div class="tbl-c"><div class="tbl-av" style="background:${DB[a.dept]};color:${DC[a.dept]}">${ini(a.name)}</div></div>
-      <div class="tbl-c"><div class="tbl-name">${a.name}</div><div class="tbl-sub">${a.id} · ${a.role}</div></div>
+      <div class="tbl-c"><div class="tbl-name">${a.name}</div><div class="tbl-sub">${a.id} Â· ${a.role}</div></div>
       <div class="tbl-c"><span class="dept-dot" style="background:${hexToRgba(_dc,0.1)};color:${_dc}">${a.dept}</span></div>
       <div class="tbl-c" style="color:var(--mu);font-size:11px;font-family:var(--mono)">${a.tz}</div>
       <div class="tbl-c"><span class="shift-badge-sm ${late?'late-flag':''}">${a.shiftStart?fmtTime(a.shiftStart):'Not set'}</span></div>
@@ -2464,7 +2320,7 @@ function openTaskModal(id){
   const av=document.getElementById('mAv');
   av.textContent=ini(a.name);av.style.cssText=`width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;background:${DB[a.dept]};color:${DC[a.dept]}`;
   document.getElementById('mName').textContent=a.name;
-  document.getElementById('mDept').textContent=a.dept+' · '+a.role;
+  document.getElementById('mDept').textContent=a.dept+' Â· '+a.role;
   document.getElementById('taskInp').value='';document.getElementById('taskPrio').value='Normal';
   document.getElementById('taskModal').classList.add('open');
   setTimeout(()=>document.getElementById('taskInp').focus(),120);
@@ -2487,7 +2343,7 @@ function saveTask(){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 
 
-// ── DEPARTMENT SYSTEM ────────────────────────────────────
+// ââ DEPARTMENT SYSTEM ââââââââââââââââââââââââââââââââââââ
 const DEPT_COLORS = [
   '#f59e0b','#06b6d4','#a78bfa','#10b981','#f43f5e',
   '#6c63ff','#fb923c','#ec4899','#14b8a6','#84cc16',
@@ -2495,9 +2351,9 @@ const DEPT_COLORS = [
 ];
 
 const DEFAULT_DEPTS = [
-  {name:'Corporate', color:'#f59e0b', icon:'🏢'},
-  {name:'Retail',    color:'#06b6d4', icon:'🛍️'},
-  {name:'Reseller',  color:'#a78bfa', icon:'👥'},
+  {name:'Corporate', color:'#f59e0b', icon:'ð¢'},
+  {name:'Retail',    color:'#06b6d4', icon:'ðï¸'},
+  {name:'Reseller',  color:'#a78bfa', icon:'ð¥'},
 ];
 
 function getDepts(){
@@ -2536,7 +2392,7 @@ function renderDeptsPage(){
       <div class="dept-card-top" style="background:${hexColor}"></div>
       <div class="dept-card-body">
         <div class="dept-card-hd">
-          <div class="dept-color-swatch" style="background:${hexToRgba(hexColor,0.15)};color:${hexColor}">${d.icon||'🏢'}</div>
+          <div class="dept-color-swatch" style="background:${hexToRgba(hexColor,0.15)};color:${hexColor}">${d.icon||'ð¢'}</div>
           <div>
             <div class="dept-card-name">${d.name}</div>
             <div class="dept-card-sub">${agents.length} agent${agents.length!==1?'s':''}</div>
@@ -2548,8 +2404,8 @@ function renderDeptsPage(){
           <div class="dcs"><div class="dcs-v" style="color:var(--ac)">${taskCount}</div><div class="dcs-k">Tasks</div></div>
         </div>
         <div class="dept-card-actions">
-          <button class="btn-dept-edit" onclick="openDeptModal('${d.name}')">✏️ Edit</button>
-          <button class="btn-dept-del" onclick="openDeptDelModal('${d.name}')">✕</button>
+          <button class="btn-dept-edit" onclick="openDeptModal('${d.name}')">âï¸ Edit</button>
+          <button class="btn-dept-del" onclick="openDeptDelModal('${d.name}')">â</button>
         </div>
       </div>
     </div>`;
@@ -2585,7 +2441,7 @@ function selectDeptColor(color, el){
 function saveDept(){
   const name = document.getElementById('deptName').value.trim();
   const color = document.getElementById('deptColor').value || DEPT_COLORS[0];
-  const icon = document.getElementById('deptIcon').value.trim() || '🏢';
+  const icon = document.getElementById('deptIcon').value.trim() || 'ð¢';
   if(!name){ toast('x','Enter a department name','red'); return; }
   const depts = getDepts();
   const now=new Date(),nowStr=now.toLocaleTimeString('en-PK',{hour12:true});
@@ -2599,7 +2455,7 @@ function saveDept(){
         AGENTS.forEach(a=>{ if(a.dept===oldName) a.dept=name; });
         sAgents(AGENTS);
       }
-      sync('LOG',{agentId:'ADMIN',agentName:'Admin',dept:name,date:TODAY(),time:nowStr,logAction:'DEPT_UPDATE',detail:oldName+' → '+name});
+      sync('LOG',{agentId:'ADMIN',agentName:'Admin',dept:name,date:TODAY(),time:nowStr,logAction:'DEPT_UPDATE',detail:oldName+' â '+name});
     }
     toast('check','Department updated','green');
   } else {
@@ -2607,7 +2463,7 @@ function saveDept(){
     depts.push({name, color, icon});
     saveDepts(depts);
     sync('LOG',{agentId:'ADMIN',agentName:'Admin',dept:name,date:TODAY(),time:nowStr,logAction:'DEPT_ADD',detail:name});
-    toast('check','Department added — '+name,'green');
+    toast('check','Department added â '+name,'green');
   }
   closeModal('deptModal');
   renderDeptsPage();
@@ -2646,13 +2502,13 @@ function refreshDeptDropdowns(){
   }
   // Agent select name dropdown groups
   buildAgentDropdown();
-  // Dept buttons on My Shift page — rebuild dynamically
+  // Dept buttons on My Shift page â rebuild dynamically
   const deptRow = document.getElementById('deptRow');
   if(deptRow && curUser && !curUser.isAdmin){
     deptRow.innerHTML = depts.map((d,i)=>{
       const key = 'dept_'+i;
       return `<button class="dt" id="dbt-${key}" onclick="selDept('${d.name}')">
-        <div class="dt-icon" style="font-size:14px">${d.icon||'🏢'}</div>${d.name}
+        <div class="dt-icon" style="font-size:14px">${d.icon||'ð¢'}</div>${d.name}
       </button>`;
     }).join('');
     selDept(curUser.agent.activeDept||curUser.agent.dept, true);
@@ -2675,7 +2531,7 @@ function updateDCDB(){
 }
 
 
-// ── PEER TASK SYSTEM ──────────────────────────────────────
+// ââ PEER TASK SYSTEM ââââââââââââââââââââââââââââââââââââââ
 const gPending=()=>JSON.parse(localStorage.getItem('sd_pending')||'[]');
 const sPending=v=>localStorage.setItem('sd_pending',JSON.stringify(v));
 const gSent=()=>JSON.parse(localStorage.getItem('sd_sent')||'[]');
@@ -2704,7 +2560,7 @@ function renderPeerAgentList(){
     const sameDept=a.dept===me.dept;
     return `<div class="peer-agent-row${selectedPeerId===a.id?' selected':''}" onclick="selectPeerAgent('${a.id}')">
       <div class="par-av" style="background:${DB[a.dept]};color:${DC[a.dept]}">${ini(a.name)}</div>
-      <div class="par-info"><div class="par-name">${a.name}</div><div class="par-dept">${a.dept} · ${a.role.substring(0,28)}${a.role.length>28?'…':''}</div></div>
+      <div class="par-info"><div class="par-name">${a.name}</div><div class="par-dept">${a.dept} Â· ${a.role.substring(0,28)}${a.role.length>28?'â¦':''}</div></div>
       <span class="par-status ${on?'par-online':'par-offline'}">${on?'Online':'Offline'}</span>
       ${!sameDept?'<span style="font-size:8px;color:var(--yl);font-weight:800;padding:2px 5px;border-radius:3px;background:rgba(251,191,36,.1);margin-left:2px">Cross</span>':''}
     </div>`;
@@ -2729,13 +2585,13 @@ function submitPeerTask(){
   const prio=document.getElementById('peerTaskPrio').value;
   const now=new Date(),nowStr=now.toLocaleTimeString('en-PK',{hour12:true});
   const cross=target.dept!==me.dept;
-  // All tasks assign directly — no approval needed
+  // All tasks assign directly â no approval needed
   const tasks=gt();if(!tasks[target.id])tasks[target.id]=[];
   tasks[target.id].push({task:desc,priority:prio,time:nowStr,date:TODAY(),assignedBy:me.name,assignedById:me.id});
   st(tasks);
   addLog(target.id,'TASK_ASSIGN',`"${desc}" from ${me.name}`);
   sync('TASK',{agentId:target.id,agentName:target.name,dept:target.dept,date:TODAY(),time:nowStr,task:desc,priority:prio,assignedBy:me.name});
-  sync('LOG',{agentId:target.id,agentName:target.name,dept:target.dept,date:TODAY(),time:nowStr,logAction:'TASK_ASSIGN',detail:`"${desc}" — from ${me.name}`});
+  sync('LOG',{agentId:target.id,agentName:target.name,dept:target.dept,date:TODAY(),time:nowStr,logAction:'TASK_ASSIGN',detail:`"${desc}" â from ${me.name}`});
   const sent=gSent();
   sent.unshift({id:Date.now(),toId:target.id,toName:target.name,toDept:target.dept,task:desc,priority:prio,time:nowStr,date:TODAY(),status:'direct',fromId:me.id,fromName:me.name});
   sSent(sent);
@@ -2757,7 +2613,7 @@ function renderMySentTasks(){
     const stLbl='Sent';
     return `<div class="sent-task-row">
       <div style="width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;background:${DB[s.toDept]};color:${DC[s.toDept]}">${ini(s.toName)}</div>
-      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.task}</div><div style="font-size:10px;color:var(--mu);margin-top:1px">→ ${s.toName} · ${s.toDept} · ${s.time}</div></div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.task}</div><div style="font-size:10px;color:var(--mu);margin-top:1px">â ${s.toName} Â· ${s.toDept} Â· ${s.time}</div></div>
       <span class="status-pill ${stCls}">${stLbl}</span>
     </div>`;
   }).join('');
@@ -2792,12 +2648,12 @@ function renderApprovalsList(){
         <div class="approval-task">"${r.task}"</div>
         <div class="approval-meta">
           <span style="color:${DC[r.fromDept]};font-weight:600">${r.fromName}</span>
-          <span style="color:var(--mu2)"> → </span>
+          <span style="color:var(--mu2)"> â </span>
           <span style="color:${DC[r.toDept]};font-weight:600">${r.toName}</span>
-          <span style="color:var(--mu)"> · ${r.time} · <span class="pr pr-${(r.priority||'normal').toLowerCase().replace(' priority','')}" style="display:inline-block">${r.priority}</span></span>
+          <span style="color:var(--mu)"> Â· ${r.time} Â· <span class="pr pr-${(r.priority||'normal').toLowerCase().replace(' priority','')}" style="display:inline-block">${r.priority}</span></span>
         </div>
       </div>
-      ${isPending?`<div class="approval-actions"><button class="btn-approve" onclick="approveTask(${r.id})">✓ Approve</button><button class="btn-reject" onclick="rejectTask(${r.id})">✕ Reject</button></div>`:''}
+      ${isPending?`<div class="approval-actions"><button class="btn-approve" onclick="approveTask(${r.id})">â Approve</button><button class="btn-reject" onclick="rejectTask(${r.id})">â Reject</button></div>`:''}
     </div>`;
   }).join('');
 }
@@ -2811,7 +2667,7 @@ function approveTask(reqId){
   addLog(req.toId,'TASK_ASSIGN',`"${req.task}" from ${req.fromName} [approved]`);
   sync('TASK',{agentId:req.toId,agentName:req.toName,dept:req.toDept,date:req.date,time:req.time,task:req.task,priority:req.priority,assignedBy:req.fromName});
   updateApprovalBadge();renderApprovalsList();renderAdmin();
-  toast('check',`Approved — task assigned to ${req.toName.split(' ')[0]}`,'green');
+  toast('check',`Approved â task assigned to ${req.toName.split(' ')[0]}`,'green');
 }
 function rejectTask(reqId){
   const allReqs=gPending();const req=allReqs.find(r=>r.id===reqId);if(!req)return;
@@ -2822,7 +2678,7 @@ function rejectTask(reqId){
 }
 
 
-// ── ADMIN FORCE CHECKOUT ─────────────────────────────────
+// ââ ADMIN FORCE CHECKOUT âââââââââââââââââââââââââââââââââ
 function adminForceCheckout(agentId){
   if(!curUser?.isAdmin){return;}
   const agent=AGENTS.find(a=>a.id===agentId);
@@ -2845,20 +2701,18 @@ function adminForceCheckout(agentId){
   addLog(agentId,'CHECK_OUT','[ADMIN FORCE] '+agent.dept);
   sync('STATUS',{agentId:agent.id,agentName:agent.name,dept:agent.dept,date:TODAY(),online:false,checkIn:s?.checkIn||'',checkOut:nowStr,totalDuration:durStr(s)});
   sync('LOG',{agentId:agent.id,agentName:agent.name,dept:agent.dept,date:TODAY(),time:nowStr,logAction:'CHECK_OUT',detail:'[Admin forced checkout]'});
-  // Clear cached sheet status so it re-fetches
   if(adminData?.statuses?.[agentId]) adminData.statuses[agentId].status='Offline';
-  // Invalidate sheet cache so next render shows offline
   if(adminData.statuses&&adminData.statuses[agentId]){
     adminData.statuses[agentId].status='Offline';
     adminData.statuses[agentId].checkOut=nowStr;
     adminData.statuses[agentId].totalDuration=durStr(s);
   }
   renderAdmin();
-  toast('check','Checked out '+agent.name.split(' ')[0]+' — '+durStr(s),'green');
+  toast('check','Checked out '+agent.name.split(' ')[0]+' â '+durStr(s),'green');
 }
 
 
-// ── MOBILE SIDEBAR ───────────────────────────────────────
+// ââ MOBILE SIDEBAR âââââââââââââââââââââââââââââââââââââââ
 function toggleMobSidebar(){
   document.querySelector('.sidebar').classList.toggle('mob-open');
   document.getElementById('mobOverlay').classList.toggle('on');
@@ -2874,7 +2728,7 @@ document.addEventListener('click',function(e){
 
 
 
-// ── ACTIVITY MONITOR PAGE ────────────────────────────────
+// ââ ACTIVITY MONITOR PAGE ââââââââââââââââââââââââââââââââ
 function timeSinceShort(ts){
   if(!ts) return '';
   const d=Date.now()-ts;
@@ -2948,16 +2802,16 @@ function renderMonitorPage(){
 
   document.getElementById('monitorGrid').innerHTML=agents.map(({a,s,on,ad,actStatus,activeMin,checkInTs})=>{
     const col=actColors[actStatus]||'var(--mu2)';
-    const lbl=actLabels[actStatus]||'—';
+    const lbl=actLabels[actStatus]||'â';
     const cc=cardClass[actStatus]||'offline-card';
-    const since=ad?.lastSeen?timeSinceShort(ad.lastSeen):'—';
+    const since=ad?.lastSeen?timeSinceShort(ad.lastSeen):'â';
     const aH=Math.floor(activeMin/60),aM=activeMin%60;
-    const activeDurStr=activeMin>0?aH+'h '+String(aM).padStart(2,'0')+'m':'—';
-    const shiftDur=on&&checkInTs?elapsed(checkInTs):'—';
-    const checkInStr=s?.date===TODAY()&&s.checkIn?fmt12(s.checkIn):'—';
+    const activeDurStr=activeMin>0?aH+'h '+String(aM).padStart(2,'0')+'m':'â';
+    const shiftDur=on&&checkInTs?elapsed(checkInTs):'â';
+    const checkInStr=s?.date===TODAY()&&s.checkIn?fmt12(s.checkIn):'â';
     const dc=getDeptColor(a.dept);
 
-    // Activity timeline — rough 8h window showing active segments
+    // Activity timeline â rough 8h window showing active segments
     // We track totalActiveMinutes since shift start
     const shiftMinutes=on&&checkInTs?Math.round((Date.now()-checkInTs)/60000):0;
     const activePct=shiftMinutes>0?Math.min(100,Math.round(activeMin/shiftMinutes*100)):0;
@@ -2970,7 +2824,7 @@ function renderMonitorPage(){
           <div class="mon-av" style="background:${hexToRgba(dc,.15)};color:${dc}">${ini(a.name)}</div>
           <div style="flex:1;min-width:0">
             <div class="mon-name">${a.name}</div>
-            <div class="mon-role">${a.dept} · ${a.role.substring(0,30)}${a.role.length>30?'…':''}</div>
+            <div class="mon-role">${a.dept} Â· ${a.role.substring(0,30)}${a.role.length>30?'â¦':''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:${hexToRgba(col.replace('var(--','').replace(')','').includes('#')?col:'#888',.1)};border:1px solid ${col};font-size:10px;font-weight:800;color:${col}">
             <div class="act-dot-lg ${actStatus}" style="width:6px;height:6px;position:relative"></div>${lbl}
@@ -3001,12 +2855,12 @@ function renderMonitorPage(){
 }
 
 
-// ── SWIMLANE FILTER ──────────────────────────────────────
+// ââ SWIMLANE FILTER ââââââââââââââââââââââââââââââââââââââ
 let swimlaneFilter='all';
 function setSwimlaneFilter(f,el){
   swimlaneFilter=f;
   document.querySelectorAll('[data-swf]').forEach(e=>e.classList.toggle('active',e.dataset.swf===f));
-  if(adminData&&Object.keys(adminData.statuses||{}).length>0) renderSwimlanesFromSheet();
+  if(adminData&&Object.keys(adminData.statuses||{}).length>0)
   else renderSwimlanes();
 }
 function getFilteredSwimAgents(dept,status){
@@ -3016,7 +2870,7 @@ function getFilteredSwimAgents(dept,status){
   return agents;
 }
 
-// ── ADMIN TASKS TAB ───────────────────────────────────────
+// ââ ADMIN TASKS TAB âââââââââââââââââââââââââââââââââââââââ
 let taskFilter='all';
 function setTaskFilter(f,el){
   taskFilter=f;
@@ -3061,7 +2915,7 @@ function renderAdminTasksTab(){
       return `<div style="display:grid;grid-template-columns:1.6fr 1fr 0.8fr 0.7fr 0.7fr 90px;border-bottom:1px solid var(--b);align-items:center;transition:background .15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">
         <div style="padding:10px 12px;font-size:12px;font-weight:600">${t.task}${byTxt}</div>
         <div style="padding:10px 12px;font-size:12px;color:var(--tx)">${agent?.name||t.agentId}</div>
-        <div style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${hexToRgba(dc,.12)};color:${dc}">${agent?.dept||'—'}</span></div>
+        <div style="padding:10px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${hexToRgba(dc,.12)};color:${dc}">${agent?.dept||'â'}</span></div>
         <div style="padding:10px 12px"><span class="pr pr-${prCls}">${t.priority||'Normal'}</span></div>
         <div style="padding:10px 12px;font-size:11px;color:var(--mu);font-family:var(--mono)">${t.date===TODAY()?t.time:t.date}</div>
         <div style="padding:10px 12px;display:flex;gap:5px">
@@ -3080,7 +2934,7 @@ function openAdminTaskModal(preAgentId){
     sel.innerHTML=getDeptNames().map(dept=>{
       const agents=AGENTS.filter(a=>a.dept===dept);
       if(!agents.length) return '';
-      return `<optgroup label="── ${dept} ──">${agents.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</optgroup>`;
+      return `<optgroup label="ââ ${dept} ââ">${agents.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</optgroup>`;
     }).join('');
     if(preAgentId) sel.value=preAgentId;
   }
@@ -3111,7 +2965,7 @@ function saveAdminTask(){
 function openTaskEditModal(agentId,idx){
   const tasks=gt();
   const allFlat=Object.entries(tasks).flatMap(([aid,ts])=>ts.map((t,i)=>({...t,agentId:aid,_idx:i})));
-  // idx here is from the filtered/sorted view — find by agentId and position in filtered
+  // idx here is from the filtered/sorted view â find by agentId and position in filtered
   const q=(document.getElementById('taskSearch')?.value||'').toLowerCase();
   let filtered=Object.entries(tasks).flatMap(([aid,ts])=>ts.map((t,i)=>({...t,agentId:aid,_idx:i})));
   if(taskFilter==='today') filtered=filtered.filter(t=>t.date===TODAY());
@@ -3193,7 +3047,7 @@ function openReassignModalByIdx(realIdx){
   sel.innerHTML=getDeptNames().map(dept=>{
     const agents=AGENTS.filter(a=>a.dept===dept&&a.id!==me);
     if(!agents.length)return'';
-    return `<optgroup label="── ${dept} ──">${agents.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</optgroup>`;
+    return `<optgroup label="ââ ${dept} ââ">${agents.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</optgroup>`;
   }).join('');
   document.getElementById('reassignModal').classList.add('open');
 }
@@ -3203,9 +3057,8 @@ function openReassignModalByIdx(realIdx){
   if(!curUser||curUser.isAdmin)return[];
   const aid=curUser.agent.id;
   const localTasks=(gt()[aid]||[]).filter(t=>t.date===TODAY());
-  const sheetTasks=(adminData?.tasks&&adminData.tasks[aid])||[];
   let my=[...localTasks];
-  sheetTasks.forEach(st=>{const already=my.find(lt=>lt.task===st.task&&lt.time===st.time);if(!already)my.push(st);});
+  [].forEach(st=>{const already=my.find(lt=>lt.task===st.task&&lt.time===st.time);if(!already)my.push(st);});
   return my;
 }
 function saveMyTasks(tasks){
@@ -3218,7 +3071,7 @@ function saveMyTasks(tasks){
   st(all);
 }
 function toggleTaskDone(idx){
-  // idx is filtered index — map to real index in full task array
+  // idx is filtered index â map to real index in full task array
   const myTasks=getMyTasks();
   if(!myTasks[idx])return;
   const t=myTasks[idx];
@@ -3226,7 +3079,6 @@ function toggleTaskDone(idx){
   const all=gt();const tasks=all[aid]||[];
   let realIdx=tasks.findIndex(x=>x.task===t.task&&x.time===t.time&&x.date===t.date);
   if(realIdx<0){
-    // Task is from sheet only — copy it to local storage first
     tasks.push({...t,date:t.date||TODAY()});
     realIdx=tasks.length-1;
     all[aid]=tasks;
@@ -3255,13 +3107,12 @@ function saveRemark(){
     // Real index from My Report
     idx=parseInt(rawIdx.slice(2));
   } else {
-    // Filtered index from My Shift — map through getMyTasks
+    // Filtered index from My Shift â map through getMyTasks
     const myTasks=getMyTasks();
     const t=myTasks[parseInt(rawIdx)];
     if(!t)return;
     idx=tasks.findIndex(x=>x.task===t.task&&x.time===t.time&&x.date===t.date);
     if(idx<0){
-      // Task is from sheet only — copy it to local storage first
       tasks.push({...t,date:t.date||TODAY()});
       idx=tasks.length-1;
       all[aid]=tasks;
@@ -3288,7 +3139,7 @@ function openReassignModal(idx){
   sel.innerHTML=getDeptNames().map(dept=>{
     const agents=AGENTS.filter(a=>a.dept===dept&&a.id!==me);
     if(!agents.length)return'';
-    return `<optgroup label="── ${dept} ──">${agents.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</optgroup>`;
+    return `<optgroup label="ââ ${dept} ââ">${agents.map(a=>`<option value="${a.id}">${a.name}</option>`).join('')}</optgroup>`;
   }).join('');
   document.getElementById('reassignModal').classList.add('open');
 }
@@ -3315,13 +3166,13 @@ function saveReassign(){
   const target=AGENTS.find(a=>a.id===toId);
   const now=new Date(),nowStr=now.toLocaleTimeString('en-PK',{hour12:true});
   if(!allTasks[toId])allTasks[toId]=[];
-  allTasks[toId].push({task:t.task+(note?' — '+note:''),priority:t.priority,time:nowStr,date:TODAY(),assignedBy:me.name,assignedById:me.id,reassignedFrom:me.name});
+  allTasks[toId].push({task:t.task+(note?' â '+note:''),priority:t.priority,time:nowStr,date:TODAY(),assignedBy:me.name,assignedById:me.id,reassignedFrom:me.name});
   tasks[realIdx].reassigned=true;tasks[realIdx].reassignedTo=target.name;
   tasks[realIdx].remark=(t.remark?t.remark+' | ':'')+`Reassigned to ${target.name}`;
   allTasks[aid]=tasks;
   st(allTasks);
   addLog(toId,'TASK_ASSIGN',`"${t.task}" reassigned from ${me.name}`);
-  sync('TASK',{agentId:target.id,agentName:target.name,dept:target.dept,date:TODAY(),time:nowStr,task:t.task+(note?' — '+note:''),priority:t.priority,assignedBy:me.name});
+  sync('TASK',{agentId:target.id,agentName:target.name,dept:target.dept,date:TODAY(),time:nowStr,task:t.task+(note?' â '+note:''),priority:t.priority,assignedBy:me.name});
   sync('LOG',{agentId:me.id,agentName:me.name,dept:me.dept,date:TODAY(),time:nowStr,logAction:'TASK_REASSIGN',detail:`"${t.task}" to ${target.name}`});
   closeModal('reassignModal');
   renderTasks();
@@ -3329,7 +3180,7 @@ function saveReassign(){
   toast('check','Task reassigned to '+target.name.split(' ')[0],'green');
 }
 
-// SYNC — all writes go to Supabase
+// SYNC â all writes go to Supabase
 async function sync(action,data){
   setSyncState('syncing');
   try{
@@ -3397,7 +3248,7 @@ function setSyncState(state){
   const ts=new Date().toLocaleTimeString('en-PK',{hour12:false,hour:'2-digit',minute:'2-digit'});
   if(state==='ok'){dot.style.background='var(--gr)';txt.textContent='Synced';document.getElementById('syncTime').textContent=ts;}
   else if(state==='err'){dot.style.background='var(--rd)';txt.textContent='Sync error';}
-  else{dot.style.background='var(--ac)';txt.textContent='Syncing…';}
+  else{dot.style.background='var(--ac)';txt.textContent='Syncingâ¦';}
 }
 
 // TOAST
