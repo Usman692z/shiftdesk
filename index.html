@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShiftDesk — Agent Workforce</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -1266,7 +1267,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 <script>
 // ── CONFIG ────────────────────────────────────────────────
-const API_URL='https://script.google.com/macros/s/AKfycbwKmRxA6z55YOWDt-qbXOGxIkOhAFrqsjSpdCPzgqshNMlpySG7lbesKXtbmHnfVzC0/exec';
+// Replace these two values with your Supabase project credentials.
+// Find them at: https://supabase.com → Project Settings → API
+const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
+const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // Simple password hash (djb2) — obfuscates plain text in storage
 function hashPw(str){
@@ -1891,115 +1896,117 @@ let anaFilter='all';let anaStatusFilter='';let anaTab='today';
 function renderAdmin(){
   if(curUser?.isAdmin)fetchAdminData();else{renderStats();renderSwimlanes();}
 }
-function fetchAdminData(){
+async function fetchAdminData(){
   if(adminLoading)return;adminLoading=true;setSyncState('syncing');
-  fetch(API_URL,{method:'POST',body:JSON.stringify({action:'GET_ALL'}),headers:{'Content-Type':'text/plain'}})
-    .then(r=>r.json()).then(data=>{
-      adminLoading=false;setSyncState('ok');
-      if(data?.statuses){
-        // Merge: prefer sheet statuses, but also fold in localStorage for agents sheet missed
-        const localSt=gs();
-        Object.keys(localSt).forEach(aid=>{
-          const loc=localSt[aid];
-          if(!data.statuses[aid]&&loc?.date===TODAY()){
-            data.statuses[aid]={agentId:aid,status:loc.online?'Online':'Offline',checkIn:loc.checkIn||'',checkOut:loc.checkOut||'',totalDuration:loc.checkOutTs?durStr(loc):''};
-          }
-        });
-        // Merge tasks: combine sheet tasks + localStorage tasks (deduplicate by task+time)
-        const localTasks=gt();
-        Object.keys(localTasks).forEach(aid=>{
-          if(!data.tasks[aid]) data.tasks[aid]=[];
-          localTasks[aid].forEach(lt=>{
-            const already=data.tasks[aid].find(st=>st.task===lt.task&&st.time===lt.time);
-            if(!already) data.tasks[aid].push(lt);
-          });
-        });
-        adminData=data;
-        // Sync agents from sheet if sheet has agents not in local AGENTS
-        if(data.agents&&Array.isArray(data.agents)&&data.agents.length>0){
-          let changed=false;
-          data.agents.forEach(sa=>{
-            if(!AGENTS.find(a=>a.id===sa.id)){
-              AGENTS.push(sa);changed=true;
-            } else {
-              // Update existing agent data from sheet
-              const idx=AGENTS.findIndex(a=>a.id===sa.id);
-              if(idx>-1){AGENTS[idx]={...AGENTS[idx],...sa};changed=true;}
-            }
-          });
-          if(changed){sAgents(AGENTS);buildAgentDropdown();refreshDeptDropdowns();}
-        }
-        renderStatsFromSheet();renderSwimlanesFromSheet();
-      } else {
-        // Sheet returned empty — use localStorage
-        renderStats();renderSwimlanes();
+  try{
+    const today=TODAY();
+    const [{data:statRows},{data:taskRows},{data:agentRows}]=await Promise.all([
+      _db.from('shift_status').select('*').eq('date',today),
+      _db.from('tasks').select('*').eq('date',today),
+      _db.from('agents').select('*')
+    ]);
+    adminLoading=false;setSyncState('ok');
+
+    // Build statuses map
+    const statusMap={};
+    (statRows||[]).forEach(s=>{
+      statusMap[s.agent_id]={
+        agentId:s.agent_id,agentName:s.agent_name,dept:s.dept,
+        status:s.online?'Online':'Offline',
+        checkIn:s.check_in||'',checkOut:s.check_out||'',
+        totalDuration:s.total_duration||''
+      };
+    });
+    // Fold in localStorage for any agent not yet synced
+    const localSt=gs();
+    Object.keys(localSt).forEach(aid=>{
+      const loc=localSt[aid];
+      if(!statusMap[aid]&&loc?.date===today){
+        statusMap[aid]={agentId:aid,status:loc.online?'Online':'Offline',checkIn:loc.checkIn||'',checkOut:loc.checkOut||'',totalDuration:loc.checkOutTs?durStr(loc):''};
       }
-    }).catch(()=>{adminLoading=false;setSyncState('err');renderStats();renderSwimlanes();});
+    });
+
+    // Build tasks map
+    const taskMap={};
+    (taskRows||[]).forEach(t=>{
+      if(!taskMap[t.agent_id])taskMap[t.agent_id]=[];
+      taskMap[t.agent_id].push({task:t.task,time:t.time,priority:t.priority,done:t.done||false});
+    });
+    // Fold in localStorage tasks
+    const localTasks=gt();
+    Object.keys(localTasks).forEach(aid=>{
+      if(!taskMap[aid])taskMap[aid]=[];
+      localTasks[aid].forEach(lt=>{
+        const already=taskMap[aid].find(st=>st.task===lt.task&&st.time===lt.time);
+        if(!already)taskMap[aid].push(lt);
+      });
+    });
+
+    adminData={statuses:statusMap,tasks:taskMap,agents:agentRows||[]};
+
+    // Sync agents from DB
+    if(agentRows&&agentRows.length>0){
+      let changed=false;
+      agentRows.forEach(sa=>{
+        const idx=AGENTS.findIndex(a=>a.id===sa.id);
+        if(idx>-1){AGENTS[idx]={...AGENTS[idx],...sa,tz:sa.timezone,shiftStart:sa.shift_start};changed=true;}
+        else{AGENTS.push({...sa,tz:sa.timezone,shiftStart:sa.shift_start});changed=true;}
+      });
+      if(changed){sAgents(AGENTS);buildAgentDropdown();refreshDeptDropdowns();}
+    }
+    renderStatsFromSheet();renderSwimlanesFromSheet();
+  }catch(e){
+    adminLoading=false;setSyncState('err');
+    console.error('fetchAdminData error:',e);
+    renderStats();renderSwimlanes();
+  }
 }
 
-// ── FETCH SHEET STATUS FOR AGENT (cross-device duplicate prevention) ─────
-function fetchSheetStatusForAgent(agentId, callback){
+// ── FETCH STATUS FOR AGENT from Supabase (cross-device duplicate prevention) ──
+async function fetchSheetStatusForAgent(agentId,callback){
   setSyncState('syncing');
-  // Show loading state on punch buttons
   const btnIn=document.getElementById('btnIn');
   const btnOut=document.getElementById('btnOut');
   if(btnIn){btnIn.disabled=true;btnIn.textContent='Checking status…';}
   if(btnOut){btnOut.disabled=true;}
-
-  fetch(API_URL,{method:'POST',body:JSON.stringify({action:'GET_ALL'}),headers:{'Content-Type':'text/plain'}})
-    .then(r=>r.json())
-    .then(data=>{
-      setSyncState('ok');
-      if(data?.statuses){
-        adminData=data;
-        const sheetStatus=data.statuses[agentId];
-        if(sheetStatus){
-          // Merge sheet status into localStorage so all devices are in sync
-          const localStatus=gs();
-          const today=TODAY();
-          if(sheetStatus.status==='Online'){
-            // Agent is online on sheet — restore that state
-            // Try to get checkInTs from local first, otherwise estimate from checkIn string
-            const existingLocal=localStatus[agentId];
-            const checkInTs=existingLocal?.checkInTs||estimateTs(sheetStatus.checkIn);
-            const prevShifts=existingLocal?.date===today&&existingLocal?.shifts?existingLocal.shifts:
-              (checkInTs?[{checkIn:sheetStatus.checkIn,checkInTs,checkOut:null,checkOutTs:null,late:isLate(AGENTS.find(a=>a.id===agentId)||{shiftStart:'09:00'},checkInTs)}]:[]);
-            localStatus[agentId]={
-              online:true, date:today,
-              checkIn:sheetStatus.checkIn, checkInTs,
-              checkOut:null, checkOutTs:null,
-              shifts:prevShifts,
-              _fromSheet:true
-            };
-          } else if(sheetStatus.status==='Offline' && sheetStatus.checkIn && sheetStatus.checkIn!=='—'){
-            // Was online today but checked out
-            const existingLocal=localStatus[agentId];
-            const checkInTs=existingLocal?.checkInTs||estimateTs(sheetStatus.checkIn);
-            const checkOutTs=existingLocal?.checkOutTs||estimateTs(sheetStatus.checkOut)||Date.now();
-            const prevShifts=existingLocal?.date===today&&existingLocal?.shifts?existingLocal.shifts:
-              (checkInTs?[{checkIn:sheetStatus.checkIn,checkInTs,checkOut:sheetStatus.checkOut,checkOutTs,late:false}]:[]);
-            localStatus[agentId]={
-              online:false, date:today,
-              checkIn:sheetStatus.checkIn, checkInTs,
-              checkOut:sheetStatus.checkOut, checkOutTs,
-              totalDuration:sheetStatus.totalDuration,
-              shifts:prevShifts,
-              _fromSheet:true
-            };
-          }
-          ss(localStatus);
-        }
+  try{
+    const {data:row}=await _db.from('shift_status').select('*')
+      .eq('date',TODAY()).eq('agent_id',agentId).maybeSingle();
+    setSyncState('ok');
+    if(row){
+      const localStatus=gs();
+      const today=TODAY();
+      if(row.online){
+        const existingLocal=localStatus[agentId];
+        const checkInTs=existingLocal?.checkInTs||row.check_in_ts||estimateTs(row.check_in);
+        const prevShifts=existingLocal?.date===today&&existingLocal?.shifts?existingLocal.shifts:
+          (checkInTs?[{checkIn:row.check_in,checkInTs,checkOut:null,checkOutTs:null,
+            late:isLate(AGENTS.find(a=>a.id===agentId)||{shiftStart:'09:00'},checkInTs)}]:[]);
+        localStatus[agentId]={
+          online:true,date:today,checkIn:row.check_in,checkInTs,
+          checkOut:null,checkOutTs:null,shifts:prevShifts,_fromSheet:true
+        };
+      } else if(row.check_in&&row.check_in!=='—'){
+        const existingLocal=localStatus[agentId];
+        const checkInTs=existingLocal?.checkInTs||row.check_in_ts||estimateTs(row.check_in);
+        const checkOutTs=existingLocal?.checkOutTs||row.check_out_ts||estimateTs(row.check_out)||Date.now();
+        const prevShifts=existingLocal?.date===today&&existingLocal?.shifts?existingLocal.shifts:
+          (checkInTs?[{checkIn:row.check_in,checkInTs,checkOut:row.check_out,checkOutTs,late:false}]:[]);
+        localStatus[agentId]={
+          online:false,date:today,checkIn:row.check_in,checkInTs,
+          checkOut:row.check_out,checkOutTs,totalDuration:row.total_duration,
+          shifts:prevShifts,_fromSheet:true
+        };
       }
-      // Restore button text
-      if(btnIn){btnIn.textContent='Check In — Start Shift';}
-      if(callback) callback();
-    })
-    .catch(()=>{
-      setSyncState('err');
-      // On error still continue with local state
-      if(btnIn){btnIn.textContent='Check In — Start Shift';}
-      if(callback) callback();
-    });
+      ss(localStatus);
+    }
+  }catch(e){
+    setSyncState('err');
+    console.error('fetchSheetStatusForAgent error:',e);
+  }
+  if(btnIn){btnIn.textContent='Check In — Start Shift';btnIn.disabled=false;}
+  if(btnOut){btnOut.disabled=false;}
+  if(callback)callback();
 }
 
 function estimateTs(timeStr){
@@ -3322,16 +3329,68 @@ function saveReassign(){
   toast('check','Task reassigned to '+target.name.split(' ')[0],'green');
 }
 
-// SYNC
-function sync(action,data){
+// SYNC — all writes go to Supabase
+async function sync(action,data){
   setSyncState('syncing');
-  fetch(API_URL,{method:'POST',body:JSON.stringify({action,...data}),headers:{'Content-Type':'text/plain'}})
-    .then(r=>r.json()).then(()=>setSyncState('ok')).catch(()=>setSyncState('err'));
+  try{
+    await _syncToSupabase(action,data);
+    setSyncState('ok');
+  }catch(e){console.error('sync error:',e);setSyncState('err');}
 }
-function syncWithCallback(action,data,onSuccess,onError){
+async function syncWithCallback(action,data,onSuccess,onError){
   setSyncState('syncing');
-  fetch(API_URL,{method:'POST',body:JSON.stringify({action,...data}),headers:{'Content-Type':'text/plain'}})
-    .then(r=>r.json()).then(()=>{setSyncState('ok');if(onSuccess)onSuccess();}).catch((err)=>{setSyncState('err');if(onError)onError(err);});
+  try{
+    await _syncToSupabase(action,data);
+    setSyncState('ok');
+    if(onSuccess)onSuccess();
+  }catch(e){console.error('syncWithCallback error:',e);setSyncState('err');if(onError)onError(e);}
+}
+async function _syncToSupabase(action,data){
+  if(action==='STATUS'){
+    await _db.from('shift_status').upsert({
+      date:data.date, agent_id:data.agentId, agent_name:data.agentName,
+      dept:data.dept, online:data.online,
+      check_in:data.checkIn||'', check_out:data.checkOut||'',
+      total_duration:data.totalDuration||'', shift_num:data.shiftNum||1,
+      updated_at:new Date().toISOString()
+    },{onConflict:'date,agent_id'});
+  } else if(action==='LOG'){
+    await _db.from('activity_logs').insert({
+      date:data.date, time:data.time, agent_id:data.agentId,
+      agent_name:data.agentName, dept:data.dept,
+      action:data.logAction, detail:data.detail
+    });
+  } else if(action==='TASK'){
+    await _db.from('tasks').insert({
+      date:data.date, time:data.time, agent_id:data.agentId,
+      agent_name:data.agentName, dept:data.dept,
+      task:data.task, priority:data.priority||'Normal',
+      assigned_by:data.assignedBy||null
+    });
+  } else if(action==='ACTIVITY'){
+    await _db.from('activity_tracking').upsert({
+      date:data.date, agent_id:data.agentId, agent_name:data.agentName,
+      dept:data.dept, time:data.time, last_seen:data.lastSeen,
+      activity_status:data.activityStatus,
+      total_active_minutes:data.totalActiveMinutes||0,
+      updated_at:new Date().toISOString()
+    },{onConflict:'date,agent_id'});
+  } else if(action==='AGENT_ADD'){
+    await _db.from('agents').insert({
+      id:data.agentId, name:data.name, dept:data.dept,
+      role:data.role, type:data.type,
+      timezone:data.timezone||'Asia/Karachi',
+      shift_start:data.shiftStart||'09:00', pw:data.pw||'MTIzNA=='
+    });
+  } else if(action==='AGENT_UPDATE'){
+    await _db.from('agents').update({
+      name:data.name, dept:data.dept, role:data.role,
+      type:data.type, timezone:data.timezone||'Asia/Karachi',
+      shift_start:data.shiftStart||'09:00', pw:data.pw
+    }).eq('id',data.agentId);
+  } else if(action==='AGENT_DELETE'){
+    await _db.from('agents').delete().eq('id',data.agentId);
+  }
 }
 function setSyncState(state){
   const dot=document.getElementById('syncDot'),txt=document.getElementById('syncTxt');
@@ -3388,10 +3447,24 @@ setInterval(()=>{
   if(curUser&&!curUser.isAdmin)renderShiftPage();
 },30000);
 
-(function(){
+(async function(){
   const t=localStorage.getItem('sd_theme');
   if(t==='lt'){document.documentElement.classList.add('lt');document.getElementById('themeIc').innerHTML=SUN;document.getElementById('themeLbl').textContent='Dark mode';}
-  const saved=gAgents();if(saved)AGENTS=saved;
+
+  // Load agents: try Supabase first, fall back to localStorage cache
+  try{
+    const {data:dbAgents,error}=await _db.from('agents').select('*');
+    if(!error&&dbAgents&&dbAgents.length){
+      AGENTS=dbAgents.map(a=>({...a,tz:a.timezone,shiftStart:a.shift_start}));
+      sAgents(AGENTS);
+    } else {
+      const saved=gAgents();if(saved)AGENTS=saved;
+    }
+  }catch(e){
+    console.warn('Supabase agent load failed, using localStorage:',e);
+    const saved=gAgents();if(saved)AGENTS=saved;
+  }
+
   updateDCDB();
   buildAgentDropdown();
   refreshDeptDropdowns();
