@@ -606,11 +606,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div id="loginErr" class="login-err"></div>
     <div id="agentLoginForm">
       <div style="margin-bottom:12px">
-        <label class="field-lbl">Your Name</label>
-        <div style="position:relative">
-          <div class="sel-arr"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
-          <select class="select-fx" id="agentNameSel"></select>
-        </div>
+        <label class="field-lbl">Email Address</label>
+        <input type="email" class="input-fx" id="agentEmailInput" placeholder="Enter your email" autocomplete="email" onkeydown="if(event.key==='Enter')document.getElementById('agentPwInput').focus()">
       </div>
       <div style="margin-bottom:14px">
         <label class="field-lbl">Password</label>
@@ -1287,18 +1284,18 @@ function checkPw(input,stored){
 function encodePw(pw){ return btoa(pw); }
 
 let AGENTS=[
-  {id:'RJY',name:'Radwan Jamal Yassin',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'senior',tz:'Asia/Riyadh',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'MB',name:'Muhammad Baksh',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'NJD',name:'Nida Javaid Dar',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'SA',name:'Sadia Asif',dept:'Corporate',role:'Corporate QA',type:'qa',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'SD',name:'SUMAN David',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'RR',name:'Rafia Rauf',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'AR',name:'Abdul Rehman',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'MF',name:'Muhammad Farhan',dept:'Retail',role:'Support Manager - Retail',type:'manager',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'SUM',name:'Suman',dept:'Retail',role:'Retail QA',type:'qa',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'MR',name:'Muhammad Raja',dept:'Reseller',role:'Data + Renewals + Rectifications (KSA)',type:'senior',tz:'Asia/Riyadh',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'MHU',name:'Muhammad Hafiz Usman',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'AA',name:'Areeeba Arshad',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'RJY',name:'Radwan Jamal Yassin',email:'radwan.yassin@shiftdesk.com',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'senior',tz:'Asia/Riyadh',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'MB',name:'Muhammad Baksh',email:'muhammad.baksh@shiftdesk.com',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'NJD',name:'Nida Javaid Dar',email:'nida.dar@shiftdesk.com',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'SA',name:'Sadia Asif',email:'sadia.asif@shiftdesk.com',dept:'Corporate',role:'Corporate QA',type:'qa',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'SD',name:'SUMAN David',email:'suman.david@shiftdesk.com',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'RR',name:'Rafia Rauf',email:'rafia.rauf@shiftdesk.com',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'AR',name:'Abdul Rehman',email:'abdul.rehman@shiftdesk.com',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'MF',name:'Muhammad Farhan',email:'muhammad.farhan@shiftdesk.com',dept:'Retail',role:'Support Manager - Retail',type:'manager',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'SUM',name:'Suman',email:'suman@shiftdesk.com',dept:'Retail',role:'Retail QA',type:'qa',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'MR',name:'Muhammad Raja',email:'muhammad.raja@shiftdesk.com',dept:'Reseller',role:'Data + Renewals + Rectifications (KSA)',type:'senior',tz:'Asia/Riyadh',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'MHU',name:'Muhammad Hafiz Usman',email:'hafiz.usman@shiftdesk.com',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'AA',name:'Areeeba Arshad',email:'areeeba.arshad@shiftdesk.com',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
 ];
 
 const DC={Corporate:'#f59e0b',Retail:'#06b6d4',Reseller:'#a78bfa'};
@@ -1365,6 +1362,7 @@ function switchLoginTab(tab){
 }
 function buildAgentDropdown(){
   const sel=document.getElementById('agentNameSel');
+  if(!sel)return;
   const prev=sel.value; // preserve selection if re-building
   sel.innerHTML='<option value="">â Select your name â</option>';
   const knownDepts=getDeptNames();
@@ -1385,12 +1383,13 @@ function buildAgentDropdown(){
   }
 }
 function doAgentLogin(){
-  const id=document.getElementById('agentNameSel').value;
+  const email=document.getElementById('agentEmailInput').value.trim().toLowerCase();
   const pw=document.getElementById('agentPwInput').value;
   const err=document.getElementById('loginErr');
-  if(!id){err.textContent='Please select your name.';err.classList.add('on');return;}
-  const agent=AGENTS.find(a=>a.id===id);
-  if(!agent||!checkPw(pw,agent.pw)){err.textContent='Incorrect password. Please try again.';err.classList.add('on');return;}
+  if(!email){err.textContent='Please enter your email address.';err.classList.add('on');return;}
+  if(!pw){err.textContent='Please enter your password.';err.classList.add('on');return;}
+  const agent=AGENTS.find(a=>a.email&&a.email.toLowerCase()===email);
+  if(!agent||!checkPw(pw,agent.pw)){err.textContent='Incorrect email or password. Please try again.';err.classList.add('on');return;}
   err.classList.remove('on');
   curUser={agent,isAdmin:false};sessionStorage.setItem('sd_curUser',JSON.stringify(curUser));
   launchApp();
@@ -1435,7 +1434,7 @@ function launchApp(){
 function logout(){
   stopActivityTracking();curUser=null;sessionStorage.removeItem('sd_curUser');
   document.getElementById('appShell').style.display='none';document.getElementById('loginPage').style.display='flex';
-  document.getElementById('adminPwInput').value='';document.getElementById('agentPwInput').value='';document.getElementById('agentNameSel').value='';
+  document.getElementById('adminPwInput').value='';document.getElementById('agentPwInput').value='';const _em=document.getElementById('agentEmailInput');if(_em)_em.value='';
   ['nav-admin','nav-agents','nav-analytics','nav-myreport','nav-assigntask','nav-tasks','nav-depts','nav-monitor'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('nav-shift').style.display='flex';
   const aab2=document.getElementById('agentAssignBtn');if(aab2)aab2.style.display='none';
@@ -1445,9 +1444,11 @@ function logout(){
 // CLOCK
 function tick(){
   const now=new Date();
-  const ts=now.toLocaleTimeString('en-PK',{hour12:true});
-  const ds=now.toLocaleDateString('en-PK',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  const ds2=now.toLocaleDateString('en-PK',{weekday:'short',month:'short',day:'numeric'});
+  const agentTz=(curUser&&curUser.agent&&curUser.agent.tz)||'Asia/Karachi';
+  const locale=agentTz==='Asia/Riyadh'?'en-SA':'en-PK';
+  const ts=now.toLocaleTimeString(locale,{hour12:true,timeZone:agentTz});
+  const ds=now.toLocaleDateString(locale,{weekday:'long',year:'numeric',month:'long',day:'numeric',timeZone:agentTz});
+  const ds2=now.toLocaleDateString(locale,{weekday:'short',month:'short',day:'numeric',timeZone:agentTz});
   document.getElementById('sbTime').textContent=ts;
   document.getElementById('punchClock').textContent=ts;
   document.getElementById('sbDate').textContent=ds2;
@@ -2288,7 +2289,7 @@ function saveAgent(){
     if(AGENTS.find(a=>a.id===id)){if(btn){btn.disabled=false;btn.textContent='Save Agent';btn.style.background='';}toast('x','Agent ID already exists','red');return;}
     AGENTS.push({id,name,dept,role,type,tz,shiftStart,pw:pw||'1234'});sAgents(AGENTS);
     syncWithCallback('AGENT_ADD',{agentId:id,name,dept,type,timezone:tz,shiftStart,role,pw:pw||'1234'},
-      ()=>{if(btn){btn.textContent='Saved!';btn.style.background='var(--gr)';}setTimeout(()=>{closeModal('agentModal');renderAgentTable();buildAgentDropdown();toast('check','Agent added','green');const sel=document.getElementById('agentNameSel');if(sel){sel.style.borderColor='var(--gr)';sel.style.boxShadow='0 0 0 3px rgba(16,185,129,.15)';setTimeout(()=>{sel.style.borderColor='';sel.style.boxShadow='';},1500);}},700);},
+      ()=>{if(btn){btn.textContent='Saved!';btn.style.background='var(--gr)';}setTimeout(()=>{closeModal('agentModal');renderAgentTable();buildAgentDropdown();toast('check','Agent added','green');const sel=null;if(sel){sel.style.borderColor='var(--gr)';sel.style.boxShadow='0 0 0 3px rgba(16,185,129,0.15)';129,.15)';setTimeout(()=>{sel.style.borderColor='';sel.style.boxShadow='';},1500);}},700);},
       ()=>{if(btn){btn.disabled=false;btn.textContent='Save Agent';btn.style.background='';}toast('x','Save failed, try again','red');});
   }
 }
