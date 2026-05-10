@@ -1283,19 +1283,27 @@ function checkPw(input,stored){
 }
 function encodePw(pw){ return btoa(pw); }
 
-let AGENTS=[
+let AGENTS = [
   {id:'RJY',name:'Radwan Jamal Yassin',email:'business@tracking',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'senior',tz:'Asia/Riyadh',shiftStart:'09:00',pw:'1234'},
   {id:'MB',name:'Muhammad Baksh',email:'muhammad.baksh@shiftdesk.com',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'NJD',name:'Nida Javaid Dar',email:'data02@tracking.me',dept:'Corporate',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'SA',name:'Sadia Asif',email:'data15@tracking.me',dept:'Corporate',role:'Corporate QA',type:'qa',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+
   {id:'SD',name:'SUMAN David',email:'data04@tracking.me',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'RR',name:'Rafia Rauf',email:'data11@tracking.me',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'AR',name:'Abdul Rehman',email:'data14@tracking.me',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'MF',name:'Muhammad Farhan',email:'mto4@tracking.me',dept:'Retail',role:'Support Manager - Retail',type:'manager',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'SUM',name:'Suman',email:'suman@shiftdesk.com',dept:'Retail',role:'Retail QA',type:'qa',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
-  {id:'MR',name:'Muhammad Raja',email:'csu106@tracking,me',dept:'Reseller',role:'Data + Renewals + Rectifications (KSA)',type:'senior',tz:'Asia/Riyadh',shiftStart:'09:00',pw:'MTIzNA=='},
+
+  {id:'MR',name:'Muhammad Raja',email:'csu106@tracking.me',dept:'Reseller',role:'Data + Renewals + Rectifications (KSA)',type:'senior',tz:'Asia/Riyadh',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'MHU',name:'Muhammad Hafiz Usman',email:'data01@tracking.me',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
   {id:'AA',name:'Areeeba Arshad',email:'mto@tracking.me',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+
+  // New Pakistan Agents
+  {id:'AN',name:'Areeba Anees',email:'csr12@tracking.me',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'KM',name:'Komal',email:'csr09@tracking.me',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'AS',name:'Asifa Asif',email:'csr13@tracking.me',dept:'Reseller',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
+  {id:'KR',name:'Kirna',email:'mto02@tracking.me',dept:'Retail',role:'Data + Renewals + Rectifications',type:'regular',tz:'Asia/Karachi',shiftStart:'09:00',pw:'MTIzNA=='},
 ];
 
 const DC={Corporate:'#f59e0b',Retail:'#06b6d4',Reseller:'#a78bfa'};
