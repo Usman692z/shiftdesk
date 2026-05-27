@@ -203,7 +203,7 @@ const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
 const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
-const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com'];
+const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
 
 async function init(){
   const {data:{session}}=await _db.auth.getSession();
