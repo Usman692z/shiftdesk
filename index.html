@@ -180,6 +180,8 @@ tr:hover td{background:var(--b)}
 const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
 const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+// Separate client for creating new auth users — does NOT touch admin session
+const _authHelper = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {auth:{persistSession:false,autoRefreshToken:false}});
 let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null,_sessionLoading=false;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
 
@@ -367,8 +369,8 @@ async function saveAgent(){
   try{
     if(!editingAgentId){
       if(!pass||pass.length<6){errEl.textContent='Password min 6 chars (e.g. 123456)';errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
-      // Create Supabase Auth user
-      const{data:su,error:se}=await _db.auth.signUp({email,password:pass,options:{data:{name,role:'agent'}}});
+      // Create Supabase Auth user WITHOUT replacing admin session
+      const{data:su,error:se}=await _authHelper.auth.signUp({email,password:pass,options:{data:{name,role:'agent'}}});
       if(se&&!se.message.toLowerCase().includes('already registered')){errEl.textContent='Auth Error: '+se.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       const auth_id=su?.user?.id||null;
       // Upsert so re-adding same email just updates
