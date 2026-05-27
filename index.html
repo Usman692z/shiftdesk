@@ -113,14 +113,37 @@ tr:hover td{background:var(--b)}
   <div class="auth-card">
     <div class="auth-logo"><h1>ShiftDesk</h1><p>Agent Workforce Management</p></div>
     <div class="auth-tabs">
-      <div class="auth-tab active" id="tabAgent" onclick="switchAuthTab('agent')">🧑 Agent Login</div>
+      <div class="auth-tab active" id="tabAgent" onclick="switchAuthTab('agent')">🧑 Login</div>
+      <div class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">✏️ Sign Up</div>
       <div class="auth-tab" id="tabAdmin" onclick="switchAuthTab('admin')">🔑 Admin</div>
     </div>
     <div id="authErr" class="auth-err"></div>
     <div id="agentLoginForm">
-      <div class="form-group"><label>Official Email</label><input type="email" id="agentEmail" placeholder="agent@company.com"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="agentEmail" placeholder="agent@company.com"></div>
       <div class="form-group"><label>Password</label><input type="password" id="agentPass" placeholder="••••••••"></div>
       <button class="btn btn-primary" id="loginBtn" onclick="agentLogin()">Login</button>
+    </div>
+    <div id="signupForm" class="hidden">
+      <div class="form-group"><label>Full Name</label><input type="text" id="suName" placeholder="Muhammad Ali"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="suEmail" placeholder="name@company.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="suPass" placeholder="Min 6 characters"></div>
+      <div class="form-group"><label>Department</label>
+        <select id="suDept">
+          <option value="">Select Department</option>
+          <option>Corporate</option>
+          <option>Retail</option>
+          <option>Reseller</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Country</label>
+        <select id="suCountry">
+          <option>Pakistan</option>
+          <option>Saudi Arabia</option>
+          <option>UAE</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">✏️ Create Account</button>
+      <p style="text-align:center;color:var(--mu);font-size:12px;margin-top:12px">Account will be reviewed by admin before access</p>
     </div>
     <div id="adminLoginForm" class="hidden">
       <div class="form-group"><label>Admin Email</label><input type="email" id="adminEmail" placeholder="admin@company.com"></div>
@@ -202,10 +225,47 @@ async function loadSession(user){
 
 function switchAuthTab(tab){
   document.getElementById('tabAgent').className='auth-tab'+(tab==='agent'?' active':'');
+  document.getElementById('tabSignup').className='auth-tab'+(tab==='signup'?' active':'');
   document.getElementById('tabAdmin').className='auth-tab'+(tab==='admin'?' active':'');
   document.getElementById('agentLoginForm').classList.toggle('hidden',tab!=='agent');
+  document.getElementById('signupForm').classList.toggle('hidden',tab!=='signup');
   document.getElementById('adminLoginForm').classList.toggle('hidden',tab!=='admin');
   document.getElementById('authErr').classList.remove('show');
+}
+
+async function doSignup(){
+  const name=document.getElementById('suName').value.trim();
+  const email=document.getElementById('suEmail').value.trim();
+  const pass=document.getElementById('suPass').value;
+  const dept=document.getElementById('suDept').value;
+  const country=document.getElementById('suCountry').value;
+  if(!name||!email||!pass||!dept){showAuthErr('Please fill all fields');return;}
+  if(pass.length<6){showAuthErr('Password must be at least 6 characters');return;}
+  const btn=document.getElementById('signupBtn');
+  btn.disabled=true;btn.textContent='Creating account...';
+  try{
+    const tzMap={'Pakistan':'Asia/Karachi','Saudi Arabia':'Asia/Riyadh','UAE':'Asia/Dubai'};
+    const timezone=tzMap[country]||'Asia/Karachi';
+    const{data:su,error:se}=await _db.auth.signUp({email,password:pass,options:{data:{name}}});
+    if(se){showAuthErr(se.message);btn.disabled=false;btn.textContent='✏️ Create Account';return;}
+    const{error:de}=await _db.from('agents').insert({
+      name,email,dept,country,timezone,
+      role:'Agent',type:'regular',shift_start:'09:00',
+      auth_id:su?.user?.id||null
+    });
+    if(de){showAuthErr('DB Error: '+de.message);btn.disabled=false;btn.textContent='✏️ Create Account';return;}
+    document.getElementById('authErr').style.background='rgba(16,185,129,.1)';
+    document.getElementById('authErr').style.borderColor='rgba(16,185,129,.3)';
+    document.getElementById('authErr').style.color='var(--gr)';
+    document.getElementById('authErr').textContent='✅ Account created! You can now login.';
+    document.getElementById('authErr').classList.add('show');
+    setTimeout(()=>{
+      document.getElementById('authErr').removeAttribute('style');
+      switchAuthTab('agent');
+      document.getElementById('agentEmail').value=email;
+    },2000);
+  }catch(e){showAuthErr('Error: '+e.message);}
+  btn.disabled=false;btn.textContent='✏️ Create Account';
 }
 
 async function agentLogin(){
