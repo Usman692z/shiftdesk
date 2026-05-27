@@ -224,17 +224,24 @@ async function init(){
 
 async function loadSession(user){
   currentUser=user;
-  isAdmin=ADMIN_EMAILS.includes(user.email);
-  if(!isAdmin){
-    try{
-      const{data:ag}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
+  try{
+    const{data:ag}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
+    if(ag){
       currentAgent=ag;
-      if(!currentAgent){
-        showToast('Agent profile not found. Contact admin.','err');
-        setTimeout(()=>_db.auth.signOut(),2000);
+      isAdmin=(ag.type==='admin')||ADMIN_EMAILS.includes(user.email);
+    } else {
+      // Not in agents table — check if admin email
+      isAdmin=ADMIN_EMAILS.includes(user.email);
+      if(!isAdmin){
+        showToast('Profile not found. Contact admin.','err');
+        setTimeout(()=>_db.auth.signOut(),2500);
         return;
       }
-    }catch(e){showToast('Connection error. Try again.','err');return;}
+    }
+  }catch(e){
+    // DB error — still allow admin by email
+    isAdmin=ADMIN_EMAILS.includes(user.email);
+    if(!isAdmin){showToast('Connection error. Try again.','err');return;}
   }
   showApp();
 }
