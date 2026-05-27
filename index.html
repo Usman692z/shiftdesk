@@ -481,7 +481,7 @@ async function doCheckIn(){
   const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
   const{error}=await _db.from('shift_status').upsert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date:today,online:true,check_in:now},{onConflict:'agent_id,date'});
   if(error){showToast('Error: '+error.message,'err');return;}
-  await _db.from('activity_log').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',timestamp:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',detail:'Check In',date:today,time:now});
   showToast('Checked in! Have a great shift 🎯','ok');renderMyShift();
 }
 
@@ -489,22 +489,22 @@ async function doCheckOut(){
   const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
   const{error}=await _db.from('shift_status').update({online:false,check_out:now}).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
-  await _db.from('activity_log').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_out',timestamp:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_out',detail:'Check Out',date:today,time:now});
   showToast('Checked out! Great work 👏','ok');renderMyShift();
 }
 
 async function loadMyActivity(){
-  const{data:logs}=await _db.from('activity_log').select('*').eq('agent_id',currentAgent.id).order('timestamp',{ascending:false}).limit(20);
+  const{data:logs}=await _db.from('activity_logs').select('*').eq('agent_id',currentAgent.id).order('timestamp',{ascending:false}).limit(20);
   const el=document.getElementById('myActivityLog');if(!el)return;
   if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">📭</div>No activity yet</div>';return;}
-  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+fmtDate(l.timestamp)+'</div></div><div class="activity-time">'+fmtTime(l.timestamp)+'</div></div>').join('');
+  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join('');
 }
 
 async function renderActivity(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const q=isAdmin?_db.from('activity_log').select('*').order('timestamp',{ascending:false}).limit(100):_db.from('activity_log').select('*').eq('agent_id',currentAgent?.id).order('timestamp',{ascending:false}).limit(50);
+  const q=isAdmin?_db.from('activity_logs').select('*').order('created_at',{ascending:false}).limit(100):_db.from('activity_logs').select('*').eq('agent_id',currentAgent?.id).order('created_at',{ascending:false}).limit(50);
   const{data:logs}=await q;
-  c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No activity recorded</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+l.agent_name+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+' • '+fmtDate(l.timestamp)+'</div></div><div class="activity-time">'+fmtTime(l.timestamp)+'</div></div>').join(''))+'</div>';
+  c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No activity recorded</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+l.agent_name+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+' • '+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join(''))+'</div>';
 }
 
 function fmtTime(ts){if(!ts)return '—';try{const tz=currentAgent?.timezone||'Asia/Karachi';return new Date(ts).toLocaleTimeString('en-US',{timeZone:tz,hour12:true,hour:'2-digit',minute:'2-digit'});}catch{return ts.slice(11,16);}}
