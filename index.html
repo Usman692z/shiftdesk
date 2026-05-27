@@ -126,7 +126,7 @@ tr:hover td{background:var(--b)}
     <div id="signupForm" class="hidden">
       <div class="form-group"><label>Full Name</label><input type="text" id="suName" placeholder="Muhammad Ali"></div>
       <div class="form-group"><label>Email</label><input type="email" id="suEmail" placeholder="name@company.com"></div>
-      <div class="form-group"><label>Password</label><input type="password" id="suPass" placeholder="Min 6 characters"></div>
+      <div class="form-group" id="suPassGroup"><label>Password</label><input type="password" id="suPass" placeholder="Min 6 characters"></div>
       <div class="form-group"><label>Department</label>
         <select id="suDept">
           <option value="">Select Department</option>
@@ -233,8 +233,18 @@ async function loadSession(user){
       // Not in agents table — check if admin email
       isAdmin=ADMIN_EMAILS.includes(user.email);
       if(!isAdmin){
-        showToast('Profile not found. Contact admin.','err');
-        setTimeout(()=>_db.auth.signOut(),2500);
+        // Auth exists but no profile — let them complete signup
+        showAuth();
+        switchAuthTab('signup');
+        document.getElementById('suEmail').value=user.email;
+        document.getElementById('suEmail').readOnly=true;
+        document.getElementById('suPassGroup').style.display='none';
+        const errEl=document.getElementById('authErr');
+        errEl.textContent='✏️ Account found! Fill in your details to complete setup.';
+        errEl.style.background='rgba(251,191,36,.1)';
+        errEl.style.borderColor='rgba(251,191,36,.3)';
+        errEl.style.color='var(--yl)';
+        errEl.classList.add('show');
         return;
       }
     }
@@ -254,6 +264,12 @@ function switchAuthTab(tab){
   document.getElementById('signupForm').classList.toggle('hidden',tab!=='signup');
   document.getElementById('adminLoginForm').classList.toggle('hidden',tab!=='admin');
   document.getElementById('authErr').classList.remove('show');
+  document.getElementById('authErr').removeAttribute('style');
+  // Reset signup form locks if manually switching tabs
+  if(tab!=='signup'){
+    const se=document.getElementById('suEmail');if(se){se.readOnly=false;se.value='';}
+    const sp=document.getElementById('suPassGroup');if(sp)sp.style.display='';
+  }
 }
 
 async function doSignup(){
@@ -262,39 +278,53 @@ async function doSignup(){
   const pass=document.getElementById('suPass').value;
   const dept=document.getElementById('suDept').value;
   const country=document.getElementById('suCountry').value;
-  if(!name||!email||!pass||!dept){showAuthErr('Please fill all fields');return;}
-  if(pass.length<6){showAuthErr('Password must be at least 6 characters');return;}
+  // If email is pre-filled (completing profile), password field can be skipped
+  const emailLocked=document.getElementById('suEmail').readOnly;
+  if(!name||!email||!dept){showAuthErr('Please fill all fields');return;}
+  if(!emailLocked&&(!pass||pass.length<6)){showAuthErr('Password must be at least 6 characters');return;}
   const btn=document.getElementById('signupBtn');
   btn.disabled=true;btn.textContent='Creating account...';
   try{
     const tzMap={'Pakistan':'Asia/Karachi','Saudi Arabia':'Asia/Riyadh','UAE':'Asia/Dubai'};
     const timezone=tzMap[country]||'Asia/Karachi';
-    const{data:su,error:se}=await _db.auth.signUp({email,password:pass,options:{data:{name}}});
-    if(se){
-      if(se.message.toLowerCase().includes('already registered')){
-        showAuthErr('Already registered! Go to Login tab.');
-        setTimeout(()=>{switchAuthTab('agent');document.getElementById('agentEmail').value=email;},1500);
-      } else {
-        showAuthErr(se.message);
+    let authId=currentUser?.id||null;
+    if(!emailLocked){
+      // Fresh signup — create Auth user
+      const{data:su,error:se}=await _db.auth.signUp({email,password:pass,options:{data:{name}}});
+      if(se){
+        if(se.message.toLowerCase().includes('already registered')){
+          showAuthErr('Already registered! Go to Login tab.');
+          setTimeout(()=>{switchAuthTab('agent');document.getElementById('agentEmail').value=email;},1500);
+        } else { showAuthErr(se.message); }
+        btn.disabled=false;btn.textContent='✏️ Create Account';return;
       }
-      btn.disabled=false;btn.textContent='✏️ Create Account';return;
+      authId=su?.user?.id||null;
     }
     const{error:de}=await _db.from('agents').insert({
       name,email,dept,country,timezone,
       role:'Agent',type:'regular',shift_start:'09:00',
-      auth_id:su?.user?.id||null
+      auth_id:authId
     });
     if(de){showAuthErr('DB Error: '+de.message);btn.disabled=false;btn.textContent='✏️ Create Account';return;}
-    document.getElementById('authErr').style.background='rgba(16,185,129,.1)';
-    document.getElementById('authErr').style.borderColor='rgba(16,185,129,.3)';
-    document.getElementById('authErr').style.color='var(--gr)';
-    document.getElementById('authErr').textContent='✅ Account created! You can now login.';
-    document.getElementById('authErr').classList.add('show');
-    setTimeout(()=>{
-      document.getElementById('authErr').removeAttribute('style');
-      switchAuthTab('agent');
-      document.getElementById('agentEmail').value=email;
-    },2000);
+    // Reset email field lock
+    document.getElementById('suEmail').readOnly=false;
+    const errEl=document.getElementById('authErr');
+    errEl.removeAttribute('style');
+    errEl.style.background='rgba(16,185,129,.1)';
+    errEl.style.borderColor='rgba(16,185,129,.3)';
+    errEl.style.color='var(--gr)';
+    errEl.textContent='✅ Profile saved! Logging you in...';
+    errEl.classList.add('show');
+    setTimeout(async()=>{
+      errEl.removeAttribute('style');
+      if(emailLocked&&currentUser){
+        // Already authenticated — just load the app
+        await loadSession(currentUser);
+      } else {
+        switchAuthTab('agent');
+        document.getElementById('agentEmail').value=email;
+      }
+    },1500);
   }catch(e){showAuthErr('Error: '+e.message);}
   btn.disabled=false;btn.textContent='✏️ Create Account';
 }
