@@ -180,8 +180,8 @@ tr:hover td{background:var(--b)}
 const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
 const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-// Separate client for creating new auth users — does NOT touch admin session
-const _authHelper = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {auth:{persistSession:false,autoRefreshToken:false}});
+// Separate client for creating new auth users — isolated storage key
+const _authHelper = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {auth:{persistSession:false,autoRefreshToken:false,storageKey:'_sd_helper'}});
 let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null,_sessionLoading=false;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
 
