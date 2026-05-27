@@ -121,6 +121,7 @@ tr:hover td{background:var(--b)}
       <div class="form-group"><label>Email</label><input type="email" id="agentEmail" placeholder="agent@company.com"></div>
       <div class="form-group"><label>Password</label><input type="password" id="agentPass" placeholder="••••••••"></div>
       <button class="btn btn-primary" id="loginBtn" onclick="agentLogin()">Login</button>
+      <button class="btn" id="demoBtn" onclick="demoLogin()" style="width:100%;margin-top:8px;background:rgba(251,191,36,.1);color:var(--yl);border:1px solid rgba(251,191,36,.3)">🧪 Demo Login</button>
       <p style="text-align:center;color:var(--mu);font-size:12px;margin-top:12px">Contact your admin if you don&#39;t have access</p>
     </div>
     <div id="adminLoginForm" class="hidden">
@@ -236,6 +237,13 @@ function switchAuthTab(tab){
   document.getElementById('authErr').removeAttribute('style');
 }
 
+async function demoLogin(){
+  const btn=document.getElementById('demoBtn');
+  btn.disabled=true;btn.textContent='Loading demo...';
+  const{error}=await _db.auth.signInWithPassword({email:'demo@shiftdesk.online',password:'demo1234'});
+  if(error){showAuthErr('Demo not set up yet. Ask admin to run setup SQL.');btn.disabled=false;btn.textContent='🧪 Demo Login';}
+}
+
 async function agentLogin(){
   const email=document.getElementById('agentEmail').value.trim();
   const pass=document.getElementById('agentPass').value;
@@ -265,6 +273,7 @@ function showAuth(){
   // Reset login buttons so they're never stuck
   const lb=document.getElementById('loginBtn');if(lb){lb.disabled=false;lb.textContent='Login';}
   const ab=document.getElementById('adminLoginBtn');if(ab){ab.disabled=false;ab.textContent='Admin Login';}
+  const db=document.getElementById('demoBtn');if(db){db.disabled=false;db.textContent='🧪 Demo Login';}
 }
 
 function showApp(){
