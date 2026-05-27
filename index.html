@@ -202,23 +202,39 @@ tr:hover td{background:var(--b)}
 const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
 const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
+let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null,_sessionLoading=false;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
 
 async function init(){
-  const {data:{session}}=await _db.auth.getSession();
-  if(session) await loadSession(session.user); else showAuth();
   startClock();
-  _db.auth.onAuthStateChange(async(_,s)=>{if(s)await loadSession(s.user);else showAuth();});
+  // Use onAuthStateChange as single source of truth
+  _db.auth.onAuthStateChange(async(event,session)=>{
+    if(event==='SIGNED_OUT'){currentUser=null;currentAgent=null;isAdmin=false;showAuth();return;}
+    if(session&&!_sessionLoading){
+      _sessionLoading=true;
+      await loadSession(session.user);
+      _sessionLoading=false;
+    }
+  });
+  // Check existing session on load
+  const{data:{session}}=await _db.auth.getSession();
+  if(session){_sessionLoading=true;await loadSession(session.user);_sessionLoading=false;}
+  else showAuth();
 }
 
 async function loadSession(user){
   currentUser=user;
   isAdmin=ADMIN_EMAILS.includes(user.email);
   if(!isAdmin){
-    const{data:ag}=await _db.from('agents').select('*').eq('email',user.email).single();
-    currentAgent=ag;
-    if(!currentAgent){showToast('Agent profile not found. Contact admin.','err');await _db.auth.signOut();return;}
+    try{
+      const{data:ag}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
+      currentAgent=ag;
+      if(!currentAgent){
+        showToast('Agent profile not found. Contact admin.','err');
+        setTimeout(()=>_db.auth.signOut(),2000);
+        return;
+      }
+    }catch(e){showToast('Connection error. Try again.','err');return;}
   }
   showApp();
 }
