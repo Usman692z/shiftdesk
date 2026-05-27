@@ -152,7 +152,7 @@ tr:hover td{background:var(--b)}
     <div class="form-group"><label>Full Name</label><input type="text" id="mName" placeholder="Agent Name"></div>
     <div class="form-group"><label>Official Email</label><input type="email" id="mEmail" placeholder="agent@company.com"></div>
     <div class="form-group" id="mPassGroup"><label>Password (for login)</label><input type="password" id="mPass" placeholder="min 6 characters"></div>
-    <div class="form-group"><label>Department</label><input type="text" id="mDept" placeholder="e.g. Sales, Support"></div>
+    <div class="form-group"><label>Department</label><select id="mDept"><option value="">Select Department</option><option value="Corporate">Corporate</option><option value="Retail">Retail</option><option value="Reseller">Reseller</option></select></div>
     <div class="form-group"><label>Role / Designation</label><input type="text" id="mRole" placeholder="e.g. Senior Agent"></div>
     <div class="form-group"><label>Country</label><select id="mCountry"><option value="Pakistan">Pakistan</option><option value="Saudi Arabia">Saudi Arabia</option><option value="UAE">UAE</option><option value="UK">UK</option><option value="USA">USA</option></select></div>
     <div class="form-group"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
@@ -260,6 +260,9 @@ function showAuth(){
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('authErr').classList.remove('show');
+  // Reset login buttons so they're never stuck
+  const lb=document.getElementById('loginBtn');if(lb){lb.disabled=false;lb.textContent='Login';}
+  const ab=document.getElementById('adminLoginBtn');if(ab){ab.disabled=false;ab.textContent='Admin Login';}
 }
 
 function showApp(){
@@ -316,7 +319,8 @@ async function renderAgents(){
 
 function openAddAgent(){
   editingAgentId=null;
-  ['mName','mEmail','mPass','mDept','mRole'].forEach(id=>document.getElementById(id).value='');
+  ['mName','mEmail','mPass','mRole'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('mDept').value='';
   document.getElementById('mCountry').value='Pakistan';
   document.getElementById('mShiftStart').value='09:00';
   document.getElementById('mType').value='regular';
@@ -358,16 +362,19 @@ async function saveAgent(){
   const errEl=document.getElementById('agentModalErr');
   if(!name){errEl.textContent='Name is required';errEl.classList.add('show');return;}
   if(!email){errEl.textContent='Email is required';errEl.classList.add('show');return;}
+  if(!dept){errEl.textContent='Department is required';errEl.classList.add('show');return;}
   const btn=document.getElementById('saveAgentBtn');btn.disabled=true;btn.textContent='Saving...';
   try{
     if(!editingAgentId){
-      if(!pass||pass.length<6){errEl.textContent='Password min 6 chars';errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      if(!pass||pass.length<6){errEl.textContent='Password min 6 chars (e.g. 123456)';errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      // Create Supabase Auth user
       const{data:su,error:se}=await _db.auth.signUp({email,password:pass,options:{data:{name,role:'agent'}}});
-      if(se&&!se.message.includes('already registered')){errEl.textContent='Auth: '+se.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      if(se&&!se.message.toLowerCase().includes('already registered')){errEl.textContent='Auth Error: '+se.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       const auth_id=su?.user?.id||null;
-      const{error:de}=await _db.from('agents').insert({name,email,dept,role,country,timezone,shift_start,type,auth_id});
-      if(de){errEl.textContent='DB: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
-      showToast('Agent added! Login: '+email,'ok');
+      // Upsert so re-adding same email just updates
+      const{error:de}=await _db.from('agents').upsert({name,email,dept,role,country,timezone,shift_start,type,auth_id},{onConflict:'email'});
+      if(de){errEl.textContent='DB Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      showToast('✅ Agent added! They can now login with: '+email,'ok');
     }else{
       const{error:de}=await _db.from('agents').update({name,email,dept,role,country,timezone,shift_start,type}).eq('id',editingAgentId);
       if(de){errEl.textContent='DB: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
