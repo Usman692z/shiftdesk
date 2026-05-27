@@ -204,14 +204,14 @@ async function init(){
 
 async function loadSession(user){
   currentUser=user;
-  // Admin emails — seedha app dikhao, DB ka wait nahi
+  // Admin emails — SEEDHA app dikhao, koi DB wait nahi
   if(ADMIN_EMAILS.includes(user.email)){
     isAdmin=true;
-    try{
-      const{data:ag}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
-      if(ag) currentAgent=ag;
-    }catch(e){}
-    showApp();
+    showApp(); // Instant — no DB wait
+    // Background mein profile load karo (non-blocking)
+    _db.from('agents').select('*').eq('email',user.email).maybeSingle()
+      .then(({data:ag})=>{ if(ag) currentAgent=ag; })
+      .catch(()=>{});
     return;
   }
   // Regular agent — agents table se profile load karo
