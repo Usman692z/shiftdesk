@@ -113,8 +113,7 @@ tr:hover td{background:var(--b)}
   <div class="auth-card">
     <div class="auth-logo"><h1>ShiftDesk</h1><p>Agent Workforce Management</p></div>
     <div class="auth-tabs">
-      <div class="auth-tab active" id="tabAgent" onclick="switchAuthTab('agent')">🧑 Login</div>
-      <div class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">✏️ Sign Up</div>
+      <div class="auth-tab active" id="tabAgent" onclick="switchAuthTab('agent')">🧑 Agent Login</div>
       <div class="auth-tab" id="tabAdmin" onclick="switchAuthTab('admin')">🔑 Admin</div>
     </div>
     <div id="authErr" class="auth-err"></div>
@@ -122,28 +121,7 @@ tr:hover td{background:var(--b)}
       <div class="form-group"><label>Email</label><input type="email" id="agentEmail" placeholder="agent@company.com"></div>
       <div class="form-group"><label>Password</label><input type="password" id="agentPass" placeholder="••••••••"></div>
       <button class="btn btn-primary" id="loginBtn" onclick="agentLogin()">Login</button>
-    </div>
-    <div id="signupForm" class="hidden">
-      <div class="form-group"><label>Full Name</label><input type="text" id="suName" placeholder="Muhammad Ali"></div>
-      <div class="form-group"><label>Email</label><input type="email" id="suEmail" placeholder="name@company.com"></div>
-      <div class="form-group" id="suPassGroup"><label>Password</label><input type="password" id="suPass" placeholder="Min 6 characters"></div>
-      <div class="form-group"><label>Department</label>
-        <select id="suDept">
-          <option value="">Select Department</option>
-          <option>Corporate</option>
-          <option>Retail</option>
-          <option>Reseller</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Country</label>
-        <select id="suCountry">
-          <option>Pakistan</option>
-          <option>Saudi Arabia</option>
-          <option>UAE</option>
-        </select>
-      </div>
-      <button class="btn btn-primary" id="signupBtn" onclick="doSignup()">✏️ Create Account</button>
-      <p style="text-align:center;color:var(--mu);font-size:12px;margin-top:12px">Account will be reviewed by admin before access</p>
+      <p style="text-align:center;color:var(--mu);font-size:12px;margin-top:12px">Contact your admin if you don&#39;t have access</p>
     </div>
     <div id="adminLoginForm" class="hidden">
       <div class="form-group"><label>Admin Email</label><input type="email" id="adminEmail" placeholder="admin@company.com"></div>
@@ -233,18 +211,9 @@ async function loadSession(user){
       // Not in agents table — check if admin email
       isAdmin=ADMIN_EMAILS.includes(user.email);
       if(!isAdmin){
-        // Auth exists but no profile — let them complete signup
-        showAuth();
-        switchAuthTab('signup');
-        document.getElementById('suEmail').value=user.email;
-        document.getElementById('suEmail').readOnly=true;
-        document.getElementById('suPassGroup').style.display='none';
-        const errEl=document.getElementById('authErr');
-        errEl.textContent='✏️ Account found! Fill in your details to complete setup.';
-        errEl.style.background='rgba(251,191,36,.1)';
-        errEl.style.borderColor='rgba(251,191,36,.3)';
-        errEl.style.color='var(--yl)';
-        errEl.classList.add('show');
+        // Auth exists but no agents profile — not approved yet
+        showToast('No profile found. Contact your admin.','err');
+        setTimeout(()=>_db.auth.signOut(),2500);
         return;
       }
     }
@@ -258,75 +227,11 @@ async function loadSession(user){
 
 function switchAuthTab(tab){
   document.getElementById('tabAgent').className='auth-tab'+(tab==='agent'?' active':'');
-  document.getElementById('tabSignup').className='auth-tab'+(tab==='signup'?' active':'');
   document.getElementById('tabAdmin').className='auth-tab'+(tab==='admin'?' active':'');
   document.getElementById('agentLoginForm').classList.toggle('hidden',tab!=='agent');
-  document.getElementById('signupForm').classList.toggle('hidden',tab!=='signup');
   document.getElementById('adminLoginForm').classList.toggle('hidden',tab!=='admin');
   document.getElementById('authErr').classList.remove('show');
   document.getElementById('authErr').removeAttribute('style');
-  // Reset signup form locks if manually switching tabs
-  if(tab!=='signup'){
-    const se=document.getElementById('suEmail');if(se){se.readOnly=false;se.value='';}
-    const sp=document.getElementById('suPassGroup');if(sp)sp.style.display='';
-  }
-}
-
-async function doSignup(){
-  const name=document.getElementById('suName').value.trim();
-  const email=document.getElementById('suEmail').value.trim();
-  const pass=document.getElementById('suPass').value;
-  const dept=document.getElementById('suDept').value;
-  const country=document.getElementById('suCountry').value;
-  // If email is pre-filled (completing profile), password field can be skipped
-  const emailLocked=document.getElementById('suEmail').readOnly;
-  if(!name||!email||!dept){showAuthErr('Please fill all fields');return;}
-  if(!emailLocked&&(!pass||pass.length<6)){showAuthErr('Password must be at least 6 characters');return;}
-  const btn=document.getElementById('signupBtn');
-  btn.disabled=true;btn.textContent='Creating account...';
-  try{
-    const tzMap={'Pakistan':'Asia/Karachi','Saudi Arabia':'Asia/Riyadh','UAE':'Asia/Dubai'};
-    const timezone=tzMap[country]||'Asia/Karachi';
-    let authId=currentUser?.id||null;
-    if(!emailLocked){
-      // Fresh signup — create Auth user
-      const{data:su,error:se}=await _db.auth.signUp({email,password:pass,options:{data:{name}}});
-      if(se){
-        if(se.message.toLowerCase().includes('already registered')){
-          showAuthErr('Already registered! Go to Login tab.');
-          setTimeout(()=>{switchAuthTab('agent');document.getElementById('agentEmail').value=email;},1500);
-        } else { showAuthErr(se.message); }
-        btn.disabled=false;btn.textContent='✏️ Create Account';return;
-      }
-      authId=su?.user?.id||null;
-    }
-    const{error:de}=await _db.from('agents').insert({
-      name,email,dept,country,timezone,
-      role:'Agent',type:'regular',shift_start:'09:00',
-      auth_id:authId
-    });
-    if(de){showAuthErr('DB Error: '+de.message);btn.disabled=false;btn.textContent='✏️ Create Account';return;}
-    // Reset email field lock
-    document.getElementById('suEmail').readOnly=false;
-    const errEl=document.getElementById('authErr');
-    errEl.removeAttribute('style');
-    errEl.style.background='rgba(16,185,129,.1)';
-    errEl.style.borderColor='rgba(16,185,129,.3)';
-    errEl.style.color='var(--gr)';
-    errEl.textContent='✅ Profile saved! Logging you in...';
-    errEl.classList.add('show');
-    setTimeout(async()=>{
-      errEl.removeAttribute('style');
-      if(emailLocked&&currentUser){
-        // Already authenticated — just load the app
-        await loadSession(currentUser);
-      } else {
-        switchAuthTab('agent');
-        document.getElementById('agentEmail').value=email;
-      }
-    },1500);
-  }catch(e){showAuthErr('Error: '+e.message);}
-  btn.disabled=false;btn.textContent='✏️ Create Account';
 }
 
 async function agentLogin(){
