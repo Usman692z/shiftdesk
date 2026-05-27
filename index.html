@@ -121,7 +121,20 @@ tr:hover td{background:var(--b)}
       <div class="form-group"><label>Email</label><input type="email" id="agentEmail" placeholder="agent@company.com"></div>
       <div class="form-group"><label>Password</label><input type="password" id="agentPass" placeholder="••••••••"></div>
       <button class="btn btn-primary" id="loginBtn" onclick="agentLogin()">Login</button>
-      <p style="text-align:center;color:var(--mu);font-size:12px;margin-top:12px">Contact your admin if you don&#39;t have access</p>
+      <p style="text-align:center;margin-top:12px"><span onclick="showForgotForm()" style="color:var(--ac);font-size:12px;cursor:pointer">🔑 Forgot Password?</span></p>
+    </div>
+    <!-- Forgot Password Form -->
+    <div id="forgotForm" class="hidden">
+      <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Apni email dalo — reset link milega</p>
+      <div class="form-group"><label>Email</label><input type="email" id="forgotEmail" placeholder="agent@company.com"></div>
+      <button class="btn btn-primary" id="forgotBtn" onclick="sendResetEmail()">📧 Reset Link Bhejo</button>
+      <p style="text-align:center;margin-top:12px"><span onclick="showForgotForm(false)" style="color:var(--mu);font-size:12px;cursor:pointer">← Wapas Login</span></p>
+    </div>
+    <!-- Set New Password Form (after reset link click) -->
+    <div id="newPassForm" class="hidden">
+      <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Naya password set karo</p>
+      <div class="form-group"><label>Naya Password</label><input type="password" id="newPassInput" placeholder="min 6 characters"></div>
+      <button class="btn btn-primary" id="newPassBtn" onclick="setNewPassword()">✅ Password Save Karo</button>
     </div>
     <div id="adminLoginForm" class="hidden">
       <div class="form-group"><label>Admin Email</label><input type="email" id="adminEmail" placeholder="admin@company.com"></div>
@@ -190,6 +203,13 @@ async function init(){
   // Use onAuthStateChange as single source of truth
   _db.auth.onAuthStateChange(async(event,session)=>{
     if(event==='SIGNED_OUT'){currentUser=null;currentAgent=null;isAdmin=false;showAuth();return;}
+    // Password reset link se aya — naya password form dikhao
+    if(event==='PASSWORD_RECOVERY'){
+      showAuth();
+      ['agentLoginForm','forgotForm','adminLoginForm'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+      document.getElementById('newPassForm').classList.remove('hidden');
+      return;
+    }
     if(session&&!_sessionLoading){
       _sessionLoading=true;
       await loadSession(session.user);
@@ -268,15 +288,53 @@ async function adminLogin(){
 }
 
 function showAuthErr(msg){const el=document.getElementById('authErr');el.textContent=msg;el.classList.add('show');}
+
+function showForgotForm(show=true){
+  document.getElementById('agentLoginForm').classList.toggle('hidden',show);
+  document.getElementById('forgotForm').classList.toggle('hidden',!show);
+  document.getElementById('authErr').classList.remove('show');
+}
+
+async function sendResetEmail(){
+  const email=document.getElementById('forgotEmail').value.trim();
+  if(!email){showAuthErr('Email dalo pehle');return;}
+  const btn=document.getElementById('forgotBtn');
+  btn.disabled=true;btn.textContent='Bhej raha hoon...';
+  const{error}=await _db.auth.resetPasswordForEmail(email,{redirectTo:'https://shiftdesk.online'});
+  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='📧 Reset Link Bhejo';return;}
+  const errEl=document.getElementById('authErr');
+  errEl.style.background='rgba(16,185,129,.1)';errEl.style.borderColor='rgba(16,185,129,.3)';errEl.style.color='var(--gr)';
+  errEl.textContent='✅ Reset link bhej diya! Email check karo.';errEl.classList.add('show');
+  btn.disabled=false;btn.textContent='📧 Reset Link Bhejo';
+}
+
+async function setNewPassword(){
+  const pass=document.getElementById('newPassInput').value;
+  if(!pass||pass.length<6){showAuthErr('Password kam se kam 6 characters hona chahiye');return;}
+  const btn=document.getElementById('newPassBtn');
+  btn.disabled=true;btn.textContent='Save ho raha hai...';
+  const{error}=await _db.auth.updateUser({password:pass});
+  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='✅ Password Save Karo';return;}
+  await _db.auth.signOut();
+  document.getElementById('newPassForm').classList.add('hidden');
+  document.getElementById('agentLoginForm').classList.remove('hidden');
+  const errEl=document.getElementById('authErr');
+  errEl.style.background='rgba(16,185,129,.1)';errEl.style.borderColor='rgba(16,185,129,.3)';errEl.style.color='var(--gr)';
+  errEl.textContent='✅ Password set ho gaya! Ab login karo.';errEl.classList.add('show');
+  btn.disabled=false;btn.textContent='✅ Password Save Karo';
+}
+
 async function logout(){await _db.auth.signOut();currentUser=null;currentAgent=null;isAdmin=false;}
 function showAuth(){
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('authErr').classList.remove('show');
-  // Reset login buttons so they're never stuck
+  // Reset forms to default state
   const lb=document.getElementById('loginBtn');if(lb){lb.disabled=false;lb.textContent='Login';}
   const ab=document.getElementById('adminLoginBtn');if(ab){ab.disabled=false;ab.textContent='Admin Login';}
-  const db=document.getElementById('demoBtn');if(db){db.disabled=false;db.textContent='🧪 Demo Login';}
+  document.getElementById('forgotForm')?.classList.add('hidden');
+  document.getElementById('newPassForm')?.classList.add('hidden');
+  document.getElementById('agentLoginForm')?.classList.remove('hidden');
 }
 
 function showApp(){
