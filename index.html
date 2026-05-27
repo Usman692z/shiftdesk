@@ -247,7 +247,15 @@ async function doSignup(){
     const tzMap={'Pakistan':'Asia/Karachi','Saudi Arabia':'Asia/Riyadh','UAE':'Asia/Dubai'};
     const timezone=tzMap[country]||'Asia/Karachi';
     const{data:su,error:se}=await _db.auth.signUp({email,password:pass,options:{data:{name}}});
-    if(se){showAuthErr(se.message);btn.disabled=false;btn.textContent='✏️ Create Account';return;}
+    if(se){
+      if(se.message.toLowerCase().includes('already registered')){
+        showAuthErr('Already registered! Go to Login tab.');
+        setTimeout(()=>{switchAuthTab('agent');document.getElementById('agentEmail').value=email;},1500);
+      } else {
+        showAuthErr(se.message);
+      }
+      btn.disabled=false;btn.textContent='✏️ Create Account';return;
+    }
     const{error:de}=await _db.from('agents').insert({
       name,email,dept,country,timezone,
       role:'Agent',type:'regular',shift_start:'09:00',
