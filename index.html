@@ -176,18 +176,6 @@ tr:hover td{background:var(--b)}
     </div>
   </div>
 </div>
-<div class="modal-bg" id="emailModal">
-  <div class="modal">
-    <h2>Change Agent Email</h2>
-    <div id="emailModalErr" class="auth-err"></div>
-    <div class="form-group"><label>New Email</label><input type="email" id="newEmail" placeholder="new@company.com"></div>
-    <div class="form-group"><label>New Password (leave blank to keep same)</label><input type="password" id="newPass" placeholder="leave blank to keep current"></div>
-    <div class="modal-footer">
-      <button class="btn btn-danger btn-sm" onclick="closeEmailModal()">Cancel</button>
-      <button class="btn btn-primary btn-sm" onclick="saveEmailChange()">Save Changes</button>
-    </div>
-  </div>
-</div>
 <script>
 
 const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
@@ -203,7 +191,6 @@ async function init(){
   // Use onAuthStateChange as single source of truth
   _db.auth.onAuthStateChange(async(event,session)=>{
     if(event==='SIGNED_OUT'){currentUser=null;currentAgent=null;isAdmin=false;showAuth();return;}
-    // Password reset link se aya — naya password form dikhao
     if(event==='PASSWORD_RECOVERY'){
       showAuth();
       ['agentLoginForm','forgotForm','adminLoginForm'].forEach(id=>document.getElementById(id).classList.add('hidden'));
@@ -224,17 +211,14 @@ async function init(){
 
 async function loadSession(user){
   currentUser=user;
-  // Admin emails — SEEDHA app dikhao, koi DB wait nahi
   if(ADMIN_EMAILS.includes(user.email)){
     isAdmin=true;
-    showApp(); // Instant — no DB wait
-    // Background mein profile load karo (non-blocking)
+    showApp();
     _db.from('agents').select('*').eq('email',user.email).maybeSingle()
       .then(({data:ag})=>{ if(ag) currentAgent=ag; })
       .catch(()=>{});
     return;
   }
-  // Regular agent — agents table se profile load karo
   try{
     const{data:ag,error}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
     if(error||!ag){
@@ -256,15 +240,13 @@ function switchAuthTab(tab){
   document.getElementById('tabAdmin').className='auth-tab'+(tab==='admin'?' active':'');
   document.getElementById('agentLoginForm').classList.toggle('hidden',tab!=='agent');
   document.getElementById('adminLoginForm').classList.toggle('hidden',tab!=='admin');
+  if(tab==='agent'){
+    document.getElementById('forgotForm').classList.add('hidden');
+    document.getElementById('newPassForm').classList.add('hidden');
+    document.getElementById('agentLoginForm').classList.remove('hidden');
+  }
   document.getElementById('authErr').classList.remove('show');
   document.getElementById('authErr').removeAttribute('style');
-}
-
-async function demoLogin(){
-  const btn=document.getElementById('demoBtn');
-  btn.disabled=true;btn.textContent='Loading demo...';
-  const{error}=await _db.auth.signInWithPassword({email:'demo@shiftdesk.online',password:'demo1234'});
-  if(error){showAuthErr('Demo not set up yet. Ask admin to run setup SQL.');btn.disabled=false;btn.textContent='🧪 Demo Login';}
 }
 
 async function agentLogin(){
@@ -310,7 +292,7 @@ async function sendResetEmail(){
 
 async function setNewPassword(){
   const pass=document.getElementById('newPassInput').value;
-  if(!pass||pass.length<6){showAuthErr('Password kam se kam 6 characters hona chahiye');return;}
+  if(!pass||pass.length<6){showAuthErr('Password must be at least 6 characters');return;}
   const btn=document.getElementById('newPassBtn');
   btn.disabled=true;btn.textContent='Saving...';
   const{error}=await _db.auth.updateUser({password:pass});
@@ -421,7 +403,6 @@ function closeAgentModal(){document.getElementById('agentModal').classList.remov
 async function saveAgent(){
   const name=document.getElementById('mName').value.trim();
   const email=document.getElementById('mEmail').value.trim();
-  const pass=document.getElementById('mPass').value;
   const dept=document.getElementById('mDept').value.trim();
   const role=document.getElementById('mRole').value.trim();
   const country=document.getElementById('mCountry').value;
@@ -458,23 +439,6 @@ async function saveAgent(){
   btn.disabled=false;btn.textContent='Save Agent';
 }
 
-function openChangeEmail(agentId){
-  editingAgentId=agentId;
-  document.getElementById('newEmail').value='';
-  document.getElementById('newPass').value='';
-  document.getElementById('emailModalErr').classList.remove('show');
-  document.getElementById('emailModal').classList.add('open');
-}
-function closeEmailModal(){document.getElementById('emailModal').classList.remove('open');}
-async function saveEmailChange(){
-  const newEmail=document.getElementById('newEmail').value.trim();
-  const errEl=document.getElementById('emailModalErr');
-  if(!newEmail){errEl.textContent='Email required';errEl.classList.add('show');return;}
-  const{error}=await _db.from('agents').update({email:newEmail}).eq('id',editingAgentId);
-  if(error){errEl.textContent='DB: '+error.message;errEl.classList.add('show');return;}
-  showToast('Email updated! ✓','ok');closeEmailModal();renderAgents();
-}
-
 async function deleteAgent(id,name){
   if(!confirm('Delete agent "'+name+'"?'))return;
   const{error}=await _db.from('agents').delete().eq('id',id);
@@ -493,7 +457,7 @@ async function renderMyShift(){
   if(!currentAgent){return;}
   const c=document.getElementById('pageContent');
   const today=new Date().toISOString().slice(0,10);
-  const{data:status}=await _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).eq('date',today).single();
+  const{data:status}=await _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
   const isIn=status?.online||false,hasIn=!!status?.check_in,hasOut=!!status?.check_out;
   c.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:16px"><div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div><div><div style="font-size:18px;font-weight:800">'+currentAgent.name+'</div><div style="color:var(--mu);font-size:13px">'+(currentAgent.role||'Agent')+' • '+(currentAgent.dept||'')+'</div><div style="color:var(--mu);font-size:12px">'+(currentAgent.email||'')+'</div></div><div style="margin-left:auto"><span class="badge '+(isIn?'badge-online':'badge-offline')+'">'+(isIn?'🟢 Online':'⚫ Offline')+'</span></div></div></div><div class="shift-panel"><div class="shift-card"><h3>⏰ Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">'+(currentAgent.timezone||'Asia/Karachi')+'</div></div><div class="shift-card"><h3>📅 Shift Start</h3><div class="shift-time">'+(currentAgent.shift_start||'09:00')+'</div><div class="shift-status-text">'+(currentAgent.country||'Pakistan')+'</div></div></div><div class="card" style="margin-bottom:16px"><div class="card-title">Today&#39;s Shift</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"><div class="stat-card"><div class="stat-num" style="color:var(--gr);font-size:18px">'+(status?.check_in?fmtTime(status.check_in):'—')+'</div><div class="stat-label">Check In</div></div><div class="stat-card"><div class="stat-num" style="color:var(--rd);font-size:18px">'+(status?.check_out?fmtTime(status.check_out):'—')+'</div><div class="stat-label">Check Out</div></div><div class="stat-card"><div class="stat-num" style="color:var(--ac);font-size:18px">'+(status?.check_in&&status?.check_out?calcHours(status.check_in,status.check_out):(status?.check_in?'Active':'—'))+'</div><div class="stat-label">Hours</div></div></div>'+(!hasIn?'<button class="checkin-btn checkin" onclick="doCheckIn()">✅ Check In</button>':(!hasOut?'<button class="checkin-btn checkout" onclick="doCheckOut()">🔴 Check Out</button>':'<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Shift Complete for Today</div>'))+'</div><div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>';
   startClock();loadMyActivity();
@@ -516,7 +480,7 @@ async function doCheckOut(){
 }
 
 async function loadMyActivity(){
-  const{data:logs}=await _db.from('activity_logs').select('*').eq('agent_id',currentAgent.id).order('timestamp',{ascending:false}).limit(20);
+  const{data:logs}=await _db.from('activity_logs').select('*').eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).limit(20);
   const el=document.getElementById('myActivityLog');if(!el)return;
   if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">📭</div>No activity yet</div>';return;}
   el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join('');
