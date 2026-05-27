@@ -125,16 +125,16 @@ tr:hover td{background:var(--b)}
     </div>
     <!-- Forgot Password Form -->
     <div id="forgotForm" class="hidden">
-      <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Apni email dalo — reset link milega</p>
+      <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Enter your email — we'll send a reset link</p>
       <div class="form-group"><label>Email</label><input type="email" id="forgotEmail" placeholder="agent@company.com"></div>
-      <button class="btn btn-primary" id="forgotBtn" onclick="sendResetEmail()">📧 Reset Link Bhejo</button>
-      <p style="text-align:center;margin-top:12px"><span onclick="showForgotForm(false)" style="color:var(--mu);font-size:12px;cursor:pointer">← Wapas Login</span></p>
+      <button class="btn btn-primary" id="forgotBtn" onclick="sendResetEmail()">📧 Send Reset Link</button>
+      <p style="text-align:center;margin-top:12px"><span onclick="showForgotForm(false)" style="color:var(--mu);font-size:12px;cursor:pointer">← Back to Login</span></p>
     </div>
     <!-- Set New Password Form (after reset link click) -->
     <div id="newPassForm" class="hidden">
-      <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Naya password set karo</p>
-      <div class="form-group"><label>Naya Password</label><input type="password" id="newPassInput" placeholder="min 6 characters"></div>
-      <button class="btn btn-primary" id="newPassBtn" onclick="setNewPassword()">✅ Password Save Karo</button>
+      <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Set your new password</p>
+      <div class="form-group"><label>New Password</label><input type="password" id="newPassInput" placeholder="Min 6 characters"></div>
+      <button class="btn btn-primary" id="newPassBtn" onclick="setNewPassword()">✅ Save Password</button>
     </div>
     <div id="adminLoginForm" class="hidden">
       <div class="form-group"><label>Admin Email</label><input type="email" id="adminEmail" placeholder="admin@company.com"></div>
@@ -238,14 +238,14 @@ async function loadSession(user){
   try{
     const{data:ag,error}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
     if(error||!ag){
-      showToast('Profile nahi mila. Admin se contact karo.','err');
+      showToast('Profile not found. Contact your admin.','err');
       setTimeout(()=>_db.auth.signOut(),2500);
       return;
     }
     currentAgent=ag;
     isAdmin=(ag.type==='admin');
   }catch(e){
-    showToast('Connection error. Dobara try karo.','err');
+    showToast('Connection error. Please try again.','err');
     return;
   }
   showApp();
@@ -297,31 +297,31 @@ function showForgotForm(show=true){
 
 async function sendResetEmail(){
   const email=document.getElementById('forgotEmail').value.trim();
-  if(!email){showAuthErr('Email dalo pehle');return;}
+  if(!email){showAuthErr('Please enter your email');return;}
   const btn=document.getElementById('forgotBtn');
-  btn.disabled=true;btn.textContent='Bhej raha hoon...';
+  btn.disabled=true;btn.textContent='Sending...';
   const{error}=await _db.auth.resetPasswordForEmail(email,{redirectTo:'https://shiftdesk.online'});
-  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='📧 Reset Link Bhejo';return;}
+  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='📧 Send Reset Link';return;}
   const errEl=document.getElementById('authErr');
   errEl.style.background='rgba(16,185,129,.1)';errEl.style.borderColor='rgba(16,185,129,.3)';errEl.style.color='var(--gr)';
-  errEl.textContent='✅ Reset link bhej diya! Email check karo.';errEl.classList.add('show');
-  btn.disabled=false;btn.textContent='📧 Reset Link Bhejo';
+  errEl.textContent='✅ Reset link sent! Check your email.';errEl.classList.add('show');
+  btn.disabled=false;btn.textContent='📧 Send Reset Link';
 }
 
 async function setNewPassword(){
   const pass=document.getElementById('newPassInput').value;
   if(!pass||pass.length<6){showAuthErr('Password kam se kam 6 characters hona chahiye');return;}
   const btn=document.getElementById('newPassBtn');
-  btn.disabled=true;btn.textContent='Save ho raha hai...';
+  btn.disabled=true;btn.textContent='Saving...';
   const{error}=await _db.auth.updateUser({password:pass});
-  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='✅ Password Save Karo';return;}
+  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='✅ Save Password';return;}
   await _db.auth.signOut();
   document.getElementById('newPassForm').classList.add('hidden');
   document.getElementById('agentLoginForm').classList.remove('hidden');
   const errEl=document.getElementById('authErr');
   errEl.style.background='rgba(16,185,129,.1)';errEl.style.borderColor='rgba(16,185,129,.3)';errEl.style.color='var(--gr)';
-  errEl.textContent='✅ Password set ho gaya! Ab login karo.';errEl.classList.add('show');
-  btn.disabled=false;btn.textContent='✅ Password Save Karo';
+  errEl.textContent='✅ Password updated! Please login now.';errEl.classList.add('show');
+  btn.disabled=false;btn.textContent='✅ Save Password';
 }
 
 async function logout(){await _db.auth.signOut();currentUser=null;currentAgent=null;isAdmin=false;}
