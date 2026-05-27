@@ -204,25 +204,29 @@ async function init(){
 
 async function loadSession(user){
   currentUser=user;
+  // Admin emails — seedha app dikhao, DB ka wait nahi
+  if(ADMIN_EMAILS.includes(user.email)){
+    isAdmin=true;
+    try{
+      const{data:ag}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
+      if(ag) currentAgent=ag;
+    }catch(e){}
+    showApp();
+    return;
+  }
+  // Regular agent — agents table se profile load karo
   try{
-    const{data:ag}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
-    if(ag){
-      currentAgent=ag;
-      isAdmin=(ag.type==='admin')||ADMIN_EMAILS.includes(user.email);
-    } else {
-      // Not in agents table — check if admin email
-      isAdmin=ADMIN_EMAILS.includes(user.email);
-      if(!isAdmin){
-        // Auth exists but no agents profile — not approved yet
-        showToast('No profile found. Contact your admin.','err');
-        setTimeout(()=>_db.auth.signOut(),2500);
-        return;
-      }
+    const{data:ag,error}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
+    if(error||!ag){
+      showToast('Profile nahi mila. Admin se contact karo.','err');
+      setTimeout(()=>_db.auth.signOut(),2500);
+      return;
     }
+    currentAgent=ag;
+    isAdmin=(ag.type==='admin');
   }catch(e){
-    // DB error — still allow admin by email
-    isAdmin=ADMIN_EMAILS.includes(user.email);
-    if(!isAdmin){showToast('Connection error. Try again.','err');return;}
+    showToast('Connection error. Dobara try karo.','err');
+    return;
   }
   showApp();
 }
