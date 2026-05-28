@@ -255,6 +255,7 @@ const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // Separate client for creating new auth users — isolated storage key
 let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
 let lastActivityTime=Date.now(),trackingInterval=null,isTracking=false;
+let currentPage='',realtimeChannel=null;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
 
 // Agent session via localStorage (no Supabase Auth needed for agents)
@@ -385,6 +386,7 @@ async function setNewPassword(){
 
 async function logout(){
   stopTracking();
+  if(realtimeChannel){_db.removeChannel(realtimeChannel);realtimeChannel=null;}
   clearAgentSession();
   currentUser=null;currentAgent=null;isAdmin=false;
   await _db.auth.signOut();
@@ -423,6 +425,8 @@ function navTo(page){
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
   const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
+  currentPage=page;
+  startRealtime(page);
   if(page==='dashboard')renderDashboard();
   else if(page==='agents')renderAgents();
   else if(page==='tasks')renderTasks();
@@ -430,6 +434,41 @@ function navTo(page){
   else if(page==='mytasks')renderMyTasks();
   else if(page==='activity')renderActivity();
   else if(page==='myshift')renderMyShift();
+}
+
+function startRealtime(page){
+  // Remove old channel
+  if(realtimeChannel){_db.removeChannel(realtimeChannel);realtimeChannel=null;}
+
+  // Which tables to watch per page
+  const watchMap={
+    dashboard:['shift_status','activity_tracking'],
+    tracking:['activity_tracking'],
+    tasks:['tasks'],
+    mytasks:['tasks'],
+    activity:['activity_logs'],
+    myshift:['shift_status'],
+    agents:['agents'],
+  };
+  const tables=watchMap[page]||[];
+  if(!tables.length)return;
+
+  realtimeChannel=_db.channel('realtime_'+page);
+  tables.forEach(table=>{
+    realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{
+      // Silently re-render current page on any DB change
+      if(currentPage===page){
+        if(page==='dashboard')renderDashboard();
+        else if(page==='tasks')renderTasks();
+        else if(page==='mytasks')renderMyTasks();
+        else if(page==='tracking')renderTracking();
+        else if(page==='activity')renderActivity();
+        else if(page==='myshift')renderMyShift();
+        else if(page==='agents')renderAgents();
+      }
+    });
+  });
+  realtimeChannel.subscribe();
 }
 
 function startClock(){
