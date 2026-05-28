@@ -9,6 +9,14 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#07080f;--s:#0d0f1a;--s2:#131629;--s3:#1a1e33;--b:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.10);--tx:#e8ecff;--mu:#6b728e;--mu2:#3d4260;--ac:#6c63ff;--ac2:#8b5cf6;--gr:#10b981;--rd:#f43f5e;--yl:#fbbf24;--or:#fb923c;--r:8px;--rl:14px;--rxl:20px;--font:'Inter',-apple-system,sans-serif;--tr:all .18s cubic-bezier(.4,0,.2,1)}
+/* ── Light Mode ───────────────────────────────────────────── */
+[data-theme="light"]{--bg:#f0f2f8;--s:#ffffff;--s2:#f5f6fa;--s3:#eceef5;--b:rgba(0,0,0,.07);--b2:rgba(0,0,0,.12);--tx:#1a1c2e;--mu:#6b728e;--mu2:#9ba3bf}
+[data-theme="light"] body{background:var(--bg)}
+[data-theme="light"] .form-group input,[data-theme="light"] .form-group select,[data-theme="light"] textarea{color:var(--tx)!important;background:var(--s2)!important}
+[data-theme="light"] .form-group select option{background:var(--s2);color:var(--tx)}
+[data-theme="light"] th{background:var(--s3)!important}
+[data-theme="light"] .auth-card,[data-theme="light"] .modal{background:var(--s)}
+[data-theme="light"] .toast{background:var(--s)}
 html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--tx);font-size:14px;line-height:1.5;overflow:hidden}
 .app{display:flex;height:100vh;overflow:hidden}
 .auth-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;width:100%;background:var(--bg);padding:20px}
@@ -151,12 +159,13 @@ tr:hover td{background:var(--b)}
       <div class="sidebar-user-name" id="sideUserName">—</div>
       <div class="sidebar-user-role" id="sideUserRole">—</div>
       <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.1/ShiftDesk-Setup-1.0.1.exe" download style="display:block;width:100%;margin-top:8px;margin-bottom:4px;background:rgba(108,99,255,.12);color:var(--ac);border:1px solid rgba(108,99,255,.25);padding:8px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;text-align:center;text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.22)'" onmouseout="this.style.background='rgba(108,99,255,.12)'">💻 Download for Windows</a>
-      <a href="https://github.com/Usman692z/shiftdesk/releases/tag/v1.0.1" target="_blank" style="display:block;width:100%;margin-bottom:4px;background:rgba(16,185,129,.08);color:var(--gr);border:1px solid rgba(16,185,129,.2);padding:8px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;text-align:center;text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.18)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">🍎 Download for Mac</a>
+      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.1/ShiftDesk-1.0.1-mac-apple-silicon.dmg" download style="display:block;width:100%;margin-bottom:4px;background:rgba(16,185,129,.08);color:var(--gr);border:1px solid rgba(16,185,129,.2);padding:8px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;text-align:center;text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.18)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">🍎 Download for Mac (Apple Silicon)</a>
+      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.1/ShiftDesk-1.0.1-mac-intel.dmg" download style="display:block;width:100%;margin-bottom:4px;background:rgba(16,185,129,.06);color:var(--gr);border:1px solid rgba(16,185,129,.15);padding:7px;border-radius:var(--r);cursor:pointer;font-size:11px;font-weight:600;text-align:center;text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.14)'" onmouseout="this.style.background='rgba(16,185,129,.06)'">🍎 Download for Mac (Intel)</a>
       <button class="sidebar-logout" onclick="logout()">Logout</button>
     </div>
   </div>
   <div class="main">
-    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div class="topbar-time" id="liveClock">—</div></div>
+    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
     <div class="content" id="pageContent"></div>
   </div>
 </div>
@@ -408,8 +417,23 @@ function showAuth(){
 function showApp(){
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+  // Restore saved theme
+  const saved=localStorage.getItem('sd_theme')||'dark';
+  applyTheme(saved);
   buildNav();
   navTo(isAdmin?'dashboard':'myshift');
+}
+
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme',theme==='light'?'light':'dark');
+  const btn=document.getElementById('themeBtn');
+  if(btn)btn.textContent=theme==='light'?'🌙':'☀️';
+  localStorage.setItem('sd_theme',theme);
+}
+
+function toggleTheme(){
+  const current=localStorage.getItem('sd_theme')||'dark';
+  applyTheme(current==='dark'?'light':'dark');
 }
 
 function buildNav(){
@@ -496,68 +520,94 @@ async function renderDashboard(){
   ]);
   const total=agents?.length||0;
   const online=ts?.filter(s=>s.online).length||0;
-  const ci=ts?.filter(s=>s.check_in).length||0;
   const activeNow=tracking?.filter(t=>t.activity_status==='active').length||0;
 
-  // Build agent cards with activity bars
-  const agentCards=(agents||[]).map(a=>{
+  // ── Build one agent card ──────────────────────────────────────
+  function buildCard(a){
     const s=ts?.find(x=>x.agent_id===a.id)||{};
     const tr=tracking?.find(x=>x.agent_id===a.id)||{};
     const isOnline=s.online||false;
     const activeMins=tr.total_active_minutes||0;
     const actStatus=tr.activity_status||'offline';
-
-    // Calculate shift duration in minutes (from check-in to now or check-out)
     let shiftMins=0;
     if(s.check_in){
       const end=s.check_out?new Date(s.check_out):new Date();
       shiftMins=Math.max(0,Math.floor((end-new Date(s.check_in))/60000));
     }
-
-    // Bar segments
     const idleMins=Math.max(0,shiftMins-activeMins);
     const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
     const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
     const offP=100-activeP-idleP;
-
-    // Status colors
     const statusDot=isOnline?(actStatus==='active'?'🟢':'🟡'):'⚫';
-    const deptColor={'Corporate':'var(--ac)','Retail':'var(--or)','Reseller':'var(--gr)'}[a.dept]||'var(--mu)';
-
+    const statusLabel=isOnline?(actStatus==='active'?'Active':'Idle'):'Offline';
+    const statusColor=isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'var(--mu)';
+    const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'}[a.country]||'';
     return `
-    <div class="card" style="padding:16px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    <div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
         <!-- Avatar -->
-        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:700;color:#fff">
-          ${a.name.charAt(0).toUpperCase()}
-        </div>
-        <!-- Info -->
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-weight:700;color:#fff">${a.name.charAt(0).toUpperCase()}</div>
+        <!-- Name + role -->
         <div style="flex:1;min-width:0">
-          <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</div>
-          <div style="font-size:11px;color:var(--mu)">${a.role||'Agent'} • <span style="color:${deptColor}">${a.dept||'—'}</span></div>
+          <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div>
+          <div style="font-size:11px;color:var(--mu)">${a.role||'Agent'}</div>
         </div>
-        <!-- Status + hours -->
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-size:13px;font-weight:700">${statusDot} ${isOnline?(actStatus==='active'?'Active':'Idle'):'Offline'}</div>
-          <div style="font-size:11px;color:var(--mu)">
-            ${s.check_in?fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now'):'Not checked in'}
-          </div>
+        <!-- Status pill -->
+        <div style="font-size:12px;font-weight:600;color:${statusColor};background:${isOnline?(actStatus==='active'?'rgba(16,185,129,.12)':'rgba(251,191,36,.12)'):'rgba(100,100,120,.15)'};border:1px solid ${isOnline?(actStatus==='active'?'rgba(16,185,129,.3)':'rgba(251,191,36,.3)'):'rgba(100,100,120,.3)'};padding:3px 9px;border-radius:20px;white-space:nowrap">${statusDot} ${statusLabel}</div>
+      </div>
+      <!-- Check-in time -->
+      <div style="font-size:11px;color:var(--mu)">
+        ${s.check_in?'🕐 '+fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now'):'⏸️ Not checked in'}
+        ${shiftMins>0?'<span style="margin-left:8px;color:var(--tx);font-weight:600">'+Math.floor(shiftMins/60)+'h '+shiftMins%60+'m</span>':''}
+      </div>
+      <!-- Activity bar -->
+      <div>
+        <div style="display:flex;border-radius:4px;overflow:hidden;height:8px;background:var(--s3)">
+          ${activeP>0?`<div style="width:${activeP}%;background:var(--gr)"></div>`:''}
+          ${idleP>0?`<div style="width:${idleP}%;background:var(--yl)"></div>`:''}
+          ${offP>0?`<div style="width:${offP}%;background:var(--s3)"></div>`:''}
+        </div>
+        <div style="display:flex;gap:12px;font-size:10px;color:var(--mu);margin-top:4px">
+          <span><span style="color:var(--gr);font-weight:600">${activeMins}m</span> active (${activeP}%)</span>
+          <span><span style="color:var(--yl);font-weight:600">${idleMins}m</span> idle</span>
         </div>
       </div>
+    </div>`;
+  }
 
-      <!-- Activity Bar (Hubstaff style) -->
-      <div style="margin-bottom:6px">
-        <div style="display:flex;border-radius:4px;overflow:hidden;height:10px;background:var(--s2)">
-          ${activeP>0?`<div style="width:${activeP}%;background:var(--gr);transition:width .5s"></div>`:''}
-          ${idleP>0?`<div style="width:${idleP}%;background:var(--yl);transition:width .5s"></div>`:''}
-          ${offP>0?`<div style="width:${offP}%;background:var(--s3);transition:width .5s"></div>`:''}
+  // ── Group agents by department ────────────────────────────────
+  const DEPT_COLOR={'Corporate':'var(--ac)','Retail':'var(--or)','Reseller':'var(--gr)'};
+  const DEPT_ICON={'Corporate':'🏢','Retail':'🛍️','Reseller':'🤝'};
+  const depts={};
+  (agents||[]).forEach(a=>{
+    const d=a.dept||'Other';
+    if(!depts[d])depts[d]=[];
+    depts[d].push(a);
+  });
+
+  const deptSections=Object.entries(depts).map(([dept,dagents])=>{
+    const dColor=DEPT_COLOR[dept]||'var(--mu)';
+    const dIcon=DEPT_ICON[dept]||'📂';
+    const dOnline=(dagents||[]).filter(a=>ts?.find(x=>x.agent_id===a.id)?.online).length;
+    const dActive=(dagents||[]).filter(a=>tracking?.find(x=>x.agent_id===a.id)?.activity_status==='active').length;
+    const cards=(dagents||[]).map(a=>buildCard(a)).join('');
+    return `
+    <div style="margin-bottom:28px">
+      <!-- Department Header -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 16px;background:var(--s);border:1px solid var(--b);border-radius:var(--rl);border-left:4px solid ${dColor}">
+        <span style="font-size:20px">${dIcon}</span>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:800;color:${dColor}">${dept}</div>
+          <div style="font-size:11px;color:var(--mu)">${dagents.length} agents total</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <span style="font-size:12px;color:var(--gr);font-weight:600;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);padding:3px 10px;border-radius:20px">🟢 ${dOnline} online</span>
+          <span style="font-size:12px;color:var(--yl);font-weight:600;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);padding:3px 10px;border-radius:20px">⚡ ${dActive} active</span>
         </div>
       </div>
-      <!-- Bar legend -->
-      <div style="display:flex;gap:16px;font-size:11px;color:var(--mu)">
-        <span><span style="color:var(--gr);font-weight:600">${activeMins}m</span> Active (${activeP}%)</span>
-        <span><span style="color:var(--yl);font-weight:600">${idleMins}m</span> Idle</span>
-        <span style="margin-left:auto;font-weight:600;color:var(--tx)">${shiftMins>0?Math.floor(shiftMins/60)+'h '+shiftMins%60+'m total':''}</span>
+      <!-- Agent cards grid -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;padding-left:4px">
+        ${cards}
       </div>
     </div>`;
   }).join('');
@@ -570,16 +620,14 @@ async function renderDashboard(){
     <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${activeNow}</div><div class="stat-label">Active Now</div></div>
     <div class="stat-card"><div class="stat-num" style="color:var(--mu)">${total-online}</div><div class="stat-label">Offline</div></div>
   </div>
-
   <!-- Legend -->
-  <div style="display:flex;gap:16px;margin-bottom:16px;font-size:12px;color:var(--mu)">
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--gr);display:inline-block"></span> Active</span>
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--yl);display:inline-block"></span> Idle</span>
-    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--s3);display:inline-block"></span> No data</span>
+  <div style="display:flex;gap:16px;margin-bottom:20px;font-size:12px;color:var(--mu);align-items:center">
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--gr);display:inline-block"></span> Active</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--yl);display:inline-block"></span> Idle</span>
+    <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--s3);display:inline-block"></span> No data</span>
   </div>
-
-  <!-- Agent cards -->
-  <div>${agentCards||'<div class="empty-state"><div class="icon">👥</div>No agents found</div>'}</div>`;
+  <!-- Departments -->
+  ${deptSections||'<div class="empty-state"><div class="icon">👥</div>No agents found</div>'}`;
 }
 
 async function renderAgents(){
