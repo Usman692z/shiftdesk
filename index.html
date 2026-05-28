@@ -198,6 +198,7 @@ const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
 const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // Separate client for creating new auth users — isolated storage key
 let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
+let lastActivityTime=Date.now(),trackingInterval=null,isTracking=false;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
 
 // Agent session via localStorage (no Supabase Auth needed for agents)
@@ -312,6 +313,7 @@ async function setNewPassword(){
 }
 
 async function logout(){
+  stopTracking();
   clearAgentSession();
   currentUser=null;currentAgent=null;isAdmin=false;
   await _db.auth.signOut();
@@ -339,18 +341,21 @@ function showApp(){
 function buildNav(){
   document.getElementById('sideUserName').textContent=isAdmin?'Admin':(currentAgent?.name||'Agent');
   document.getElementById('sideUserRole').textContent=isAdmin?'Administrator':(currentAgent?.role||'Agent');
-  const items=isAdmin?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'activity',icon:'📋',label:'Activity'}]:[{id:'myshift',icon:'⏱️',label:'My Shift'},{id:'mytasks',icon:'✅',label:'My Tasks'},{id:'activity',icon:'📋',label:'Activity'}];
+  const items=isAdmin
+    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'}]
+    :[{id:'myshift',icon:'⏱️',label:'My Shift'},{id:'mytasks',icon:'✅',label:'My Tasks'},{id:'activity',icon:'📋',label:'Activity'}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></div>`).join('');
 }
 
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   if(page==='dashboard')renderDashboard();
   else if(page==='agents')renderAgents();
   else if(page==='tasks')renderTasks();
+  else if(page==='tracking')renderTracking();
   else if(page==='mytasks')renderMyTasks();
   else if(page==='activity')renderActivity();
   else if(page==='myshift')renderMyShift();
@@ -476,10 +481,12 @@ async function renderMyShift(){
   const today=new Date().toISOString().slice(0,10);
   const{data:status}=await _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
   const isIn=status?.online||false,hasIn=!!status?.check_in,hasOut=!!status?.check_out;
+  // Auto-start tracking if already checked in
+  if(isIn&&!isTracking)startTracking();
   const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'};
   const flag=countryFlag[currentAgent.country]||'🌍';
   const countryLabel=flag+' '+(currentAgent.country||'Pakistan');
-  c.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:16px"><div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div><div><div style="font-size:18px;font-weight:800">'+currentAgent.name+'</div><div style="color:var(--mu);font-size:13px">'+(currentAgent.role||'Agent')+' • '+(currentAgent.dept||'')+'</div><div style="color:var(--mu);font-size:12px">'+(currentAgent.email||'')+'</div></div><div style="margin-left:auto"><span class="badge '+(isIn?'badge-online':'badge-offline')+'">'+(isIn?'🟢 Online':'⚫ Offline')+'</span></div></div></div><div class="shift-panel"><div class="shift-card"><h3>⏰ Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">'+countryLabel+'</div></div><div class="shift-card"><h3>📅 Shift Start</h3><div class="shift-time">'+(currentAgent.shift_start||'09:00')+'</div><div class="shift-status-text">'+countryLabel+'</div></div></div><div class="card" style="margin-bottom:16px"><div class="card-title">Today&#39;s Shift</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"><div class="stat-card"><div class="stat-num" style="color:var(--gr);font-size:18px">'+(status?.check_in?fmtTime(status.check_in):'—')+'</div><div class="stat-label">Check In</div></div><div class="stat-card"><div class="stat-num" style="color:var(--rd);font-size:18px">'+(status?.check_out?fmtTime(status.check_out):'—')+'</div><div class="stat-label">Check Out</div></div><div class="stat-card"><div class="stat-num" style="color:var(--ac);font-size:18px">'+(status?.check_in&&status?.check_out?calcHours(status.check_in,status.check_out):(status?.check_in?'Active':'—'))+'</div><div class="stat-label">Hours</div></div></div>'+(!hasIn?'<button class="checkin-btn checkin" onclick="doCheckIn()">✅ Check In</button>':(!hasOut?'<button class="checkin-btn checkout" onclick="doCheckOut()">🔴 Check Out</button>':'<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Shift Complete for Today</div>'))+'</div><div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>';
+  c.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:16px"><div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div><div><div style="font-size:18px;font-weight:800">'+currentAgent.name+'</div><div style="color:var(--mu);font-size:13px">'+(currentAgent.role||'Agent')+' • '+(currentAgent.dept||'')+'</div><div style="color:var(--mu);font-size:12px">'+(currentAgent.email||'')+'</div></div><div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end"><span class="badge '+(isIn?'badge-online':'badge-offline')+'">'+(isIn?'🟢 Online':'⚫ Offline')+'</span>'+(isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3)">🟡 Idle</span>':'')+'</div></div></div><div class="shift-panel"><div class="shift-card"><h3>⏰ Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">'+countryLabel+'</div></div><div class="shift-card"><h3>📅 Shift Start</h3><div class="shift-time">'+(currentAgent.shift_start||'09:00')+'</div><div class="shift-status-text">'+countryLabel+'</div></div></div><div class="card" style="margin-bottom:16px"><div class="card-title">Today&#39;s Shift</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"><div class="stat-card"><div class="stat-num" style="color:var(--gr);font-size:18px">'+(status?.check_in?fmtTime(status.check_in):'—')+'</div><div class="stat-label">Check In</div></div><div class="stat-card"><div class="stat-num" style="color:var(--rd);font-size:18px">'+(status?.check_out?fmtTime(status.check_out):'—')+'</div><div class="stat-label">Check Out</div></div><div class="stat-card"><div class="stat-num" style="color:var(--ac);font-size:18px">'+(status?.check_in&&status?.check_out?calcHours(status.check_in,status.check_out):(status?.check_in?'Active':'—'))+'</div><div class="stat-label">Hours</div></div></div>'+(!hasIn?'<button class="checkin-btn checkin" onclick="doCheckIn()">✅ Check In</button>':(!hasOut?'<button class="checkin-btn checkout" onclick="doCheckOut()">🔴 Check Out</button>':'<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Shift Complete for Today</div>'))+'</div><div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>';
   startClock();loadMyActivity();
 }
 
@@ -488,6 +495,7 @@ async function doCheckIn(){
   const{error}=await _db.from('shift_status').upsert({agent_id:currentAgent.id,date:today,online:true,check_in:now},{onConflict:'agent_id,date'});
   if(error){showToast('Error: '+error.message,'err');return;}
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',detail:'Check In',date:today,time:now});
+  startTracking();
   showToast('Checked in! Have a great shift 🎯','ok');renderMyShift();
 }
 
@@ -496,6 +504,7 @@ async function doCheckOut(){
   const{error}=await _db.from('shift_status').update({online:false,check_out:now}).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_out',detail:'Check Out',date:today,time:now});
+  stopTracking();
   showToast('Checked out! Great work 👏','ok');renderMyShift();
 }
 
@@ -511,6 +520,93 @@ async function renderActivity(){
   const q=isAdmin?_db.from('activity_logs').select('*').order('created_at',{ascending:false}).limit(100):_db.from('activity_logs').select('*').eq('agent_id',currentAgent?.id).order('created_at',{ascending:false}).limit(50);
   const{data:logs}=await q;
   c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No activity recorded</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+l.agent_name+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+' • '+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join(''))+'</div>';
+}
+
+// ── ACTIVITY TRACKING ────────────────────────────────────────
+const IDLE_MS = 5 * 60 * 1000; // 5 min idle threshold
+
+function startTracking(){
+  if(isTracking||!currentAgent)return;
+  isTracking=true;
+  lastActivityTime=Date.now();
+  // Detect any user input
+  ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(ev=>
+    document.addEventListener(ev,()=>{lastActivityTime=Date.now();},true)
+  );
+  // Ping every 60 seconds
+  trackingInterval=setInterval(pingActivity,60000);
+  pingActivity(); // immediate first ping
+}
+
+function stopTracking(){
+  if(trackingInterval){clearInterval(trackingInterval);trackingInterval=null;}
+  isTracking=false;
+}
+
+async function pingActivity(){
+  if(!currentAgent)return;
+  const now=Date.now();
+  const idle=now-lastActivityTime>IDLE_MS;
+  const status=idle?'idle':'active';
+  const today=new Date().toISOString().slice(0,10);
+  // Fetch current row
+  const{data:row}=await _db.from('activity_tracking')
+    .select('id,total_active_minutes,activity_status')
+    .eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
+  const prevMins=row?.total_active_minutes||0;
+  const newMins=status==='active'?prevMins+1:prevMins;
+  await _db.from('activity_tracking').upsert({
+    agent_id:currentAgent.id,
+    date:today,
+    last_seen:now,
+    activity_status:status,
+    total_active_minutes:newMins,
+    updated_at:new Date().toISOString()
+  },{onConflict:'agent_id,date'});
+  // Update badge in My Shift if visible
+  const badge=document.getElementById('trackingBadge');
+  if(badge){badge.className='badge '+(status==='active'?'badge-online':'');badge.textContent=status==='active'?'🟢 Active':'🟡 Idle';}
+}
+
+async function renderTracking(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const today=new Date().toISOString().slice(0,10);
+  const[{data:agents},{data:tracking}]=await Promise.all([
+    _db.from('agents').select('id,name,dept,country').order('name'),
+    _db.from('activity_tracking').select('*').eq('date',today)
+  ]);
+  c.innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">📡 Agent Activity — Today (${today})</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Agent</th><th>Dept</th><th>Status</th><th>Active Time</th><th>Idle Time</th><th>Last Seen</th></tr></thead>
+      <tbody>
+        ${(agents||[]).map(a=>{
+          const t=tracking?.find(x=>x.agent_id===a.id);
+          const activeMins=t?.total_active_minutes||0;
+          // total shift time in mins from check-in (rough: since first ping)
+          const idleMins=t?Math.max(0,Math.floor((Date.now()-t.last_seen)/60000)):0;
+          const status=t?.activity_status||'offline';
+          const lastSeen=t?.last_seen?new Date(t.last_seen).toLocaleTimeString('en-US',{hour12:true,hour:'2-digit',minute:'2-digit'}):'—';
+          const statusColor=status==='active'?'badge-online':status==='idle'?'':'badge-offline';
+          const statusLabel=status==='active'?'🟢 Active':status==='idle'?'🟡 Idle':'⚫ Offline';
+          return `<tr>
+            <td><b>${a.name}</b></td>
+            <td>${a.dept||'—'}</td>
+            <td><span class="badge ${statusColor}" style="${status==='idle'?'background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3)':''}">${statusLabel}</span></td>
+            <td><span style="color:var(--gr);font-weight:600">${activeMins}m</span> <span style="color:var(--mu);font-size:11px">(${Math.floor(activeMins/60)}h ${activeMins%60}m)</span></td>
+            <td><span style="color:var(--mu)">${t?idleMins+'m since last ping':'—'}</span></td>
+            <td style="font-family:monospace;font-size:12px;color:var(--mu)">${lastSeen}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="card-title" style="font-size:12px;color:var(--mu)">ℹ️ How it works</div>
+    <p style="font-size:12px;color:var(--mu)">Active time increases by 1 minute for every minute the agent moves their mouse or types. After 5 minutes of no activity, status changes to Idle.</p>
+  </div>`;
 }
 
 // ── TASK MANAGEMENT ──────────────────────────────────────────
