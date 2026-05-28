@@ -6,6 +6,8 @@
 <title>ShiftDesk - Agent Workforce</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#07080f;--s:#0d0f1a;--s2:#131629;--s3:#1a1e33;--b:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.10);--tx:#e8ecff;--mu:#6b728e;--mu2:#3d4260;--ac:#6c63ff;--ac2:#8b5cf6;--gr:#10b981;--rd:#f43f5e;--yl:#fbbf24;--or:#fb923c;--r:8px;--rl:14px;--rxl:20px;--font:'Inter',-apple-system,sans-serif;--tr:all .18s cubic-bezier(.4,0,.2,1)}
@@ -113,6 +115,13 @@ tr:hover td{background:var(--b)}
 .empty-state{text-align:center;padding:40px;color:var(--mu)}
 .empty-state .icon{font-size:48px;margin-bottom:12px}
 @media(max-width:700px){.sidebar{width:60px;min-width:60px}.nav-label,.logo small,.sidebar-user-name,.sidebar-user-role{display:none}.logo h2{font-size:14px}.shift-panel{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}}
+/* Notification badge */
+.notif-wrap{position:relative;cursor:pointer;padding:5px 10px;background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);font-size:18px;line-height:1;transition:var(--tr)}
+.notif-wrap:hover{background:var(--s3)}
+.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--rd);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;display:none}
+.notif-badge.show{display:flex}
+/* Print styles for PDF export */
+@media print{.sidebar,.topbar,.no-print{display:none!important}.main{overflow:visible!important}.content{overflow:visible!important}body{background:#fff!important;color:#000!important}}
 </style>
 </head>
 <body>
@@ -165,7 +174,7 @@ tr:hover td{background:var(--b)}
     </div>
   </div>
   <div class="main">
-    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
+    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span>🔔</span><span class="notif-badge" id="notifBadge">0</span></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
     <div class="content" id="pageContent"></div>
   </div>
 </div>
@@ -421,6 +430,7 @@ function showApp(){
   const saved=localStorage.getItem('sd_theme')||'dark';
   applyTheme(saved);
   buildNav();
+  fetchNotifBadge();
   navTo(isAdmin?'dashboard':'myshift');
 }
 
@@ -436,11 +446,31 @@ function toggleTheme(){
   applyTheme(current==='dark'?'light':'dark');
 }
 
+function updateNotifBadge(count){
+  const badge=document.getElementById('notifBadge');
+  if(!badge)return;
+  if(count>0){badge.textContent=count>99?'99+':count;badge.classList.add('show');}
+  else{badge.classList.remove('show');}
+}
+
+async function fetchNotifBadge(){
+  try{
+    let q;
+    if(isAdmin){
+      const{count}=await _db.from('tasks').select('*',{count:'exact',head:true}).eq('status','pending');
+      updateNotifBadge(count||0);
+    } else if(currentAgent){
+      const{count}=await _db.from('tasks').select('*',{count:'exact',head:true}).eq('agent_id',currentAgent.id).eq('status','pending');
+      updateNotifBadge(count||0);
+    }
+  }catch{}
+}
+
 function buildNav(){
   document.getElementById('sideUserName').textContent=isAdmin?'Admin':(currentAgent?.name||'Agent');
   document.getElementById('sideUserRole').textContent=isAdmin?'Administrator':(currentAgent?.role||'Agent');
   const items=isAdmin
-    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'}]
+    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'}]
     :[{id:'myshift',icon:'⏱️',label:'My Shift'},{id:'mytasks',icon:'✅',label:'My Tasks'},{id:'activity',icon:'📋',label:'Activity'}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></div>`).join('');
 }
@@ -448,7 +478,7 @@ function buildNav(){
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',reports:'Reports'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   startRealtime(page);
@@ -459,6 +489,7 @@ function navTo(page){
   else if(page==='mytasks')renderMyTasks();
   else if(page==='activity')renderActivity();
   else if(page==='myshift')renderMyShift();
+  else if(page==='reports')renderReports();
 }
 
 function startRealtime(page){
@@ -474,6 +505,7 @@ function startRealtime(page){
     activity:['activity_logs'],
     myshift:['shift_status'],
     agents:['agents'],
+    reports:['shift_status','activity_tracking'],
   };
   const tables=watchMap[page]||[];
   if(!tables.length)return;
@@ -768,9 +800,11 @@ async function loadMyActivity(){
 
 async function renderActivity(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const q=isAdmin?_db.from('activity_logs').select('*').order('created_at',{ascending:false}).limit(100):_db.from('activity_logs').select('*').eq('agent_id',currentAgent?.id).order('created_at',{ascending:false}).limit(50);
-  const{data:logs}=await q;
-  c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No activity recorded</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+l.agent_name+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+' • '+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join(''))+'</div>';
+  let q=isAdmin?_db.from('activity_logs').select('*').limit(200):_db.from('activity_logs').select('*').eq('agent_id',currentAgent?.id).limit(100);
+  q=q.order('time',{ascending:false});
+  const{data:logs,error:logErr}=await q;
+  if(logErr){c.innerHTML='<div class="card"><div class="empty-state"><div class="icon">⚠️</div><p style="color:var(--rd)">Error: '+logErr.message+'</p></div></div>';return;}
+  c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No check-in/out activity recorded yet</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+(l.agent_name||'—')+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+(l.dept?' • ':'')+fmtDate(l.time||l.created_at)+'</div></div><div class="activity-time">'+fmtTime(l.time||l.created_at)+'</div></div>').join(''))+'</div>';
 }
 
 // ── ACTIVITY TRACKING ────────────────────────────────────────
@@ -979,10 +1013,16 @@ async function renderMyTasks(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const{data:tasks}=await _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false});
+  const{data:tasks,error}=await _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false});
+  if(error){c.innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Error loading tasks: '+error.message+'</p></div>';return;}
+  // ── Task store: safe reference for onclick (avoids JSON.stringify breaking on quotes) ──
+  window._taskStore={};
+  (tasks||[]).forEach(t=>{window._taskStore[t.id]=t.task;});
   const pending=tasks?.filter(t=>!t.status||t.status==='pending')||[];
   const completed=tasks?.filter(t=>t.status==='completed')||[];
   const rejected=tasks?.filter(t=>t.status==='rejected')||[];
+  // Update notification badge
+  updateNotifBadge(pending.length);
   if(!tasks?.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>No tasks assigned yet!</p></div>';return;}
   c.innerHTML=`
   <div style="margin-bottom:16px;display:flex;gap:12px">
@@ -995,37 +1035,37 @@ async function renderMyTasks(){
     <div class="card-title">⏳ Pending Tasks</div>
     ${pending.map(t=>`
     <div style="padding:14px 0;border-bottom:1px solid var(--b)">
-      <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task}</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task.replace(/</g,'&lt;')}</div>
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority}</span>
+          <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span>
           ${t.date?`<span style="font-size:11px;color:var(--mu);align-self:center">📅 ${t.date}</span>`:''}
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openRemarkModal('${t.id}','completed',${JSON.stringify(t.task)})">✅ Complete</button>
-          <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="openRemarkModal('${t.id}','rejected',${JSON.stringify(t.task)})">❌ Reject</button>
+          <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openRemarkModal('${t.id}','completed')">✅ Complete</button>
+          <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="openRemarkModal('${t.id}','rejected')">❌ Reject</button>
         </div>
       </div>
     </div>`).join('')}
   </div>`:''}
 
   ${completed.length?`<div class="card" style="margin-bottom:12px">
-    <div class="card-title" style="color:var(--gr)">✅ Completed</div>
+    <div class="card-title" style="color:var(--gr)">✅ Completed (${completed.length})</div>
     ${completed.map(t=>`
     <div style="padding:12px 0;border-bottom:1px solid var(--b)">
-      <div style="font-size:13px;font-weight:600;color:var(--mu);text-decoration:line-through">${t.task}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--mu);text-decoration:line-through">${t.task.replace(/</g,'&lt;')}</div>
       ${t.remark?`<div style="font-size:12px;color:var(--gr);margin-top:4px">💬 ${t.remark}</div>`:''}
     </div>`).join('')}
   </div>`:''}
 
   ${rejected.length?`<div class="card">
-    <div class="card-title" style="color:var(--rd)">❌ Rejected</div>
+    <div class="card-title" style="color:var(--rd)">❌ Rejected (${rejected.length})</div>
     ${rejected.map(t=>`
     <div style="padding:12px 0;border-bottom:1px solid var(--b)">
-      <div style="font-size:13px;font-weight:600;color:var(--mu)">${t.task}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--mu)">${t.task.replace(/</g,'&lt;')}</div>
       ${t.remark?`<div style="font-size:12px;color:var(--rd);margin-top:4px">💬 ${t.remark}</div>`:''}
     </div>`).join('')}
-  </div>`:''}  `;
+  </div>`:''}`;
 }
 
 // ── Task remark modal ─────────────────────────────────────────
@@ -1033,9 +1073,11 @@ let _remarkTaskId=null,_remarkAction=null;
 
 function openRemarkModal(taskId,action,taskDesc){
   _remarkTaskId=taskId;_remarkAction=action;
+  // Use _taskStore first (safe), fallback to passed taskDesc
+  const desc=window._taskStore?.[taskId]||taskDesc||'';
   document.getElementById('remarkTitle').textContent=action==='completed'?'✅ Complete Task':'❌ Reject Task';
   document.getElementById('remarkSubmitBtn').style.background=action==='completed'?'linear-gradient(135deg,var(--gr),#059669)':'linear-gradient(135deg,var(--rd),#dc2626)';
-  document.getElementById('remarkTaskDesc').textContent=taskDesc;
+  document.getElementById('remarkTaskDesc').textContent=desc;
   document.getElementById('remarkText').value='';
   document.getElementById('remarkErr').classList.remove('show');
   document.getElementById('remarkModal').classList.add('open');
@@ -1193,6 +1235,136 @@ function lateBadge(checkIn, shiftStart, timezone){
   if(li.status==='late')
     return ' <span style="font-size:10px;color:var(--yl);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.28);padding:1px 6px;border-radius:10px">⚠️ +'+li.diff+'m late</span>';
   return ' <span style="font-size:10px;color:var(--gr);background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);padding:1px 6px;border-radius:10px">✅ on time</span>';
+}
+
+// ── REPORTS ──────────────────────────────────────────────────
+async function renderReports(){
+  const c=document.getElementById('pageContent');
+  const defaultMonth=new Date().toISOString().slice(0,7);
+  c.innerHTML=`
+  <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px">
+    <div class="form-group" style="margin:0;flex:1;min-width:140px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label><input type="month" id="rMonth" value="${defaultMonth}" style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"></div>
+    <div class="form-group" style="margin:0;flex:1;min-width:140px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Department</label><select id="rDept" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"><option value="">All Departments</option><option value="Corporate">Corporate</option><option value="Retail">Retail</option><option value="Reseller">Reseller</option></select></div>
+    <div class="form-group" style="margin:0;flex:2;min-width:160px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Agent</label><select id="rAgent" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"><option value="">All Agents</option></select></div>
+    <button class="btn btn-primary btn-sm no-print" onclick="applyReportFilters()" style="padding:9px 18px;white-space:nowrap">🔍 Apply Filter</button>
+    <button class="btn btn-sm no-print" onclick="exportReportPDF()" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);padding:9px 18px;white-space:nowrap">📄 Export PDF</button>
+  </div>
+  <div id="reportBody"><div class="empty-state"><div class="icon">⏳</div>Loading...</div></div>`;
+  // Populate agent dropdown
+  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+  const sel=document.getElementById('rAgent');
+  if(sel&&agents)agents.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name+(a.dept?' ('+a.dept+')':'');sel.appendChild(o);});
+  await loadReportData();
+}
+
+async function applyReportFilters(){await loadReportData();}
+
+async function loadReportData(){
+  const rb=document.getElementById('reportBody');
+  if(!rb)return;
+  rb.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const month=document.getElementById('rMonth')?.value||new Date().toISOString().slice(0,7);
+  const dept=document.getElementById('rDept')?.value||'';
+  const agentId=document.getElementById('rAgent')?.value||'';
+  const from=month+'-01';
+  const lastDay=new Date(parseInt(month.split('-')[0]),parseInt(month.split('-')[1]),0).getDate();
+  const to=month+'-'+String(lastDay).padStart(2,'0');
+  const[{data:agents},{data:shifts},{data:tracking}]=await Promise.all([
+    _db.from('agents').select('id,name,dept,shift_start,timezone').order('name'),
+    _db.from('shift_status').select('*').gte('date',from).lte('date',to),
+    _db.from('activity_tracking').select('*').gte('date',from).lte('date',to)
+  ]);
+  let filteredAgents=agents||[];
+  if(dept)filteredAgents=filteredAgents.filter(a=>a.dept===dept);
+  if(agentId)filteredAgents=filteredAgents.filter(a=>a.id===agentId);
+  const rows=[];
+  filteredAgents.forEach(a=>{
+    const agShifts=(shifts||[]).filter(s=>s.agent_id===a.id);
+    if(!agShifts.length&&!agentId){
+      // Show agent with no data for the period
+      rows.push({agent:a,shift:{date:'—'},tr:{},li:null,noData:true});
+      return;
+    }
+    agShifts.forEach(s=>{
+      const tr=(tracking||[]).find(t=>t.agent_id===a.id&&t.date===s.date)||{};
+      const li=s.check_in?getCheckinStatus(s.check_in,a.shift_start,a.timezone):null;
+      rows.push({agent:a,shift:s,tr,li,noData:false});
+    });
+  });
+  rows.sort((a,b)=>{if(a.noData&&!b.noData)return 1;if(!a.noData&&b.noData)return-1;return(b.shift.date||'').localeCompare(a.shift.date||'');});
+  // Summary stats
+  const dataRows=rows.filter(r=>!r.noData);
+  const totalDays=dataRows.length;
+  const lateCount=dataRows.filter(r=>r.li?.status==='late').length;
+  const ontimeCount=dataRows.filter(r=>r.li?.status==='ontime'||r.li?.status==='early').length;
+  const totalHours=dataRows.reduce((s,r)=>{if(!r.shift.check_in||!r.shift.check_out)return s;return s+(new Date(r.shift.check_out)-new Date(r.shift.check_in))/3600000;},0);
+  const totalActive=dataRows.reduce((s,r)=>s+(r.tr.total_active_minutes||0),0);
+  const avgHours=totalDays?totalHours/totalDays:0;
+  const tableRows=rows.map(r=>{
+    if(r.noData)return`<tr style="opacity:.4"><td><b>${r.agent.name}</b></td><td>${r.agent.dept||'—'}</td><td colspan="6" style="color:var(--mu);font-style:italic">No check-ins this period</td></tr>`;
+    const hours=r.shift.check_in&&r.shift.check_out?((new Date(r.shift.check_out)-new Date(r.shift.check_in))/3600000).toFixed(1):'—';
+    let liHtml='—';
+    if(r.li){
+      if(r.li.status==='late')liHtml='<span style="color:var(--yl);font-weight:600">⚠️ Late +'+r.li.diff+'m</span>';
+      else if(r.li.status==='ontime')liHtml='<span style="color:var(--gr);font-weight:600">✅ On Time</span>';
+      else liHtml='<span style="color:var(--gr)">🟢 Early +'+r.li.diff+'m</span>';
+    }
+    return`<tr>
+      <td><b>${r.agent.name}</b></td>
+      <td><span style="font-size:11px;color:var(--mu)">${r.agent.dept||'—'}</span></td>
+      <td style="font-family:monospace;font-size:12px">${r.shift.date||'—'}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--gr)">${r.shift.check_in?fmtTime(r.shift.check_in):'—'}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--rd)">${r.shift.check_out?fmtTime(r.shift.check_out):'—'}</td>
+      <td style="font-weight:600">${hours!=='—'?hours+'h':'—'}</td>
+      <td><span style="color:var(--gr);font-weight:600">${r.tr.total_active_minutes||0}m</span></td>
+      <td>${liHtml}</td>
+    </tr>`;
+  }).join('');
+  rb.innerHTML=`
+  <!-- Summary stats -->
+  <div class="stats-grid" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${totalDays}</div><div class="stat-label">Total Days</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${ontimeCount}</div><div class="stat-label">On Time</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${lateCount}</div><div class="stat-label">Late Days</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${avgHours.toFixed(1)}h</div><div class="stat-label">Avg Hours/Day</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--mu)">${Math.floor(totalActive/60)}h ${totalActive%60}m</div><div class="stat-label">Total Active Time</div></div>
+  </div>
+  <!-- Table -->
+  <div class="card" style="padding:0" id="reportTable">
+    <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14px;font-weight:700">📊 Report: ${month} ${dept?'• '+dept:''} ${agentId?'• 1 Agent':filteredAgents.length+' Agents'}</div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Agent</th><th>Dept</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Active</th><th>Punctuality</th></tr></thead>
+      <tbody>${tableRows||'<tr><td colspan="8" style="text-align:center;color:var(--mu);padding:30px">No records found</td></tr>'}</tbody>
+    </table></div>
+  </div>`;
+}
+
+function exportReportPDF(){
+  try{
+    const{jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    // Title
+    const month=document.getElementById('rMonth')?.value||'';
+    const dept=document.getElementById('rDept')?.value||'All Depts';
+    doc.setFontSize(16);doc.setFont(undefined,'bold');
+    doc.text('ShiftDesk Report — '+month,14,18);
+    doc.setFontSize(10);doc.setFont(undefined,'normal');
+    doc.text('Department: '+dept+' | Generated: '+new Date().toLocaleString(),14,26);
+    // Table data
+    const table=document.querySelector('#reportTable table');
+    if(!table){showToast('No data to export','err');return;}
+    const headers=[['Agent','Dept','Date','Check In','Check Out','Hours','Active','Punctuality']];
+    const rows=[];
+    table.querySelectorAll('tbody tr').forEach(tr=>{
+      const cells=[...tr.querySelectorAll('td')].map(td=>td.innerText.replace(/\n/g,' ').trim());
+      if(cells.length)rows.push(cells);
+    });
+    doc.autoTable({head:headers,body:rows,startY:32,styles:{fontSize:9,cellPadding:3},headStyles:{fillColor:[108,99,255],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[245,246,250]},margin:{left:14,right:14}});
+    doc.save('ShiftDesk-Report-'+month+'.pdf');
+    showToast('PDF downloaded!','ok');
+  }catch(e){showToast('PDF error: '+e.message,'err');console.error(e);}
 }
 
 init();
