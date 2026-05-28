@@ -777,7 +777,7 @@ async function renderTasks(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const[{data:tasks},{data:agents}]=await Promise.all([
-    _db.from('tasks').select('*').order('created_at',{ascending:false}),
+    _db.from('tasks').select('*').order('date',{ascending:false}),
     _db.from('agents').select('id,name,dept').order('name')
   ]);
   const pending=tasks?.filter(t=>!t.done)||[];
@@ -860,7 +860,7 @@ async function renderMyTasks(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const{data:tasks}=await _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('created_at',{ascending:false});
+  const{data:tasks}=await _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false});
   const pending=tasks?.filter(t=>!t.done)||[];
   const done=tasks?.filter(t=>t.done)||[];
   if(!tasks?.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>No tasks assigned yet!</p></div>';return;}
