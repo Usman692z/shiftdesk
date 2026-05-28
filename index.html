@@ -216,6 +216,22 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
     </div>
   </div>
 </div>
+<!-- Task Remark Modal (Complete / Reject) -->
+<div class="modal-bg" id="remarkModal">
+  <div class="modal" style="max-width:420px">
+    <h2 id="remarkTitle">✅ Complete Task</h2>
+    <p id="remarkTaskDesc" style="color:var(--mu);font-size:13px;margin-bottom:16px;padding:10px;background:var(--s2);border-radius:var(--r)"></p>
+    <div class="form-group">
+      <label>Remark <span style="color:var(--rd)">*</span></label>
+      <textarea id="remarkText" rows="3" placeholder="Write your remark..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical;transition:var(--tr)"></textarea>
+    </div>
+    <div id="remarkErr" class="auth-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeRemarkModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="remarkSubmitBtn" onclick="submitRemark()">Submit</button>
+    </div>
+  </div>
+</div>
 <!-- Task Modal -->
 <div class="modal-bg" id="taskModal">
   <div class="modal">
@@ -780,19 +796,23 @@ async function renderTasks(){
     _db.from('tasks').select('*').order('date',{ascending:false}),
     _db.from('agents').select('id,name,dept').order('name')
   ]);
-  const pending=tasks?.filter(t=>!t.done)||[];
-  const done=tasks?.filter(t=>t.done)||[];
+  const pending=tasks?.filter(t=>!t.status||t.status==='pending')||[];
+  const done=tasks?.filter(t=>t.status&&t.status!=='pending')||[];
+  const STATUS_STYLE={pending:'badge-online',completed:'',rejected:''};
+  const STATUS_LABEL={pending:'⏳ Pending',completed:'✅ Completed',rejected:'❌ Rejected'};
+  const STATUS_COLOR={pending:'',completed:'background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)',rejected:'background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)'};
   const rows=[...pending,...done].map(t=>{
     const ag=(agents||[]).find(a=>a.id===t.agent_id)||{};
-    return `<tr style="${t.done?'opacity:.5':''}">
+    const st=t.status||'pending';
+    return `<tr style="${st!=='pending'?'opacity:.6':''}">
       <td><b>${ag.name||'—'}</b></td>
       <td>${ag.dept||'—'}</td>
-      <td style="max-width:240px;white-space:pre-wrap">${t.task||'—'}</td>
+      <td style="max-width:200px;white-space:pre-wrap">${t.task||'—'}</td>
       <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span></td>
       <td style="font-size:12px;color:var(--mu)">${t.date||'—'}</td>
-      <td><span class="badge ${t.done?'badge-offline':'badge-online'}">${t.done?'✅ Done':'⏳ Pending'}</span></td>
+      <td><span class="badge" style="${STATUS_COLOR[st]}">${STATUS_LABEL[st]}</span></td>
+      <td style="font-size:12px;color:var(--mu);max-width:160px">${t.remark||'—'}</td>
       <td><div class="td-actions">
-        ${!t.done?`<button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="markTaskDone('${t.id}')">✅ Done</button>`:''}
         <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
       </div></td>
     </tr>`;
@@ -805,7 +825,7 @@ async function renderTasks(){
   ${rows?`
   <div class="card" style="padding:0">
     <div class="table-wrap"><table>
-      <thead><tr><th>Agent</th><th>Dept</th><th>Task</th><th>Priority</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Agent</th><th>Dept</th><th>Task</th><th>Priority</th><th>Due</th><th>Status</th><th>Agent Remark</th><th>Actions</th></tr></thead>
       <tbody>${rows}
       </tbody>
     </table></div>
@@ -861,38 +881,79 @@ async function renderMyTasks(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const{data:tasks}=await _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false});
-  const pending=tasks?.filter(t=>!t.done)||[];
-  const done=tasks?.filter(t=>t.done)||[];
+  const pending=tasks?.filter(t=>!t.status||t.status==='pending')||[];
+  const completed=tasks?.filter(t=>t.status==='completed')||[];
+  const rejected=tasks?.filter(t=>t.status==='rejected')||[];
   if(!tasks?.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>No tasks assigned yet!</p></div>';return;}
   c.innerHTML=`
   <div style="margin-bottom:16px;display:flex;gap:12px">
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--yl)">${pending.length}</div><div class="stat-label">Pending</div></div>
-    <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--gr)">${done.length}</div><div class="stat-label">Done</div></div>
+    <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--gr)">${completed.length}</div><div class="stat-label">Completed</div></div>
+    <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--rd)">${rejected.length}</div><div class="stat-label">Rejected</div></div>
   </div>
-  ${pending.length?`<div class="card"><div class="card-title">⏳ Pending Tasks</div>${pending.map(t=>`
+
+  ${pending.length?`<div class="card" style="margin-bottom:12px">
+    <div class="card-title">⏳ Pending Tasks</div>
+    ${pending.map(t=>`
     <div style="padding:14px 0;border-bottom:1px solid var(--b)">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:600;margin-bottom:6px">${t.task}</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority}</span>
-            ${t.date?`<span style="font-size:11px;color:var(--mu)">📅 Due: ${t.date}</span>`:''}
-          </div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority}</span>
+          ${t.date?`<span style="font-size:11px;color:var(--mu);align-self:center">📅 ${t.date}</span>`:''}
         </div>
-        <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3);flex-shrink:0" onclick="agentMarkDone('${t.id}')">✅ Done</button>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openRemarkModal('${t.id}','completed',${JSON.stringify(t.task)})">✅ Complete</button>
+          <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="openRemarkModal('${t.id}','rejected',${JSON.stringify(t.task)})">❌ Reject</button>
+        </div>
       </div>
-    </div>`).join('')}</div>`:''}
-  ${done.length?`<div class="card" style="opacity:.6"><div class="card-title">✅ Completed</div>${done.map(t=>`
+    </div>`).join('')}
+  </div>`:''}
+
+  ${completed.length?`<div class="card" style="margin-bottom:12px">
+    <div class="card-title" style="color:var(--gr)">✅ Completed</div>
+    ${completed.map(t=>`
     <div style="padding:12px 0;border-bottom:1px solid var(--b)">
-      <div style="font-size:13px;text-decoration:line-through;color:var(--mu)">${t.task}</div>
-      <div style="font-size:11px;color:var(--mu);margin-top:4px">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority}${t.date?' • Due: '+t.date:''}</div>
-    </div>`).join('')}</div>`:''}`;
+      <div style="font-size:13px;font-weight:600;color:var(--mu);text-decoration:line-through">${t.task}</div>
+      ${t.remark?`<div style="font-size:12px;color:var(--gr);margin-top:4px">💬 ${t.remark}</div>`:''}
+    </div>`).join('')}
+  </div>`:''}
+
+  ${rejected.length?`<div class="card">
+    <div class="card-title" style="color:var(--rd)">❌ Rejected</div>
+    ${rejected.map(t=>`
+    <div style="padding:12px 0;border-bottom:1px solid var(--b)">
+      <div style="font-size:13px;font-weight:600;color:var(--mu)">${t.task}</div>
+      ${t.remark?`<div style="font-size:12px;color:var(--rd);margin-top:4px">💬 ${t.remark}</div>`:''}
+    </div>`).join('')}
+  </div>`:''}  `;
 }
 
-async function agentMarkDone(id){
-  const{error}=await _db.from('tasks').update({done:true}).eq('id',id);
-  if(error){showToast('Error: '+error.message,'err');return;}
-  showToast('Great work! Task completed ✅','ok');renderMyTasks();
+// ── Task remark modal ─────────────────────────────────────────
+let _remarkTaskId=null,_remarkAction=null;
+
+function openRemarkModal(taskId,action,taskDesc){
+  _remarkTaskId=taskId;_remarkAction=action;
+  document.getElementById('remarkTitle').textContent=action==='completed'?'✅ Complete Task':'❌ Reject Task';
+  document.getElementById('remarkSubmitBtn').style.background=action==='completed'?'linear-gradient(135deg,var(--gr),#059669)':'linear-gradient(135deg,var(--rd),#dc2626)';
+  document.getElementById('remarkTaskDesc').textContent=taskDesc;
+  document.getElementById('remarkText').value='';
+  document.getElementById('remarkErr').classList.remove('show');
+  document.getElementById('remarkModal').classList.add('open');
+  setTimeout(()=>document.getElementById('remarkText').focus(),100);
+}
+function closeRemarkModal(){document.getElementById('remarkModal').classList.remove('open');_remarkTaskId=null;_remarkAction=null;}
+
+async function submitRemark(){
+  const remark=document.getElementById('remarkText').value.trim();
+  const errEl=document.getElementById('remarkErr');
+  if(!remark){errEl.textContent='Remark is required';errEl.classList.add('show');return;}
+  const btn=document.getElementById('remarkSubmitBtn');btn.disabled=true;btn.textContent='Saving...';
+  const{error}=await _db.from('tasks').update({status:_remarkAction,done:_remarkAction==='completed',remark}).eq('id',_remarkTaskId);
+  btn.disabled=false;btn.textContent='Submit';
+  if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
+  showToast(_remarkAction==='completed'?'✅ Task completed!':'❌ Task rejected','ok');
+  closeRemarkModal();renderMyTasks();
 }
 
 // ── BULK IMPORT ───────────────────────────────────────────────
