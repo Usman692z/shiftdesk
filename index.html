@@ -524,18 +524,31 @@ async function renderActivity(){
 
 // ── ACTIVITY TRACKING ────────────────────────────────────────
 const IDLE_MS = 5 * 60 * 1000; // 5 min idle threshold
+let windowBlurred = false; // tracks if browser lost OS focus
 
 function startTracking(){
   if(isTracking||!currentAgent)return;
   isTracking=true;
   lastActivityTime=Date.now();
-  // Detect any user input
+  windowBlurred=!document.hasFocus();
+
+  // Track mouse/keyboard on our tab
   ['mousemove','mousedown','keydown','touchstart','scroll'].forEach(ev=>
-    document.addEventListener(ev,()=>{lastActivityTime=Date.now();},true)
+    document.addEventListener(ev,()=>{lastActivityTime=Date.now();windowBlurred=false;},true)
   );
-  // Ping every 60 seconds
+
+  // Window focus/blur → detects when user switches to another APP (Excel, desktop etc.)
+  // Does NOT fire on tab switches within Chrome — so other Chrome tabs still count as active
+  window.addEventListener('focus',()=>{windowBlurred=false;lastActivityTime=Date.now();});
+  window.addEventListener('blur',()=>{windowBlurred=true;});
+
+  // Tab visibility change → user came back to our tab
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){lastActivityTime=Date.now();windowBlurred=false;}
+  });
+
   trackingInterval=setInterval(pingActivity,60000);
-  pingActivity(); // immediate first ping
+  pingActivity();
 }
 
 function stopTracking(){
@@ -546,8 +559,9 @@ function stopTracking(){
 async function pingActivity(){
   if(!currentAgent)return;
   const now=Date.now();
-  const idle=now-lastActivityTime>IDLE_MS;
-  const status=idle?'idle':'active';
+  const recentActivity=now-lastActivityTime<IDLE_MS;
+  // Active if: recent activity on our tab OR browser window is still focused (any tab)
+  const status=(recentActivity||!windowBlurred)?'active':'idle';
   const today=new Date().toISOString().slice(0,10);
   // Fetch current row
   const{data:row}=await _db.from('activity_tracking')
