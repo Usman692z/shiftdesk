@@ -121,7 +121,7 @@ tr:hover td{background:var(--b)}
       <div class="form-group"><label>Email</label><input type="email" id="agentEmail" placeholder="agent@company.com"></div>
       <div class="form-group"><label>Password</label><input type="password" id="agentPass" placeholder="••••••••"></div>
       <button class="btn btn-primary" id="loginBtn" onclick="agentLogin()">Login</button>
-      <p style="text-align:center;margin-top:12px"><span onclick="showForgotForm()" style="color:var(--ac);font-size:12px;cursor:pointer">🔑 Forgot Password?</span></p>
+      <p style="text-align:center;margin-top:12px;color:var(--mu);font-size:12px">Forgot password? Contact your admin to reset it.</p>
     </div>
     <!-- Forgot Password Form -->
     <div id="forgotForm" class="hidden">
@@ -169,7 +169,7 @@ tr:hover td{background:var(--b)}
     <div class="form-group"><label>Country</label><select id="mCountry"><option value="Pakistan">Pakistan</option><option value="Saudi Arabia">Saudi Arabia</option><option value="UAE">UAE</option><option value="UK">UK</option><option value="USA">USA</option></select></div>
     <div class="form-group"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
     <div class="form-group"><label>Agent Type</label><select id="mType"><option value="regular">Regular</option><option value="senior">Senior</option><option value="qa">QA</option><option value="manager">Manager</option><option value="admin">Admin</option></select></div>
-    <p style="font-size:12px;color:var(--mu);margin-bottom:12px">📧 Agent will receive an email to set their own password.</p>
+    <div class="form-group" id="mPassGroup"><label>Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span></label><input type="password" id="mPass" placeholder="Set agent password"></div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" onclick="closeAgentModal()">Cancel</button>
       <button class="btn btn-primary btn-sm" id="saveAgentBtn" onclick="saveAgent()">Save Agent</button>
@@ -182,57 +182,41 @@ const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
 const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 // Separate client for creating new auth users — isolated storage key
-const _authHelper = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {auth:{persistSession:false,autoRefreshToken:false,storageKey:'_sd_helper'}});
-let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null,_sessionLoading=false;
+let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
+
+// Agent session via localStorage (no Supabase Auth needed for agents)
+function saveAgentSession(ag){localStorage.setItem('sd_agent',JSON.stringify(ag));}
+function clearAgentSession(){localStorage.removeItem('sd_agent');}
+function getAgentSession(){try{return JSON.parse(localStorage.getItem('sd_agent'));}catch{return null;}}
 
 async function init(){
   startClock();
-  // Use onAuthStateChange as single source of truth
+  // Check saved agent session first
+  const saved=getAgentSession();
+  if(saved){
+    currentAgent=saved;isAdmin=(saved.type==='admin');
+    showApp();return;
+  }
+  // Then check Supabase Auth (for admin)
   _db.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_OUT'){currentUser=null;currentAgent=null;isAdmin=false;showAuth();return;}
+    if(event==='SIGNED_OUT'){currentUser=null;isAdmin=false;showAuth();return;}
     if(event==='PASSWORD_RECOVERY'){
       showAuth();
       ['agentLoginForm','forgotForm','adminLoginForm'].forEach(id=>document.getElementById(id).classList.add('hidden'));
       document.getElementById('newPassForm').classList.remove('hidden');
       return;
     }
-    if(session&&!_sessionLoading){
-      _sessionLoading=true;
-      await loadSession(session.user);
-      _sessionLoading=false;
+    if(session&&ADMIN_EMAILS.includes(session.user.email)){
+      currentUser=session.user;isAdmin=true;showApp();
     }
   });
-  // Check existing session on load
   const{data:{session}}=await _db.auth.getSession();
-  if(session){_sessionLoading=true;await loadSession(session.user);_sessionLoading=false;}
-  else showAuth();
-}
-
-async function loadSession(user){
-  currentUser=user;
-  if(ADMIN_EMAILS.includes(user.email)){
-    isAdmin=true;
-    showApp();
-    _db.from('agents').select('*').eq('email',user.email).maybeSingle()
-      .then(({data:ag})=>{ if(ag) currentAgent=ag; })
-      .catch(()=>{});
-    return;
+  if(session&&ADMIN_EMAILS.includes(session.user.email)){
+    currentUser=session.user;isAdmin=true;showApp();
+  } else {
+    showAuth();
   }
-  try{
-    const{data:ag,error}=await _db.from('agents').select('*').eq('email',user.email).maybeSingle();
-    if(error||!ag){
-      showToast('Profile not found. Contact your admin.','err');
-      setTimeout(()=>_db.auth.signOut(),2500);
-      return;
-    }
-    currentAgent=ag;
-    isAdmin=(ag.type==='admin');
-  }catch(e){
-    showToast('Connection error. Please try again.','err');
-    return;
-  }
-  showApp();
 }
 
 function switchAuthTab(tab){
@@ -240,11 +224,9 @@ function switchAuthTab(tab){
   document.getElementById('tabAdmin').className='auth-tab'+(tab==='admin'?' active':'');
   document.getElementById('agentLoginForm').classList.toggle('hidden',tab!=='agent');
   document.getElementById('adminLoginForm').classList.toggle('hidden',tab!=='admin');
-  if(tab==='agent'){
-    document.getElementById('forgotForm').classList.add('hidden');
-    document.getElementById('newPassForm').classList.add('hidden');
-    document.getElementById('agentLoginForm').classList.remove('hidden');
-  }
+  document.getElementById('forgotForm').classList.add('hidden');
+  document.getElementById('newPassForm').classList.add('hidden');
+  if(tab==='agent') document.getElementById('agentLoginForm').classList.remove('hidden');
   document.getElementById('authErr').classList.remove('show');
   document.getElementById('authErr').removeAttribute('style');
 }
@@ -255,8 +237,16 @@ async function agentLogin(){
   if(!email||!pass){showAuthErr('Please fill all fields');return;}
   const btn=document.getElementById('loginBtn');
   btn.disabled=true;btn.textContent='Logging in...';
-  const{error}=await _db.auth.signInWithPassword({email,password:pass});
-  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='Login';}
+  try{
+    // Check agents table directly — admin sets password here
+    const{data:ag,error}=await _db.from('agents').select('*').eq('email',email).maybeSingle();
+    if(error||!ag){showAuthErr('Account not found. Contact your admin.');btn.disabled=false;btn.textContent='Login';return;}
+    if(!ag.pw){showAuthErr('Password not set. Contact your admin.');btn.disabled=false;btn.textContent='Login';return;}
+    if(ag.pw!==btoa(pass)){showAuthErr('Invalid password.');btn.disabled=false;btn.textContent='Login';return;}
+    currentAgent=ag;isAdmin=(ag.type==='admin');
+    saveAgentSession(ag);
+    showApp();
+  }catch(e){showAuthErr('Connection error. Try again.');btn.disabled=false;btn.textContent='Login';}
 }
 
 async function adminLogin(){
@@ -306,7 +296,12 @@ async function setNewPassword(){
   btn.disabled=false;btn.textContent='✅ Save Password';
 }
 
-async function logout(){await _db.auth.signOut();currentUser=null;currentAgent=null;isAdmin=false;}
+async function logout(){
+  clearAgentSession();
+  currentUser=null;currentAgent=null;isAdmin=false;
+  await _db.auth.signOut();
+  showAuth();
+}
 function showAuth(){
   document.getElementById('authScreen').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
@@ -368,16 +363,18 @@ async function renderDashboard(){
 async function renderAgents(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const{data:agents}=await _db.from('agents').select('*').order('name');
-  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><button class="btn btn-primary btn-sm" onclick="openAddAgent()">➕ Add Agent</button></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Type</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td><span class="badge" style="background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3)">${a.type||'regular'}</span></td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">✏️ Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.email}','${a.name.replace(/'/g,'')}')">🔑 Reset Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">🗑️ Del</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet. Click Add Agent.</td></tr>'}</tbody></table></div></div>`;
+  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><button class="btn btn-primary btn-sm" onclick="openAddAgent()">➕ Add Agent</button></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Type</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td><span class="badge" style="background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3)">${a.type||'regular'}</span></td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">✏️ Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">🔑 Reset Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">🗑️ Del</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet. Click Add Agent.</td></tr>'}</tbody></table></div></div>`;
 }
 
 function openAddAgent(){
   editingAgentId=null;
-  ['mName','mEmail','mRole'].forEach(id=>document.getElementById(id).value='');
+  ['mName','mEmail','mRole','mPass'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('mDept').value='';
   document.getElementById('mCountry').value='Pakistan';
   document.getElementById('mShiftStart').value='09:00';
   document.getElementById('mType').value='regular';
+  // Show password label as required for new agents
+  document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
   document.getElementById('modalTitle').textContent='➕ Add New Agent';
   document.getElementById('agentModalErr').classList.remove('show');
   document.getElementById('agentModal').classList.add('open');
@@ -394,6 +391,9 @@ async function openEditAgent(id){
   document.getElementById('mCountry').value=a.country||'Pakistan';
   document.getElementById('mShiftStart').value=a.shift_start||'09:00';
   document.getElementById('mType').value=a.type||'regular';
+  document.getElementById('mPass').value=''; // Never pre-fill password
+  // Show password label as optional for editing
+  document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span>';
   document.getElementById('modalTitle').textContent='✏️ Edit Agent';
   document.getElementById('agentModalErr').classList.remove('show');
   document.getElementById('agentModal').classList.add('open');
@@ -408,31 +408,29 @@ async function saveAgent(){
   const country=document.getElementById('mCountry').value;
   const shift_start=document.getElementById('mShiftStart').value;
   const type=document.getElementById('mType').value;
+  const pw=document.getElementById('mPass').value;
   const tzMap={'Pakistan':'Asia/Karachi','Saudi Arabia':'Asia/Riyadh','UAE':'Asia/Dubai','UK':'Europe/London','USA':'America/New_York'};
   const timezone=tzMap[country]||'Asia/Karachi';
   const errEl=document.getElementById('agentModalErr');
   if(!name){errEl.textContent='Name is required';errEl.classList.add('show');return;}
   if(!email){errEl.textContent='Email is required';errEl.classList.add('show');return;}
   if(!dept){errEl.textContent='Department is required';errEl.classList.add('show');return;}
+  if(!editingAgentId&&!pw){errEl.textContent='Password is required for new agents';errEl.classList.add('show');return;}
   const btn=document.getElementById('saveAgentBtn');btn.disabled=true;btn.textContent='Saving...';
   try{
     if(!editingAgentId){
-      // Create auth user with random temp password (agent will reset via email)
-      const tempPass='Tmp_'+Math.random().toString(36).slice(2,10)+'!1';
-      const{data:su,error:se}=await _authHelper.auth.signUp({email,password:tempPass,options:{data:{name}}});
-      if(se&&!se.message.toLowerCase().includes('already registered')){
-        errEl.textContent='Auth Error: '+se.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;
-      }
-      const auth_id=su?.user?.id||null;
-      const{error:de}=await _db.from('agents').upsert({name,email,dept,role,country,timezone,shift_start,type,auth_id},{onConflict:'email'});
-      if(de){errEl.textContent='DB Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
-      // Send password reset email so agent sets their own password
-      await _db.auth.resetPasswordForEmail(email,{redirectTo:'https://shiftdesk.online'});
-      showToast('✅ Agent added! Password setup email sent to: '+email,'ok');
+      // Add new agent directly to agents table — no Supabase Auth needed
+      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,type,pw:btoa(pw)};
+      const{error:de}=await _db.from('agents').insert(agentData);
+      if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      showToast('✅ Agent added: '+name,'ok');
     }else{
-      const{error:de}=await _db.from('agents').update({name,email,dept,role,country,timezone,shift_start,type}).eq('id',editingAgentId);
-      if(de){errEl.textContent='DB Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
-      showToast('✅ Agent updated!','ok');
+      // Update agent — only update pw if admin entered one
+      const updateData={name,email,dept,role,country,timezone,shift_start,type};
+      if(pw)updateData.pw=btoa(pw);
+      const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
+      if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      showToast('✅ Agent updated: '+name,'ok');
     }
     closeAgentModal();renderAgents();
   }catch(e){errEl.textContent='Error: '+e.message;errEl.classList.add('show');}
@@ -446,11 +444,13 @@ async function deleteAgent(id,name){
   showToast('Agent deleted: '+name,'ok');renderAgents();
 }
 
-async function resetAgentPassword(email,name){
-  if(!confirm('Send password reset email to '+name+' ('+email+')?'))return;
-  const{error}=await _db.auth.resetPasswordForEmail(email,{redirectTo:'https://shiftdesk.online'});
+async function resetAgentPassword(agentId,name){
+  const newPass=prompt('Set new password for '+name+' (min 6 chars):');
+  if(!newPass)return;
+  if(newPass.length<6){showToast('Password must be at least 6 characters','err');return;}
+  const{error}=await _db.from('agents').update({pw:btoa(newPass)}).eq('id',agentId);
   if(error){showToast('Error: '+error.message,'err');return;}
-  showToast('✅ Password reset email sent to '+name,'ok');
+  showToast('✅ Password updated for '+name,'ok');
 }
 
 async function renderMyShift(){
