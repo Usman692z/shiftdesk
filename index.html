@@ -177,6 +177,45 @@ tr:hover td{background:var(--b)}
     </div>
   </div>
 </div>
+<!-- Bulk Import Modal -->
+<div class="modal-bg" id="bulkModal">
+  <div class="modal" style="max-width:680px">
+    <h2>📥 Bulk Import Agents</h2>
+    <div id="bulkErr" class="auth-err"></div>
+
+    <!-- Step 1: Upload -->
+    <div id="bulkStep1">
+      <p style="color:var(--mu);font-size:13px;margin-bottom:16px">Upload a CSV file. Required columns: <b>name, email, dept, role, country, shift_start, type</b></p>
+      <div style="background:var(--s2);border:2px dashed var(--b2);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('csvFile').click()">
+        <div style="font-size:32px;margin-bottom:8px">📂</div>
+        <div style="font-size:14px;color:var(--mu)">Click to choose CSV file</div>
+        <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="parseCsv(this)">
+      </div>
+      <div style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:12px;margin-bottom:16px">
+        <div style="font-size:11px;color:var(--mu);font-weight:600;margin-bottom:6px">📋 CSV FORMAT EXAMPLE:</div>
+        <code style="font-size:11px;color:var(--ac);white-space:pre">name,email,dept,role,country,shift_start,type
+Ahmed Ali,ahmed@co.com,Corporate,Agent,Pakistan,09:00,regular
+Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
+      </div>
+      <div class="form-group">
+        <label>Default Password for all agents <span style="color:var(--rd)">*</span></label>
+        <input type="password" id="bulkPass" placeholder="Min 6 characters — agents can change later">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-danger btn-sm" onclick="closeBulkModal()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Preview -->
+    <div id="bulkStep2" class="hidden">
+      <div id="bulkPreview"></div>
+      <div class="modal-footer">
+        <button class="btn btn-danger btn-sm" onclick="document.getElementById('bulkStep1').classList.remove('hidden');document.getElementById('bulkStep2').classList.add('hidden')">← Back</button>
+        <button class="btn btn-primary btn-sm" id="bulkImportBtn" onclick="doBulkImport()">⬆️ Import All</button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Task Modal -->
 <div class="modal-bg" id="taskModal">
   <div class="modal">
@@ -401,7 +440,7 @@ async function renderDashboard(){
 async function renderAgents(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const{data:agents}=await _db.from('agents').select('*').order('name');
-  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><button class="btn btn-primary btn-sm" onclick="openAddAgent()">➕ Add Agent</button></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Type</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td><span class="badge" style="background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3)">${a.type||'regular'}</span></td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">✏️ Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">🔑 Reset Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">🗑️ Del</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet. Click Add Agent.</td></tr>'}</tbody></table></div></div>`;
+  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">📥 Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">➕ Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Type</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td><span class="badge" style="background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3)">${a.type||'regular'}</span></td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">✏️ Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">🔑 Reset Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">🗑️ Del</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet. Click Add Agent.</td></tr>'}</tbody></table></div></div>`;
 }
 
 function openAddAgent(){
@@ -765,6 +804,103 @@ async function agentMarkDone(id){
   const{error}=await _db.from('tasks').update({done:true}).eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
   showToast('Great work! Task completed ✅','ok');renderMyTasks();
+}
+
+// ── BULK IMPORT ───────────────────────────────────────────────
+let bulkAgents=[];
+
+function openBulkModal(){
+  bulkAgents=[];
+  document.getElementById('csvFile').value='';
+  document.getElementById('bulkPass').value='';
+  document.getElementById('bulkErr').classList.remove('show');
+  document.getElementById('bulkStep1').classList.remove('hidden');
+  document.getElementById('bulkStep2').classList.add('hidden');
+  document.getElementById('bulkModal').classList.add('open');
+}
+function closeBulkModal(){document.getElementById('bulkModal').classList.remove('open');}
+
+function parseCsv(input){
+  const file=input.files[0];if(!file)return;
+  const pass=document.getElementById('bulkPass').value;
+  if(!pass||pass.length<6){
+    document.getElementById('bulkErr').textContent='Set a default password (min 6 chars) before uploading';
+    document.getElementById('bulkErr').classList.add('show');
+    input.value='';return;
+  }
+  document.getElementById('bulkErr').classList.remove('show');
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=e.target.result.trim().split('\n').map(l=>l.trim()).filter(Boolean);
+    if(lines.length<2){showErr('CSV must have header + at least 1 row');return;}
+    const headers=lines[0].toLowerCase().split(',').map(h=>h.trim());
+    const required=['name','email','dept'];
+    const missing=required.filter(r=>!headers.includes(r));
+    if(missing.length){
+      document.getElementById('bulkErr').textContent='Missing columns: '+missing.join(', ');
+      document.getElementById('bulkErr').classList.add('show');return;
+    }
+    const tzMap={'pakistan':'Asia/Karachi','saudi arabia':'Asia/Riyadh'};
+    bulkAgents=[];
+    const errors=[];
+    lines.slice(1).forEach((line,i)=>{
+      const vals=line.split(',').map(v=>v.trim());
+      const row={};
+      headers.forEach((h,idx)=>row[h]=vals[idx]||'');
+      if(!row.name||!row.email||!row.dept){errors.push(`Row ${i+2}: name/email/dept required`);return;}
+      const country=row.country||'Pakistan';
+      bulkAgents.push({
+        id:crypto.randomUUID(),
+        name:row.name,email:row.email,dept:row.dept,
+        role:row.role||'Agent',
+        country:country,
+        timezone:tzMap[country.toLowerCase()]||'Asia/Karachi',
+        shift_start:row.shift_start||'09:00',
+        type:row.type||'regular',
+      });
+    });
+    if(errors.length){
+      document.getElementById('bulkErr').textContent=errors.join(' | ');
+      document.getElementById('bulkErr').classList.add('show');
+      if(!bulkAgents.length)return;
+    }
+    // Show preview
+    const preview=document.getElementById('bulkPreview');
+    preview.innerHTML=`
+      <div style="margin-bottom:12px;font-size:13px;color:var(--gr);font-weight:600">✅ ${bulkAgents.length} agents ready to import${errors.length?' ('+errors.length+' rows skipped)':''}</div>
+      <div class="table-wrap" style="max-height:260px;overflow-y:auto;margin-bottom:12px">
+        <table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Country</th><th>Type</th></tr></thead>
+        <tbody>${bulkAgents.map((a,i)=>`<tr><td style="color:var(--mu)">${i+1}</td><td><b>${a.name}</b></td><td style="font-size:11px;color:var(--mu)">${a.email}</td><td>${a.dept}</td><td>${a.role}</td><td>${a.country}</td><td>${a.type}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);padding:10px;font-size:12px;color:var(--yl)">🔑 Default password will be set for all ${bulkAgents.length} agents</div>`;
+    document.getElementById('bulkStep1').classList.add('hidden');
+    document.getElementById('bulkStep2').classList.remove('hidden');
+  };
+  reader.readAsText(file);
+}
+
+async function doBulkImport(){
+  if(!bulkAgents.length)return;
+  const pass=document.getElementById('bulkPass').value;
+  const btn=document.getElementById('bulkImportBtn');
+  btn.disabled=true;btn.textContent='Importing...';
+  const hashed=await hashPw(pass);
+  const agentsWithPw=bulkAgents.map(a=>({...a,pw:hashed}));
+  let success=0,failed=0;
+  // Insert in batches of 10
+  for(let i=0;i<agentsWithPw.length;i+=10){
+    const batch=agentsWithPw.slice(i,i+10);
+    const{error}=await _db.from('agents').upsert(batch,{onConflict:'email',ignoreDuplicates:true});
+    if(error){failed+=batch.length;console.error(error);}
+    else success+=batch.length;
+    btn.textContent=`Importing... ${Math.min(i+10,agentsWithPw.length)}/${agentsWithPw.length}`;
+  }
+  btn.disabled=false;btn.textContent='⬆️ Import All';
+  closeBulkModal();
+  renderAgents();
+  if(failed) showToast(`Imported ${success}, failed ${failed}`,'info');
+  else showToast(`✅ ${success} agents imported successfully!`,'ok');
 }
 
 function fmtTime(ts){if(!ts)return '—';try{const tz=currentAgent?.timezone||'Asia/Karachi';return new Date(ts).toLocaleTimeString('en-US',{timeZone:tz,hour12:true,hour:'2-digit',minute:'2-digit'});}catch{return ts.slice(11,16);}}
