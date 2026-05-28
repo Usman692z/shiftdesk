@@ -207,6 +207,12 @@ function saveAgentSession(ag){localStorage.setItem('sd_agent',JSON.stringify(ag)
 function clearAgentSession(){localStorage.removeItem('sd_agent');}
 function getAgentSession(){try{return JSON.parse(localStorage.getItem('sd_agent'));}catch{return null;}}
 
+// SHA-256 password hashing — browser built-in, no library needed
+async function hashPw(pass){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(pass));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
 async function init(){
   startClock();
   // Check saved agent session first
@@ -259,7 +265,16 @@ async function agentLogin(){
     const{data:ag,error}=await _db.from('agents').select('*').eq('email',email).maybeSingle();
     if(error||!ag){showAuthErr('Account not found. Contact your admin.');btn.disabled=false;btn.textContent='Login';return;}
     if(!ag.pw){showAuthErr('Password not set. Contact your admin.');btn.disabled=false;btn.textContent='Login';return;}
-    if(ag.pw!==btoa(pass)){showAuthErr('Invalid password.');btn.disabled=false;btn.textContent='Login';return;}
+    const hashed=await hashPw(pass);
+    if(ag.pw===hashed){
+      // ✅ SHA-256 match (new format)
+    } else if(ag.pw===btoa(pass)){
+      // Old btoa format — auto-upgrade to SHA-256 silently
+      await _db.from('agents').update({pw:hashed}).eq('id',ag.id);
+      ag.pw=hashed;
+    } else {
+      showAuthErr('Invalid password.');btn.disabled=false;btn.textContent='Login';return;
+    }
     currentAgent=ag;isAdmin=(ag.type==='admin');
     saveAgentSession(ag);
     showApp();
@@ -443,14 +458,14 @@ async function saveAgent(){
   try{
     if(!editingAgentId){
       // Add new agent directly to agents table — no Supabase Auth needed
-      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,type,pw:btoa(pw)};
+      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,type,pw:await hashPw(pw)};
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       showToast('✅ Agent added: '+name,'ok');
     }else{
       // Update agent — only update pw if admin entered one
       const updateData={name,email,dept,role,country,timezone,shift_start,type};
-      if(pw)updateData.pw=btoa(pw);
+      if(pw)updateData.pw=await hashPw(pw);
       const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       showToast('✅ Agent updated: '+name,'ok');
@@ -471,7 +486,7 @@ async function resetAgentPassword(agentId,name){
   const newPass=prompt('Set new password for '+name+' (min 6 chars):');
   if(!newPass)return;
   if(newPass.length<6){showToast('Password must be at least 6 characters','err');return;}
-  const{error}=await _db.from('agents').update({pw:btoa(newPass)}).eq('id',agentId);
+  const{error}=await _db.from('agents').update({pw:await hashPw(newPass)}).eq('id',agentId);
   if(error){showToast('Error: '+error.message,'err');return;}
   showToast('✅ Password updated for '+name,'ok');
 }
