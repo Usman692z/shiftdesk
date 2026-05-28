@@ -654,28 +654,31 @@ async function renderTasks(){
   ]);
   const pending=tasks?.filter(t=>!t.done)||[];
   const done=tasks?.filter(t=>t.done)||[];
+  const rows=[...pending,...done].map(t=>{
+    const ag=(agents||[]).find(a=>a.id===t.agent_id)||{};
+    return `<tr style="${t.done?'opacity:.5':''}">
+      <td><b>${ag.name||'—'}</b></td>
+      <td>${ag.dept||'—'}</td>
+      <td style="max-width:240px;white-space:pre-wrap">${t.task||'—'}</td>
+      <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span></td>
+      <td style="font-size:12px;color:var(--mu)">${t.date||'—'}</td>
+      <td><span class="badge ${t.done?'badge-offline':'badge-online'}">${t.done?'✅ Done':'⏳ Pending'}</span></td>
+      <td><div class="td-actions">
+        ${!t.done?`<button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="markTaskDone('${t.id}')">✅ Done</button>`:''}
+        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
+      </div></td>
+    </tr>`;
+  }).join('');
   c.innerHTML=`
   <div class="agents-header">
     <h2>Tasks — ${pending.length} pending, ${done.length} done</h2>
     <button class="btn btn-primary btn-sm" onclick="openTaskModal()">➕ Assign Task</button>
   </div>
-  ${pending.length||done.length?`
+  ${rows?`
   <div class="card" style="padding:0">
     <div class="table-wrap"><table>
       <thead><tr><th>Agent</th><th>Dept</th><th>Task</th><th>Priority</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
-      <tbody>
-        ${[...pending,...done].map(t=>`<tr style="${t.done?'opacity:.5':''}">
-          <td><b>${t.agent_name||'—'}</b></td>
-          <td>${t.dept||'—'}</td>
-          <td style="max-width:240px;white-space:pre-wrap">${t.task||'—'}</td>
-          <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span></td>
-          <td style="font-size:12px;color:var(--mu)">${t.date||'—'}</td>
-          <td><span class="badge ${t.done?'badge-offline':'badge-online'}">${t.done?'✅ Done':'⏳ Pending'}</span></td>
-          <td><div class="td-actions">
-            ${!t.done?`<button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="markTaskDone('${t.id}')">✅ Done</button>`:''}
-            <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
-          </div></td>
-        </tr>`).join('')}
+      <tbody>${rows}
       </tbody>
     </table></div>
   </div>`:`<div class="empty-state"><div class="icon">📭</div><p>No tasks yet. Click Assign Task to add one.</p></div>`}`;
@@ -705,7 +708,7 @@ async function saveTask(){
   if(!agentId){errEl.textContent='Please select an agent';errEl.classList.add('show');return;}
   if(!task){errEl.textContent='Task description is required';errEl.classList.add('show');return;}
   const btn=document.getElementById('saveTaskBtn');btn.disabled=true;btn.textContent='Assigning...';
-  const{error}=await _db.from('tasks').insert({agent_id:agentId,agent_name:agentName,dept:agentDept,task,priority,date,assigned_by:'Admin',done:false});
+  const{error}=await _db.from('tasks').insert({agent_id:agentId,task,priority,date,done:false});
   btn.disabled=false;btn.textContent='Assign Task';
   if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
   showToast('✅ Task assigned to '+agentName,'ok');
