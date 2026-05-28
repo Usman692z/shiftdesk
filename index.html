@@ -430,11 +430,100 @@ function startClock(){
 }
 
 async function renderDashboard(){
-  const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  const[{data:agents},{data:ts}]=await Promise.all([_db.from('agents').select('*').order('name'),_db.from('shift_status').select('*').eq('date',today)]);
-  const total=agents?.length||0,online=ts?.filter(s=>s.online).length||0,ci=ts?.filter(s=>s.check_in).length||0;
-  c.innerHTML='<div class="stats-grid"><div class="stat-card"><div class="stat-num" style="color:var(--ac)">'+total+'</div><div class="stat-label">Total Agents</div></div><div class="stat-card"><div class="stat-num" style="color:var(--gr)">'+online+'</div><div class="stat-label">Online Now</div></div><div class="stat-card"><div class="stat-num" style="color:var(--yl)">'+ci+'</div><div class="stat-label">Checked In Today</div></div><div class="stat-card"><div class="stat-num" style="color:var(--mu)">'+(total-online)+'</div><div class="stat-label">Offline</div></div></div><div class="card"><div class="card-title">📡 Live Agent Status</div><div class="table-wrap"><table><thead><tr><th>Agent</th><th>Dept</th><th>Status</th><th>Check In</th><th>Check Out</th><th>Hours</th></tr></thead><tbody>'+(agents||[]).map(a=>{const s=ts?.find(x=>x.agent_id===a.id)||{};const hrs=s.check_in&&s.check_out?calcHours(s.check_in,s.check_out):(s.check_in?'Active':'—');return '<tr><td><b>'+a.name+'</b><br><span style="color:var(--mu);font-size:11px">'+( a.email||'')+'</span></td><td>'+(a.dept||'—')+'</td><td><span class="badge '+(s.online?'badge-online':'badge-offline')+'">'+(s.online?'🟢 Online':'⚫ Offline')+'</span></td><td>'+(s.check_in?fmtTime(s.check_in):'—')+'</td><td>'+(s.check_out?fmtTime(s.check_out):'—')+'</td><td>'+hrs+'</td></tr>';}).join('')+'</tbody></table></div></div>';
+  const[{data:agents},{data:ts},{data:tracking}]=await Promise.all([
+    _db.from('agents').select('*').order('name'),
+    _db.from('shift_status').select('*').eq('date',today),
+    _db.from('activity_tracking').select('*').eq('date',today)
+  ]);
+  const total=agents?.length||0;
+  const online=ts?.filter(s=>s.online).length||0;
+  const ci=ts?.filter(s=>s.check_in).length||0;
+  const activeNow=tracking?.filter(t=>t.activity_status==='active').length||0;
+
+  // Build agent cards with activity bars
+  const agentCards=(agents||[]).map(a=>{
+    const s=ts?.find(x=>x.agent_id===a.id)||{};
+    const tr=tracking?.find(x=>x.agent_id===a.id)||{};
+    const isOnline=s.online||false;
+    const activeMins=tr.total_active_minutes||0;
+    const actStatus=tr.activity_status||'offline';
+
+    // Calculate shift duration in minutes (from check-in to now or check-out)
+    let shiftMins=0;
+    if(s.check_in){
+      const end=s.check_out?new Date(s.check_out):new Date();
+      shiftMins=Math.max(0,Math.floor((end-new Date(s.check_in))/60000));
+    }
+
+    // Bar segments
+    const idleMins=Math.max(0,shiftMins-activeMins);
+    const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
+    const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
+    const offP=100-activeP-idleP;
+
+    // Status colors
+    const statusDot=isOnline?(actStatus==='active'?'🟢':'🟡'):'⚫';
+    const deptColor={'Corporate':'var(--ac)','Retail':'var(--or)','Reseller':'var(--gr)'}[a.dept]||'var(--mu)';
+
+    return `
+    <div class="card" style="padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <!-- Avatar -->
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:700;color:#fff">
+          ${a.name.charAt(0).toUpperCase()}
+        </div>
+        <!-- Info -->
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</div>
+          <div style="font-size:11px;color:var(--mu)">${a.role||'Agent'} • <span style="color:${deptColor}">${a.dept||'—'}</span></div>
+        </div>
+        <!-- Status + hours -->
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:13px;font-weight:700">${statusDot} ${isOnline?(actStatus==='active'?'Active':'Idle'):'Offline'}</div>
+          <div style="font-size:11px;color:var(--mu)">
+            ${s.check_in?fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now'):'Not checked in'}
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Bar (Hubstaff style) -->
+      <div style="margin-bottom:6px">
+        <div style="display:flex;border-radius:4px;overflow:hidden;height:10px;background:var(--s2)">
+          ${activeP>0?`<div style="width:${activeP}%;background:var(--gr);transition:width .5s"></div>`:''}
+          ${idleP>0?`<div style="width:${idleP}%;background:var(--yl);transition:width .5s"></div>`:''}
+          ${offP>0?`<div style="width:${offP}%;background:var(--s3);transition:width .5s"></div>`:''}
+        </div>
+      </div>
+      <!-- Bar legend -->
+      <div style="display:flex;gap:16px;font-size:11px;color:var(--mu)">
+        <span><span style="color:var(--gr);font-weight:600">${activeMins}m</span> Active (${activeP}%)</span>
+        <span><span style="color:var(--yl);font-weight:600">${idleMins}m</span> Idle</span>
+        <span style="margin-left:auto;font-weight:600;color:var(--tx)">${shiftMins>0?Math.floor(shiftMins/60)+'h '+shiftMins%60+'m total':''}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  c.innerHTML=`
+  <!-- Stats row -->
+  <div class="stats-grid" style="margin-bottom:20px">
+    <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${total}</div><div class="stat-label">Total Agents</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${online}</div><div class="stat-label">Online Now</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${activeNow}</div><div class="stat-label">Active Now</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--mu)">${total-online}</div><div class="stat-label">Offline</div></div>
+  </div>
+
+  <!-- Legend -->
+  <div style="display:flex;gap:16px;margin-bottom:16px;font-size:12px;color:var(--mu)">
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--gr);display:inline-block"></span> Active</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--yl);display:inline-block"></span> Idle</span>
+    <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;border-radius:2px;background:var(--s3);display:inline-block"></span> No data</span>
+  </div>
+
+  <!-- Agent cards -->
+  <div>${agentCards||'<div class="empty-state"><div class="icon">👥</div>No agents found</div>'}</div>`;
 }
 
 async function renderAgents(){
