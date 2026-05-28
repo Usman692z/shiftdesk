@@ -527,6 +527,8 @@ const IDLE_MS = 5 * 60 * 1000; // 5 min idle threshold
 let windowBlurred = false; // tracks if browser lost OS focus
 
 function startTracking(){
+  // Desktop app handles tracking system-wide — skip browser tracking
+  if(window.__SHIFTDESK_DESKTOP__)return;
   if(isTracking||!currentAgent)return;
   isTracking=true;
   lastActivityTime=Date.now();
