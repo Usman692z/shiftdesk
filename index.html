@@ -166,13 +166,28 @@ tr:hover td{background:var(--b)}
     <div class="form-group"><label>Official Email</label><input type="email" id="mEmail" placeholder="agent@company.com"></div>
     <div class="form-group"><label>Department</label><select id="mDept"><option value="">Select Department</option><option value="Corporate">Corporate</option><option value="Retail">Retail</option><option value="Reseller">Reseller</option></select></div>
     <div class="form-group"><label>Role / Designation</label><input type="text" id="mRole" placeholder="e.g. Senior Agent"></div>
-    <div class="form-group"><label>Country</label><select id="mCountry"><option value="Pakistan">Pakistan</option><option value="Saudi Arabia">Saudi Arabia</option><option value="UAE">UAE</option><option value="UK">UK</option><option value="USA">USA</option></select></div>
+    <div class="form-group"><label>Country</label><select id="mCountry"><option value="Pakistan">🇵🇰 Pakistan</option><option value="Saudi Arabia">🇸🇦 Saudi Arabia</option></select></div>
     <div class="form-group"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
     <div class="form-group"><label>Agent Type</label><select id="mType"><option value="regular">Regular</option><option value="senior">Senior</option><option value="qa">QA</option><option value="manager">Manager</option><option value="admin">Admin</option></select></div>
     <div class="form-group" id="mPassGroup"><label>Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span></label><input type="password" id="mPass" placeholder="Set agent password"></div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" onclick="closeAgentModal()">Cancel</button>
       <button class="btn btn-primary btn-sm" id="saveAgentBtn" onclick="saveAgent()">Save Agent</button>
+    </div>
+  </div>
+</div>
+<!-- Task Modal -->
+<div class="modal-bg" id="taskModal">
+  <div class="modal">
+    <h2>📋 Assign Task</h2>
+    <div id="taskModalErr" class="auth-err"></div>
+    <div class="form-group"><label>Assign To</label><select id="tAgent"><option value="">Select Agent</option></select></div>
+    <div class="form-group"><label>Task Description</label><textarea id="tDesc" rows="3" placeholder="Describe the task..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Priority</label><select id="tPriority"><option value="Normal">🟡 Normal</option><option value="High">🟠 High</option><option value="Urgent">🔴 Urgent</option><option value="Low">🟢 Low</option></select></div>
+    <div class="form-group"><label>Due Date</label><input type="date" id="tDate"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeTaskModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="saveTaskBtn" onclick="saveTask()">Assign Task</button>
     </div>
   </div>
 </div>
@@ -324,17 +339,19 @@ function showApp(){
 function buildNav(){
   document.getElementById('sideUserName').textContent=isAdmin?'Admin':(currentAgent?.name||'Agent');
   document.getElementById('sideUserRole').textContent=isAdmin?'Administrator':(currentAgent?.role||'Agent');
-  const items=isAdmin?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'activity',icon:'📋',label:'Activity'}]:[{id:'myshift',icon:'⏱️',label:'My Shift'},{id:'activity',icon:'📋',label:'Activity'}];
+  const items=isAdmin?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'activity',icon:'📋',label:'Activity'}]:[{id:'myshift',icon:'⏱️',label:'My Shift'},{id:'mytasks',icon:'✅',label:'My Tasks'},{id:'activity',icon:'📋',label:'Activity'}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></div>`).join('');
 }
 
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',activity:'Activity Log',myshift:'My Shift'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   if(page==='dashboard')renderDashboard();
   else if(page==='agents')renderAgents();
+  else if(page==='tasks')renderTasks();
+  else if(page==='mytasks')renderMyTasks();
   else if(page==='activity')renderActivity();
   else if(page==='myshift')renderMyShift();
 }
@@ -409,7 +426,7 @@ async function saveAgent(){
   const shift_start=document.getElementById('mShiftStart').value;
   const type=document.getElementById('mType').value;
   const pw=document.getElementById('mPass').value;
-  const tzMap={'Pakistan':'Asia/Karachi','Saudi Arabia':'Asia/Riyadh','UAE':'Asia/Dubai','UK':'Europe/London','USA':'America/New_York'};
+  const tzMap={'Pakistan':'Asia/Karachi','Saudi Arabia':'Asia/Riyadh'};
   const timezone=tzMap[country]||'Asia/Karachi';
   const errEl=document.getElementById('agentModalErr');
   if(!name){errEl.textContent='Name is required';errEl.classList.add('show');return;}
@@ -459,7 +476,7 @@ async function renderMyShift(){
   const today=new Date().toISOString().slice(0,10);
   const{data:status}=await _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
   const isIn=status?.online||false,hasIn=!!status?.check_in,hasOut=!!status?.check_out;
-  const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦','UAE':'🇦🇪','UK':'🇬🇧','USA':'🇺🇸'};
+  const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'};
   const flag=countryFlag[currentAgent.country]||'🌍';
   const countryLabel=flag+' '+(currentAgent.country||'Pakistan');
   c.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:16px"><div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div><div><div style="font-size:18px;font-weight:800">'+currentAgent.name+'</div><div style="color:var(--mu);font-size:13px">'+(currentAgent.role||'Agent')+' • '+(currentAgent.dept||'')+'</div><div style="color:var(--mu);font-size:12px">'+(currentAgent.email||'')+'</div></div><div style="margin-left:auto"><span class="badge '+(isIn?'badge-online':'badge-offline')+'">'+(isIn?'🟢 Online':'⚫ Offline')+'</span></div></div></div><div class="shift-panel"><div class="shift-card"><h3>⏰ Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">'+countryLabel+'</div></div><div class="shift-card"><h3>📅 Shift Start</h3><div class="shift-time">'+(currentAgent.shift_start||'09:00')+'</div><div class="shift-status-text">'+countryLabel+'</div></div></div><div class="card" style="margin-bottom:16px"><div class="card-title">Today&#39;s Shift</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"><div class="stat-card"><div class="stat-num" style="color:var(--gr);font-size:18px">'+(status?.check_in?fmtTime(status.check_in):'—')+'</div><div class="stat-label">Check In</div></div><div class="stat-card"><div class="stat-num" style="color:var(--rd);font-size:18px">'+(status?.check_out?fmtTime(status.check_out):'—')+'</div><div class="stat-label">Check Out</div></div><div class="stat-card"><div class="stat-num" style="color:var(--ac);font-size:18px">'+(status?.check_in&&status?.check_out?calcHours(status.check_in,status.check_out):(status?.check_in?'Active':'—'))+'</div><div class="stat-label">Hours</div></div></div>'+(!hasIn?'<button class="checkin-btn checkin" onclick="doCheckIn()">✅ Check In</button>':(!hasOut?'<button class="checkin-btn checkout" onclick="doCheckOut()">🔴 Check Out</button>':'<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Shift Complete for Today</div>'))+'</div><div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>';
@@ -494,6 +511,129 @@ async function renderActivity(){
   const q=isAdmin?_db.from('activity_logs').select('*').order('created_at',{ascending:false}).limit(100):_db.from('activity_logs').select('*').eq('agent_id',currentAgent?.id).order('created_at',{ascending:false}).limit(50);
   const{data:logs}=await q;
   c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No activity recorded</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+l.agent_name+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+' • '+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join(''))+'</div>';
+}
+
+// ── TASK MANAGEMENT ──────────────────────────────────────────
+const PRIORITY_COLOR={Urgent:'var(--rd)',High:'var(--or)',Normal:'var(--yl)',Low:'var(--gr)'};
+const PRIORITY_ICON={Urgent:'🔴',High:'🟠',Normal:'🟡',Low:'🟢'};
+
+async function renderTasks(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const[{data:tasks},{data:agents}]=await Promise.all([
+    _db.from('tasks').select('*').order('created_at',{ascending:false}),
+    _db.from('agents').select('id,name,dept').order('name')
+  ]);
+  const pending=tasks?.filter(t=>!t.done)||[];
+  const done=tasks?.filter(t=>t.done)||[];
+  c.innerHTML=`
+  <div class="agents-header">
+    <h2>Tasks — ${pending.length} pending, ${done.length} done</h2>
+    <button class="btn btn-primary btn-sm" onclick="openTaskModal()">➕ Assign Task</button>
+  </div>
+  ${pending.length||done.length?`
+  <div class="card" style="padding:0">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Agent</th><th>Dept</th><th>Task</th><th>Priority</th><th>Due</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        ${[...pending,...done].map(t=>`<tr style="${t.done?'opacity:.5':''}">
+          <td><b>${t.agent_name||'—'}</b></td>
+          <td>${t.dept||'—'}</td>
+          <td style="max-width:240px;white-space:pre-wrap">${t.task||'—'}</td>
+          <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span></td>
+          <td style="font-size:12px;color:var(--mu)">${t.date||'—'}</td>
+          <td><span class="badge ${t.done?'badge-offline':'badge-online'}">${t.done?'✅ Done':'⏳ Pending'}</span></td>
+          <td><div class="td-actions">
+            ${!t.done?`<button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="markTaskDone('${t.id}')">✅ Done</button>`:''}
+            <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
+          </div></td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+  </div>`:`<div class="empty-state"><div class="icon">📭</div><p>No tasks yet. Click Assign Task to add one.</p></div>`}`;
+}
+
+async function openTaskModal(){
+  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+  const sel=document.getElementById('tAgent');
+  sel.innerHTML='<option value="">Select Agent</option>'+(agents||[]).map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
+  document.getElementById('tDesc').value='';
+  document.getElementById('tPriority').value='Normal';
+  document.getElementById('tDate').value=new Date().toISOString().slice(0,10);
+  document.getElementById('taskModalErr').classList.remove('show');
+  document.getElementById('taskModal').classList.add('open');
+}
+function closeTaskModal(){document.getElementById('taskModal').classList.remove('open');}
+
+async function saveTask(){
+  const sel=document.getElementById('tAgent');
+  const agentId=sel.value;
+  const agentName=sel.options[sel.selectedIndex]?.dataset?.name||'';
+  const agentDept=sel.options[sel.selectedIndex]?.dataset?.dept||'';
+  const task=document.getElementById('tDesc').value.trim();
+  const priority=document.getElementById('tPriority').value;
+  const date=document.getElementById('tDate').value;
+  const errEl=document.getElementById('taskModalErr');
+  if(!agentId){errEl.textContent='Please select an agent';errEl.classList.add('show');return;}
+  if(!task){errEl.textContent='Task description is required';errEl.classList.add('show');return;}
+  const btn=document.getElementById('saveTaskBtn');btn.disabled=true;btn.textContent='Assigning...';
+  const{error}=await _db.from('tasks').insert({agent_id:agentId,agent_name:agentName,dept:agentDept,task,priority,date,assigned_by:'Admin',done:false});
+  btn.disabled=false;btn.textContent='Assign Task';
+  if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
+  showToast('✅ Task assigned to '+agentName,'ok');
+  closeTaskModal();renderTasks();
+}
+
+async function markTaskDone(id){
+  const{error}=await _db.from('tasks').update({done:true}).eq('id',id);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  showToast('Task marked as done ✅','ok');renderTasks();
+}
+
+async function deleteTask(id){
+  if(!confirm('Delete this task?'))return;
+  const{error}=await _db.from('tasks').delete().eq('id',id);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  showToast('Task deleted','ok');renderTasks();
+}
+
+async function renderMyTasks(){
+  if(!currentAgent)return;
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const{data:tasks}=await _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('created_at',{ascending:false});
+  const pending=tasks?.filter(t=>!t.done)||[];
+  const done=tasks?.filter(t=>t.done)||[];
+  if(!tasks?.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>No tasks assigned yet!</p></div>';return;}
+  c.innerHTML=`
+  <div style="margin-bottom:16px;display:flex;gap:12px">
+    <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--yl)">${pending.length}</div><div class="stat-label">Pending</div></div>
+    <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--gr)">${done.length}</div><div class="stat-label">Done</div></div>
+  </div>
+  ${pending.length?`<div class="card"><div class="card-title">⏳ Pending Tasks</div>${pending.map(t=>`
+    <div style="padding:14px 0;border-bottom:1px solid var(--b)">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:600;margin-bottom:6px">${t.task}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority}</span>
+            ${t.date?`<span style="font-size:11px;color:var(--mu)">📅 Due: ${t.date}</span>`:''}
+          </div>
+        </div>
+        <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3);flex-shrink:0" onclick="agentMarkDone('${t.id}')">✅ Done</button>
+      </div>
+    </div>`).join('')}</div>`:''}
+  ${done.length?`<div class="card" style="opacity:.6"><div class="card-title">✅ Completed</div>${done.map(t=>`
+    <div style="padding:12px 0;border-bottom:1px solid var(--b)">
+      <div style="font-size:13px;text-decoration:line-through;color:var(--mu)">${t.task}</div>
+      <div style="font-size:11px;color:var(--mu);margin-top:4px">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority}${t.date?' • Due: '+t.date:''}</div>
+    </div>`).join('')}</div>`:''}`;
+}
+
+async function agentMarkDone(id){
+  const{error}=await _db.from('tasks').update({done:true}).eq('id',id);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  showToast('Great work! Task completed ✅','ok');renderMyTasks();
 }
 
 function fmtTime(ts){if(!ts)return '—';try{const tz=currentAgent?.timezone||'Asia/Karachi';return new Date(ts).toLocaleTimeString('en-US',{timeZone:tz,hour12:true,hour:'2-digit',minute:'2-digit'});}catch{return ts.slice(11,16);}}
