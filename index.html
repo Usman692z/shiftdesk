@@ -465,7 +465,7 @@ async function renderMyShift(){
 
 async function doCheckIn(){
   const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
-  const{error}=await _db.from('shift_status').upsert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date:today,online:true,check_in:now},{onConflict:'agent_id,date'});
+  const{error}=await _db.from('shift_status').upsert({agent_id:currentAgent.id,date:today,online:true,check_in:now},{onConflict:'agent_id,date'});
   if(error){showToast('Error: '+error.message,'err');return;}
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',detail:'Check In',date:today,time:now});
   showToast('Checked in! Have a great shift 🎯','ok');renderMyShift();
