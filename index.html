@@ -1316,9 +1316,7 @@ async function openTaskModal(calledByAgent){
   const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
   const sel=document.getElementById('tAgent');
   // If agent is assigning: exclude self from list
-  const filtered=calledByAgent
-    ?(agents||[]).filter(a=>a.id!==currentAgent?.id)
-    :(agents||[]);
+  const filtered=agents||[];
   sel.innerHTML='<option value="">Select Agent</option>'+filtered.map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
   document.getElementById('tDesc').value='';
   document.getElementById('tPriority').value='Normal';
@@ -1392,11 +1390,11 @@ async function renderMyTasks(){
   updateNotifBadge(pending.length);
   const assignedByMeList=assignedByMe||[];
   if(!tasks?.length&&!assignedByMeList.length){
-    c.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">${canAssign?`<button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">📤 Assign Task to Agent</button>`:''}</div><div class="empty-state"><div class="icon">🎉</div><p>No tasks assigned yet!</p></div>`;
+    c.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">${canAssign?`<button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">➕ Create / Assign Task</button>`:''}</div><div class="empty-state"><div class="icon">🎉</div><p>No tasks yet!</p></div>`;
     return;
   }
   c.innerHTML=`
-  ${canAssign?`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">📤 Assign Task to Agent</button></div>`:''}
+  ${canAssign?`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">➕ Create / Assign Task</button></div>`:''}
   <div style="margin-bottom:16px;display:flex;gap:12px">
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--yl)">${pending.length}</div><div class="stat-label">Pending</div></div>
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--gr)">${completed.length}</div><div class="stat-label">Completed</div></div>
