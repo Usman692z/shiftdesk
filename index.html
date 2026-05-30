@@ -157,8 +157,8 @@ tr:hover td{background:var(--b)}
   <div class="auth-card">
     <div class="auth-logo"><h1>ShiftDesk</h1><p>Agent Workforce Management</p></div>
     <div class="auth-tabs">
-      <div class="auth-tab active" id="tabAgent" onclick="switchAuthTab('agent')">🧑 Agent Login</div>
-      <div class="auth-tab" id="tabAdmin" onclick="switchAuthTab('admin')">🔑 Admin</div>
+      <div class="auth-tab active" id="tabAgent" onclick="switchAuthTab('agent')">Agent Login</div>
+      <div class="auth-tab" id="tabAdmin" onclick="switchAuthTab('admin')">${_i('key',12)} Admin</div>
     </div>
     <div id="authErr" class="auth-err"></div>
     <div id="agentLoginForm">
@@ -171,14 +171,14 @@ tr:hover td{background:var(--b)}
     <div id="forgotForm" class="hidden">
       <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Enter your email — we'll send a reset link</p>
       <div class="form-group"><label>Email</label><input type="email" id="forgotEmail" placeholder="agent@company.com"></div>
-      <button class="btn btn-primary" id="forgotBtn" onclick="sendResetEmail()">📧 Send Reset Link</button>
+      <button class="btn btn-primary" id="forgotBtn" onclick="sendResetEmail()">${_i('mail',12)} Send Reset Link</button>
       <p style="text-align:center;margin-top:12px"><span onclick="showForgotForm(false)" style="color:var(--mu);font-size:12px;cursor:pointer">← Back to Login</span></p>
     </div>
     <!-- Set New Password Form (after reset link click) -->
     <div id="newPassForm" class="hidden">
       <p style="color:var(--mu);font-size:13px;margin-bottom:16px;text-align:center">Set your new password</p>
       <div class="form-group"><label>New Password</label><input type="password" id="newPassInput" placeholder="Min 6 characters"></div>
-      <button class="btn btn-primary" id="newPassBtn" onclick="setNewPassword()">✅ Save Password</button>
+      <button class="btn btn-primary" id="newPassBtn" onclick="setNewPassword()">Save Password</button>
     </div>
     <div id="adminLoginForm" class="hidden">
       <div class="form-group"><label>Admin Email</label><input type="email" id="adminEmail" placeholder="admin@company.com"></div>
@@ -198,7 +198,7 @@ tr:hover td{background:var(--b)}
     </div>
   </div>
   <div class="main">
-    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span>🔔</span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap" style="display:none"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)">💬 <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span>💬 Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
+    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span style="display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap" style="display:none"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div></div>
     <div class="content" id="pageContent"></div>
   </div>
 </div>
@@ -219,7 +219,7 @@ tr:hover td{background:var(--b)}
     <div class="form-group" id="mPassGroup"><label>Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span></label><input type="password" id="mPass" placeholder="Set agent password"></div>
     <!-- Permissions -->
     <div class="form-group">
-      <label>🔐 Access Permissions</label>
+      <label>${_i('lock')} Access Permissions</label>
       <div style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px">
         <label style="display:flex;align-items:center;gap:10px;cursor:default;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--mu)">
           <input type="checkbox" checked disabled style="width:16px;height:16px;accent-color:var(--ac)">
@@ -227,15 +227,15 @@ tr:hover td{background:var(--b)}
         </label>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--tx)">
           <input type="checkbox" id="pMytasks" value="mytasks" style="width:16px;height:16px;accent-color:var(--ac)">
-          <span>✅ My Tasks</span>
+          <span>My Tasks</span>
         </label>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--tx)">
           <input type="checkbox" id="pActivity" value="activity" style="width:16px;height:16px;accent-color:var(--ac)">
-          <span>📋 Activity Log</span>
+          <span>${_i('file-text')} Activity Log</span>
         </label>
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--tx)">
           <input type="checkbox" id="pAssignTask" value="assign_task" style="width:16px;height:16px;accent-color:var(--ac)">
-          <span>📤 Assign Tasks <span style="font-size:11px;color:var(--mu)">(can assign to others)</span></span>
+          <span>Assign Tasks <span style="font-size:11px;color:var(--mu)">(can assign to others)</span></span>
         </label>
       </div>
     </div>
@@ -248,19 +248,19 @@ tr:hover td{background:var(--b)}
 <!-- Bulk Import Modal -->
 <div class="modal-bg" id="bulkModal">
   <div class="modal" style="max-width:680px">
-    <h2>📥 Bulk Import Agents</h2>
+    <h2>${_i('download')} Bulk Import Agents</h2>
     <div id="bulkErr" class="auth-err"></div>
 
     <!-- Step 1: Upload -->
     <div id="bulkStep1">
       <p style="color:var(--mu);font-size:13px;margin-bottom:16px">Upload a CSV file. Required columns: <b>name, email, dept, role, country, shift_start, type</b></p>
       <div style="background:var(--s2);border:2px dashed var(--b2);border-radius:var(--r);padding:24px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('csvFile').click()">
-        <div style="font-size:32px;margin-bottom:8px">📂</div>
+        <div style="margin-bottom:8px"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--mu)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg></div>
         <div style="font-size:14px;color:var(--mu)">Click to choose CSV file</div>
         <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="parseCsv(this)">
       </div>
       <div style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:12px;margin-bottom:16px">
-        <div style="font-size:11px;color:var(--mu);font-weight:600;margin-bottom:6px">📋 CSV FORMAT EXAMPLE:</div>
+        <div style="font-size:11px;color:var(--mu);font-weight:600;margin-bottom:6px">${_i('file-text')} CSV FORMAT EXAMPLE:</div>
         <code style="font-size:11px;color:var(--ac);white-space:pre">name,email,dept,role,country,shift_start,type
 Ahmed Ali,ahmed@co.com,Corporate,Agent,Pakistan,09:00,regular
 Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
@@ -287,7 +287,7 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 <!-- Re-assign Modal -->
 <div class="modal-bg" id="reassignModal">
   <div class="modal" style="max-width:400px">
-    <h2>🔁 Re-assign Task</h2>
+    <h2>${_i('refresh',14)} Re-assign Task</h2>
     <p id="reassignTaskDesc" style="color:var(--mu);font-size:13px;margin-bottom:16px;padding:10px;background:var(--s2);border-radius:var(--r)"></p>
     <div class="form-group"><label>Assign To</label><select id="reassignAgent"><option value="">Select Agent</option></select></div>
     <div id="reassignErr" class="auth-err"></div>
@@ -300,7 +300,7 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 <!-- Task Remark Modal (Complete / Reject) -->
 <div class="modal-bg" id="remarkModal">
   <div class="modal" style="max-width:420px">
-    <h2 id="remarkTitle">✅ Complete Task</h2>
+    <h2 id="remarkTitle">${_i('check')} Complete Task</h2>
     <p id="remarkTaskDesc" style="color:var(--mu);font-size:13px;margin-bottom:16px;padding:10px;background:var(--s2);border-radius:var(--r)"></p>
     <div class="form-group">
       <label>Remark <span style="color:var(--rd)">*</span></label>
@@ -316,15 +316,15 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 <!-- Work Location Modal -->
 <div class="modal-bg" id="locationModal">
   <div class="modal" style="max-width:380px;text-align:center">
-    <h2>📍 Where are you working?</h2>
+    <h2>${_i('map-pin',12)} Where are you working?</h2>
     <p style="color:var(--mu);font-size:13px;margin-bottom:24px">Please select your work location for today's shift</p>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px">
       <button onclick="confirmCheckIn('Office')" style="padding:20px 12px;border-radius:var(--rl);background:rgba(16,185,129,.1);border:2px solid rgba(16,185,129,.3);cursor:pointer;font-family:var(--font);transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.2)';this.style.borderColor='var(--gr)'" onmouseout="this.style.background='rgba(16,185,129,.1)';this.style.borderColor='rgba(16,185,129,.3)'">
-        <div style="font-size:32px;margin-bottom:8px">🏢</div>
+        <div style="font-size:32px;margin-bottom:8px;display:flex;align-items:center;justify-content:center"><?xml version="1.0"?><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gr)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/></svg></div>
         <div style="font-weight:700;font-size:15px;color:var(--gr)">Office</div>
       </button>
       <button onclick="confirmCheckIn('WFH')" style="padding:20px 12px;border-radius:var(--rl);background:rgba(108,99,255,.1);border:2px solid rgba(108,99,255,.3);cursor:pointer;font-family:var(--font);transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.2)';this.style.borderColor='var(--ac)'" onmouseout="this.style.background='rgba(108,99,255,.1)';this.style.borderColor='rgba(108,99,255,.3)'">
-        <div style="font-size:32px;margin-bottom:8px">🏠</div>
+        <div style="font-size:32px;margin-bottom:8px;display:flex;align-items:center;justify-content:center"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
         <div style="font-weight:700;font-size:15px;color:var(--ac)">Work From Home</div>
       </button>
     </div>
@@ -334,7 +334,7 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 <!-- Leave Request Modal -->
 <div class="modal-bg" id="leaveModal">
   <div class="modal" style="max-width:420px">
-    <h2>🏖️ Apply for Leave</h2>
+    <h2>Apply for Leave</h2>
     <div id="leaveErr" class="auth-err"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="form-group" style="margin:0"><label>From Date</label><input type="date" id="leaveFrom"></div>
@@ -350,7 +350,7 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 <!-- Announcement Modal -->
 <div class="modal-bg" id="announceModal">
   <div class="modal" style="max-width:440px">
-    <h2>📢 New Announcement</h2>
+    <h2>${_i('bell')} New Announcement</h2>
     <div id="announceErr" class="auth-err"></div>
     <div class="form-group"><label>Title</label><input type="text" id="aTitle" placeholder="e.g. Office closed Friday"></div>
     <div class="form-group"><label>Message</label><textarea id="aMsg" rows="3" placeholder="Write your announcement..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
@@ -364,11 +364,11 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 <!-- Task Modal -->
 <div class="modal-bg" id="taskModal">
   <div class="modal">
-    <h2>📋 Assign Task</h2>
+    <h2>${_i('file-text')} Assign Task</h2>
     <div id="taskModalErr" class="auth-err"></div>
     <div class="form-group" id="tAgentRow"><label>Assign To</label><select id="tAgent"><option value="">Select Agent</option></select></div>
     <div class="form-group"><label>Task Description</label><textarea id="tDesc" rows="3" placeholder="Describe the task..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
-    <div class="form-group"><label>Priority</label><select id="tPriority"><option value="Normal">🟡 Normal</option><option value="High">🟠 High</option><option value="Urgent">🔴 Urgent</option><option value="Low">🟢 Low</option></select></div>
+    <div class="form-group"><label>Priority</label><select id="tPriority"><option value="Normal">${_dot('var(--yl)')} Normal</option><option value="High">${_dot('var(--or)')} High</option><option value="Urgent">${_dot('var(--rd)')} Urgent</option><option value="Low">${_dot('var(--gr)')} Low</option></select></div>
     <div class="form-group"><label>Due Date</label><input type="date" id="tDate"></div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" onclick="closeTaskModal()">Cancel</button>
@@ -535,11 +535,11 @@ async function sendResetEmail(){
   const btn=document.getElementById('forgotBtn');
   btn.disabled=true;btn.textContent='Sending...';
   const{error}=await _db.auth.resetPasswordForEmail(email,{redirectTo:'https://shiftdesk.online'});
-  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='📧 Send Reset Link';return;}
+  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='${_i('mail',12)} Send Reset Link';return;}
   const errEl=document.getElementById('authErr');
   errEl.style.background='rgba(16,185,129,.1)';errEl.style.borderColor='rgba(16,185,129,.3)';errEl.style.color='var(--gr)';
-  errEl.textContent='✅ Reset link sent! Check your email.';errEl.classList.add('show');
-  btn.disabled=false;btn.textContent='📧 Send Reset Link';
+  errEl.textContent='Reset link sent! Check your email.';errEl.classList.add('show');
+  btn.disabled=false;btn.textContent='${_i('mail',12)} Send Reset Link';
 }
 
 async function setNewPassword(){
@@ -548,14 +548,14 @@ async function setNewPassword(){
   const btn=document.getElementById('newPassBtn');
   btn.disabled=true;btn.textContent='Saving...';
   const{error}=await _db.auth.updateUser({password:pass});
-  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='✅ Save Password';return;}
+  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='Save Password';return;}
   await _db.auth.signOut();
   document.getElementById('newPassForm').classList.add('hidden');
   document.getElementById('agentLoginForm').classList.remove('hidden');
   const errEl=document.getElementById('authErr');
   errEl.style.background='rgba(16,185,129,.1)';errEl.style.borderColor='rgba(16,185,129,.3)';errEl.style.color='var(--gr)';
-  errEl.textContent='✅ Password updated! Please login now.';errEl.classList.add('show');
-  btn.disabled=false;btn.textContent='✅ Save Password';
+  errEl.textContent='Password updated! Please login now.';errEl.classList.add('show');
+  btn.disabled=false;btn.textContent='Save Password';
 }
 
 async function logout(){
@@ -601,7 +601,7 @@ function showApp(){
 function applyTheme(theme){
   document.documentElement.setAttribute('data-theme',theme==='light'?'light':'dark');
   const btn=document.getElementById('themeBtn');
-  if(btn)btn.textContent=theme==='light'?'🌙':'☀️';
+  if(btn)btn.innerHTML=theme==='light'?_i('moon',16):_i('sun',16);
   localStorage.setItem('sd_theme',theme);
 }
 
@@ -629,6 +629,61 @@ async function fetchNotifBadge(){
     }
   }catch{}
 }
+
+function _i(name,sz=15){
+  const p={
+    check:`<polyline points="20 6 9 17 4 12"/>`,
+    x:`<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>`,
+    'check-circle':`<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>`,
+    'x-circle':`<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>`,
+    alert:`<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>`,
+    plus:`<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>`,
+    trash:`<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>`,
+    edit:`<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>`,
+    calendar:`<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
+    bell:`<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>`,
+    user:`<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`,
+    users:`<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>`,
+    upload:`<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>`,
+    download:`<polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/>`,
+    chat:`<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+    search:`<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>`,
+    moon:`<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`,
+    sun:`<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`,
+    coffee:`<path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>`,
+    refresh:`<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>`,
+    mail:`<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>`,
+    key:`<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>`,
+    home:`<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`,
+    building:`<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/>`,
+    monitor:`<rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>`,
+    laptop:`<rect x="2" y="3" width="20" height="13" rx="2" ry="2"/><path d="M22 17H2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z"/>`,
+    send:`<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>`,
+    logout:`<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>`,
+    clock:`<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>`,
+    'file-text':`<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>`,
+    save:`<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>`,
+    bars:`<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>`,
+    filter:`<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>`,
+    info:`<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>`,
+    globe:`<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>`,
+    printer:`<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>`,
+    eye:`<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`,
+    'arrow-right':`<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>`,
+    zap:`<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
+    shield:`<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`,
+    lock:`<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`,
+    award:`<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>`,
+    grid:`<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>`,
+    'map-pin':`<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>`,
+    'trending-up':`<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>`,
+    overdue:`<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>`,
+    'check-square':`<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>`,
+  };
+  const d=p[name]||p.info;
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0">${d}</svg>`;
+}
+function _dot(color,sz=8){return `<span style="display:inline-block;width:${sz}px;height:${sz}px;border-radius:50%;background:${color};flex-shrink:0"></span>`;}
 
 const _SVG={
   dashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
@@ -854,7 +909,7 @@ async function startChatNotifChannel(){
     addToInbox(m);
     if(currentPage!=='chat')_incChatUnread();
     if(Notification.permission==='granted'){
-      new Notification('💬 New message from '+(m.from_name||'Someone'),{body:m.message?.slice(0,80)||'',icon:'/favicon.ico',tag:'shiftdesk-chat'});
+      new Notification('${_i('chat',12)} New message from '+(m.from_name||'Someone'),{body:m.message?.slice(0,80)||'',icon:'/favicon.ico',tag:'shiftdesk-chat'});
     }
   });
   _chatNotifChannel.subscribe();
@@ -879,7 +934,7 @@ function _incAnnounceUnread(title){
   const nav=document.getElementById('nav_'+navPage);
   if(nav){nav.style.background='rgba(251,191,36,.15)';setTimeout(()=>{if(nav&&currentPage!==navPage)nav.style.background='';},1500);}
   if(Notification.permission==='granted'){
-    new Notification('📢 New Announcement',{body:title?.slice(0,80)||'You have a new announcement',icon:'/favicon.ico',tag:'shiftdesk-announce'});
+    new Notification('${_i('bell')} New Announcement',{body:title?.slice(0,80)||'You have a new announcement',icon:'/favicon.ico',tag:'shiftdesk-announce'});
   }
 }
 
@@ -1005,7 +1060,7 @@ async function renderDashboard(){
     const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
     const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
     const offP=100-activeP-idleP;
-    const statusDot=isOnline?(actStatus==='active'?'🟢':'🟡'):'⚫';
+    const statusDot=isOnline?(actStatus==='active'?_dot('var(--gr)'):_dot('var(--yl)')):_dot('#6b728e');
     const statusLabel=isOnline?(actStatus==='active'?'Active':'Idle'):'Offline';
     const statusColor=isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'var(--mu)';
     const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'}[a.country]||'';
@@ -1024,7 +1079,7 @@ async function renderDashboard(){
       </div>
       <!-- Check-in time -->
       <div style="font-size:11px;color:var(--mu)">
-        ${s.check_in?'🕐 '+fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now')+lateBadge(s.check_in,a.shift_start,a.timezone)+(s.work_location?` <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${s.work_location==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.12)'};color:${s.work_location==='WFH'?'var(--ac)':'var(--gr)'}">${s.work_location==='WFH'?'🏠 WFH':'🏢 Office'}</span>`:''):'⏸️ Not checked in'}
+        ${s.check_in?_i('clock',11)+' '+fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now')+lateBadge(s.check_in,a.shift_start,a.timezone)+(s.work_location?` <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${s.work_location==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.12)'};color:${s.work_location==='WFH'?'var(--ac)':'var(--gr)'};display:inline-flex;align-items:center;gap:3px">${s.work_location==='WFH'?_i('home',10)+' WFH':_i('building',10)+' Office'}</span>`:''):_i('clock',11)+' Not checked in'}
         ${shiftMins>0?'<span style="margin-left:8px;color:var(--tx);font-weight:600">'+Math.floor(shiftMins/60)+'h '+shiftMins%60+'m</span>':''}
       </div>
       <!-- Activity bar -->
@@ -1044,7 +1099,7 @@ async function renderDashboard(){
 
   // ── Group agents by department ────────────────────────────────
   const DEPT_COLOR={'Corporate':'var(--ac)','Retail':'var(--or)','Reseller':'var(--gr)'};
-  const DEPT_ICON={'Corporate':'🏢','Retail':'🛍️','Reseller':'🤝'};
+  const DEPT_ICON={'Corporate':'${_i('building',12)}','Retail':_i('upload',12),'Reseller':'${_i('award')}'};
   const depts={};
   (agents||[]).forEach(a=>{
     const d=a.dept||'Other';
@@ -1054,7 +1109,7 @@ async function renderDashboard(){
 
   const deptSections=Object.entries(depts).map(([dept,dagents])=>{
     const dColor=DEPT_COLOR[dept]||'var(--mu)';
-    const dIcon=DEPT_ICON[dept]||'📂';
+    const dIcon=DEPT_ICON[dept]||'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>';
     const dOnline=(dagents||[]).filter(a=>ts?.find(x=>x.agent_id===a.id)?.online).length;
     const dActive=(dagents||[]).filter(a=>tracking?.find(x=>x.agent_id===a.id)?.activity_status==='active').length;
     const cards=(dagents||[]).map(a=>buildCard(a)).join('');
@@ -1068,8 +1123,8 @@ async function renderDashboard(){
           <div style="font-size:11px;color:var(--mu)">${dagents.length} agents total</div>
         </div>
         <div style="display:flex;gap:10px;align-items:center">
-          <span style="font-size:12px;color:var(--gr);font-weight:600;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);padding:3px 10px;border-radius:20px">🟢 ${dOnline} online</span>
-          <span style="font-size:12px;color:var(--yl);font-weight:600;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);padding:3px 10px;border-radius:20px">⚡ ${dActive} active</span>
+          <span style="font-size:12px;color:var(--gr);font-weight:600;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px">${_dot('var(--gr)')} ${dOnline} online</span>
+          <span style="font-size:12px;color:var(--yl);font-weight:600;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px">${_i('zap',12)} ${dActive} active</span>
         </div>
       </div>
       <!-- Agent cards grid -->
@@ -1094,7 +1149,7 @@ async function renderDashboard(){
     <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--s3);display:inline-block"></span> No data</span>
   </div>
   <!-- Departments -->
-  ${deptSections||'<div class="empty-state"><div class="icon">👥</div>No agents found</div>'}`;
+  ${deptSections||'<div class="empty-state"><div class="icon">${_i('users')}</div>No agents found</div>'}`;
 }
 
 async function renderAgents(){
@@ -1102,10 +1157,10 @@ async function renderAgents(){
   const agents=await _getAgents(C.agents_full);
   const permLabel=p=>{
     if(!p)return'<span style="font-size:10px;color:var(--mu)">all</span>';
-    const icons={myshift:'⏱️',mytasks:'✅',activity:'📋',assign_task:'📤'};
+    const icons={myshift:_i('clock'),mytasks:_i('check-square'),activity:'${_i('file-text')}',assign_task:_i('upload')};
     return p.split(',').map(x=>`<span style="font-size:11px;background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:1px 5px">${icons[x]||x}</span>`).join(' ');
   };
-  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">📥 Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">➕ Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)">🔑 Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">✏️ Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">🔑 Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">🗑️</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
+  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
 }
 
 function setPermCheckboxes(perms){
@@ -1133,7 +1188,7 @@ function openAddAgent(){
   document.getElementById('mType').value='regular';
   setPermCheckboxes('myshift,mytasks,activity,assign_task'); // all on by default
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
-  document.getElementById('modalTitle').textContent='➕ Add New Agent';
+  document.getElementById('modalTitle').innerHTML=_i('plus')+' Add New Agent';
   document.getElementById('agentModalErr').classList.remove('show');
   document.getElementById('agentModal').classList.add('open');
 }
@@ -1153,7 +1208,7 @@ async function openEditAgent(id){
   document.getElementById('mPass').value='';
   setPermCheckboxes(a.permissions||'myshift,mytasks,activity');
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span>';
-  document.getElementById('modalTitle').textContent='✏️ Edit Agent';
+  document.getElementById('modalTitle').innerHTML=_i('edit')+' Edit Agent';
   document.getElementById('agentModalErr').classList.remove('show');
   document.getElementById('agentModal').classList.add('open');
 }
@@ -1185,14 +1240,14 @@ async function saveAgent(){
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
-      showToast('✅ Agent added: '+name,'ok');
+      showToast(_i('check')+' Agent added: '+name,'ok');
     }else{
       const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions};
       if(pw)updateData.pw=await hashPw(pw);
       const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
-      showToast('✅ Agent updated: '+name,'ok');
+      showToast(_i('check')+' Agent updated: '+name,'ok');
     }
     closeAgentModal();renderAgents();
   }catch(e){errEl.textContent='Error: '+e.message;errEl.classList.add('show');}
@@ -1213,7 +1268,7 @@ async function resetAgentPassword(agentId,name){
   if(newPass.length<6){showToast('Password must be at least 6 characters','err');return;}
   const{error}=await _db.from('agents').update({pw:await hashPw(newPass)}).eq('id',agentId);
   if(error){showToast('Error: '+error.message,'err');return;}
-  showToast('✅ Password updated for '+name,'ok');
+  showToast(_i('check')+' Password updated for '+name,'ok');
 }
 
 // ── AGENT DASHBOARD ──────────────────────────────────────────────
@@ -1331,7 +1386,7 @@ async function renderMyDashboard(){
   c.innerHTML=`
   ${announcements?.filter(a=>!a.expires_at||a.expires_at>=today).length?`<div style="margin-bottom:16px">${announcements.filter(a=>!a.expires_at||a.expires_at>=today).map(a=>`
     <div style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);border-left:3px solid var(--ac);border-radius:var(--r);padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
-      <span style="font-size:18px">📢</span>
+      <span style="font-size:18px;display:flex;align-items:center">${_i('bell',18)}</span>
       <div><div style="font-weight:700;font-size:13px;margin-bottom:2px">${a.title}</div><div style="font-size:12px;color:var(--mu)">${a.message}</div></div>
     </div>`).join('')}</div>`:''}
 
@@ -1353,7 +1408,7 @@ async function renderMyDashboard(){
       </div>
       <div>
         <div style="font-size:16px;font-weight:800;color:${perfColor}">${perfLabel}</div>
-        <div style="font-size:11px;color:var(--mu);margin-top:4px">⭐ Performance Score</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:4px">Performance Score</div>
         <div style="font-size:11px;color:var(--mu);margin-top:2px">Attend: ${attendScore}% · Punct: ${punctScore}% · Tasks: ${taskScore}%</div>
       </div>
     </div>
@@ -1367,12 +1422,12 @@ async function renderMyDashboard(){
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="card-title" style="margin:0">📅 ${monthName} ${yr}</div>
+      <div class="card-title" style="margin:0;display:flex;align-items:center;gap:6px">${_i('calendar')} ${monthName} ${yr}</div>
       <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap">
-        <span style="color:var(--gr)">🟢 On Time</span>
-        <span style="color:var(--yl)">🟡 Late</span>
-        <span style="color:var(--rd)">🔴 Absent</span>
-        <span style="color:#a78bfa">🟣 Leave</span>
+        <span style="color:var(--gr);display:inline-flex;align-items:center;gap:3px">${_dot('var(--gr)')} On Time</span>
+        <span style="color:var(--yl);display:inline-flex;align-items:center;gap:3px">${_dot('var(--yl)')} Late</span>
+        <span style="color:var(--rd);display:inline-flex;align-items:center;gap:3px">${_dot('var(--rd)')} Absent</span>
+        <span style="color:#a78bfa;display:inline-flex;align-items:center;gap:3px">${_dot('var(--ac2)')} Leave</span>
         <span style="color:var(--rd)">Off=Fri</span>
       </div>
     </div>
@@ -1387,18 +1442,18 @@ async function renderAnnouncements(){
   const list=await _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).then(r=>r.data));
   c.innerHTML=`
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-    <button class="btn btn-primary btn-sm" onclick="openAnnounceModal()">📢 New Announcement</button>
+    <button class="btn btn-primary btn-sm" onclick="openAnnounceModal()">${_i('bell')} New Announcement</button>
   </div>
-  ${!list?.length?'<div class="empty-state"><div class="icon">📢</div><p>No announcements yet.</p></div>':list.map(a=>{
+  ${!list?.length?'<div class="empty-state"><div class="icon">🎉</div><p>No announcements yet.</p></div>':list.map(a=>{
     const expired=a.expires_at&&a.expires_at<today;
     return `<div class="card" style="margin-bottom:12px;border-left:3px solid ${expired?'var(--mu)':'var(--ac)'}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
         <div>
           <div style="font-size:15px;font-weight:700;margin-bottom:6px">${a.title} ${expired?'<span style="font-size:11px;color:var(--mu)">(Expired)</span>':''}</div>
           <div style="font-size:13px;color:var(--mu);margin-bottom:8px">${a.message}</div>
-          <div style="font-size:11px;color:var(--mu)">📅 ${new Date(a.created_at).toLocaleDateString()} ${a.expires_at?'· Expires: '+a.expires_at:''}</div>
+          <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:4px">${_i('calendar',11)} ${new Date(a.created_at).toLocaleDateString()} ${a.expires_at?'· Expires: '+a.expires_at:''}</div>
         </div>
-        <button class="btn btn-danger btn-sm" style="flex-shrink:0" onclick="deleteAnnouncement('${a.id}')">🗑️</button>
+        <button class="btn btn-danger btn-sm" style="flex-shrink:0" onclick="deleteAnnouncement('${a.id}')">${_i('trash',14)}</button>
       </div>
     </div>`;
   }).join('')}`;
@@ -1408,11 +1463,11 @@ function renderHelp(){
   c.innerHTML=`
   <!-- Downloads -->
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title">💻 Download Desktop App</div>
+    <div class="card-title">${_i('laptop',12)} Download Desktop App</div>
     <p style="font-size:13px;color:var(--mu);margin-bottom:16px">Desktop app installs on your PC/Mac and tracks activity system-wide — even when browser is closed.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
       <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-Setup-1.0.3.exe" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.2)'" onmouseout="this.style.background='rgba(108,99,255,.1)'">
-        <span style="font-size:28px">💻</span>
+        <span style="font-size:28px">${_i('laptop',12)}</span>
         <div><div style="font-weight:700;color:var(--ac);font-size:14px">Windows</div><div style="font-size:11px;color:var(--mu)">ShiftDesk-Setup-1.0.3.exe</div></div>
       </a>
       <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-1.0.3-mac-apple-silicon.dmg" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.18)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">
@@ -1425,32 +1480,32 @@ function renderHelp(){
       </a>
     </div>
     <div style="margin-top:12px;padding:10px 14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:var(--r);font-size:12px;color:var(--mu)">
-      💡 <b>Mac users:</b> If you see a "damaged app" error — open Terminal and run: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;color:var(--ac)">xattr -cr ~/Downloads/ShiftDesk*.dmg</code> then Right-click → Open
+      ${_i('zap')} <b>Mac users:</b> If you see a "damaged app" error — open Terminal and run: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;color:var(--ac)">xattr -cr ~/Downloads/ShiftDesk*.dmg</code> then Right-click → Open
     </div>
   </div>
 
   <!-- User Manual -->
   <div class="card">
-    <div class="card-title">📖 How to Use ShiftDesk</div>
+    <div class="card-title">${_i('file-text')} How to Use ShiftDesk</div>
     <div style="display:grid;gap:12px">
       ${(isAdmin?[
-        {icon:'📊',title:'Dashboard',desc:'Live status of all agents — online/offline, active/idle, check-in time, and daily hours. Updates in real time.'},
-        {icon:'👥',title:'Manage Agents',desc:'Add new agents, edit details, and reset passwords. Set permissions to control what each agent can see. Bulk CSV import is also available.'},
-        {icon:'✅',title:'Task Management',desc:'Assign tasks to any agent with priority and due date. Task status updates automatically when completed or rejected.'},
-        {icon:'🏖️',title:'Leave Requests',desc:'All agent leave requests appear here. Approve or reject with one click. Approved leave is shown on the agent\'s calendar.'},
-        {icon:'📢',title:'Announcements',desc:'Send notices to the entire team — with a title, message, and expiry date. All agents see it on their dashboard.'},
-        {icon:'💬',title:'Chat',desc:'Chat directly with any agent or use "Admin Broadcast" to send a message to the entire team at once.'},
-        {icon:'🖥️',title:'Activity Tracking',desc:'Tracked automatically via the desktop app — active time and idle time. Each agent\'s daily productivity is shown in a bar chart.'},
-        {icon:'📋',title:'Activity Log',desc:'All agent check-in, check-out, and break events in chronological order.'},
-        {icon:'📈',title:'Reports',desc:'Filter by month, department, or agent. View detailed reports or a heatmap. PDF export available for payroll.'},
+        {icon:'${_i('bars')}',title:'Dashboard',desc:'Live status of all agents — online/offline, active/idle, check-in time, and daily hours. Updates in real time.'},
+        {icon:'${_i('users')}',title:'Manage Agents',desc:'Add new agents, edit details, and reset passwords. Set permissions to control what each agent can see. Bulk CSV import is also available.'},
+        {icon:_i('check-square'),title:'Task Management',desc:'Assign tasks to any agent with priority and due date. Task status updates automatically when completed or rejected.'},
+        {icon:_i('calendar'),title:'Leave Requests',desc:'All agent leave requests appear here. Approve or reject with one click. Approved leave is shown on the agent\'s calendar.'},
+        {icon:'${_i('bell')}',title:'Announcements',desc:'Send notices to the entire team — with a title, message, and expiry date. All agents see it on their dashboard.'},
+        {icon:'${_i('chat',12)}',title:'Chat',desc:'Chat directly with any agent or use "Admin Broadcast" to send a message to the entire team at once.'},
+        {icon:'${_i('monitor')}',title:'Activity Tracking',desc:'Tracked automatically via the desktop app — active time and idle time. Each agent\'s daily productivity is shown in a bar chart.'},
+        {icon:'${_i('file-text')}',title:'Activity Log',desc:'All agent check-in, check-out, and break events in chronological order.'},
+        {icon:'${_i('trending-up')}',title:'Reports',desc:'Filter by month, department, or agent. View detailed reports or a heatmap. PDF export available for payroll.'},
       ]:[
-        {icon:'⏱️',title:'My Shift',desc:'Check in at the start of your shift every day. Click "Take Break" when you need a break — then resume when you return. Check out when your shift ends. A 2nd shift is optional.'},
-        {icon:'✅',title:'My Tasks',desc:'Tasks assigned to you by admin or other agents appear here. Mark them complete or reject with a remark. You can also track your own work using "New Task".'},
-        {icon:'📊',title:'My Dashboard',desc:'Monthly calendar — 🟢 On time, 🟡 Late, 🔴 Absent, 🟣 Leave, Off=Friday. Shows your performance score (attendance + punctuality + tasks) and overtime.'},
-        {icon:'🏖️',title:'Leave',desc:'Click "Apply Leave", fill in the from/to dates and reason, and submit. Admin will approve it. Approved leave appears on your calendar in purple with a "Leave" label.'},
-        {icon:'📢',title:'Announcements',desc:'Any notices from admin appear here — office meetings, holidays, or important updates.'},
-        {icon:'💬',title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
-        {icon:'📋',title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
+        {icon:_i('clock'),title:'My Shift',desc:'Check in at the start of your shift every day. Click "Take Break" when you need a break — then resume when you return. Check out when your shift ends. A 2nd shift is optional.'},
+        {icon:_i('check-square'),title:'My Tasks',desc:'Tasks assigned to you by admin or other agents appear here. Mark them complete or reject with a remark. You can also track your own work using "New Task".'},
+        {icon:'${_i('bars')}',title:'My Dashboard',desc:'Monthly calendar — ${_dot('var(--gr)')} On time, ${_dot('var(--yl)')} Late, ${_dot('var(--rd)')} Absent, ${_dot('var(--ac2)')} Leave, Off=Friday. Shows your performance score (attendance + punctuality + tasks) and overtime.'},
+        {icon:_i('calendar'),title:'Leave',desc:'Click "Apply Leave", fill in the from/to dates and reason, and submit. Admin will approve it. Approved leave appears on your calendar in purple with a "Leave" label.'},
+        {icon:'${_i('bell')}',title:'Announcements',desc:'Any notices from admin appear here — office meetings, holidays, or important updates.'},
+        {icon:'${_i('chat',12)}',title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
+        {icon:'${_i('file-text')}',title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
       ]).map(s=>`
       <div style="display:flex;gap:14px;padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
         <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
@@ -1466,15 +1521,15 @@ async function renderMyAnnouncements(){
   const today=new Date().toISOString().slice(0,10);
   const list=await _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).then(r=>r.data));
   const active=(list||[]).filter(a=>!a.expires_at||a.expires_at>=today);
-  if(!active.length){c.innerHTML='<div class="empty-state"><div class="icon">📢</div><p>No announcements right now.</p></div>';return;}
+  if(!active.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>No announcements right now.</p></div>';return;}
   c.innerHTML=active.map(a=>`
   <div class="card" style="margin-bottom:12px;border-left:3px solid var(--ac)">
     <div style="display:flex;gap:12px;align-items:flex-start">
-      <span style="font-size:22px">📢</span>
+      <span style="font-size:22px;display:flex;align-items:center">${_i('bell',22)}</span>
       <div>
         <div style="font-size:15px;font-weight:700;margin-bottom:6px">${a.title}</div>
         <div style="font-size:13px;color:var(--mu);margin-bottom:8px;line-height:1.5">${a.message}</div>
-        <div style="font-size:11px;color:var(--mu)">📅 ${new Date(a.created_at).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}${a.expires_at?' · Expires: '+a.expires_at:''}</div>
+        <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:4px">${_i('calendar',11)} ${new Date(a.created_at).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}${a.expires_at?' · Expires: '+a.expires_at:''}</div>
       </div>
     </div>
   </div>`).join('');
@@ -1494,7 +1549,7 @@ async function saveAnnouncement(){
   btn.disabled=false;btn.textContent='Post Announcement';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('announcements');
-  showToast('📢 Announcement posted!','ok');closeAnnounceModal();renderAnnouncements();
+  showToast('${_i('bell')} Announcement posted!','ok');closeAnnounceModal();renderAnnouncements();
 }
 async function deleteAnnouncement(id){
   if(!confirm('Delete this announcement?'))return;
@@ -1525,7 +1580,7 @@ async function submitLeave(){
   btn.disabled=false;btn.textContent='Submit Request';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('leaves_agent_'+currentAgent.id,'leaves_all','leaves_agent_approved_'+currentAgent.id);
-  showToast('🏖️ Leave request submitted!','ok');closeLeaveModal();renderMyLeave();
+  showToast(_i('calendar')+' Leave request submitted!','ok');closeLeaveModal();renderMyLeave();
 }
 
 async function renderMyLeave(){
@@ -1534,16 +1589,16 @@ async function renderMyLeave(){
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const leaves=await _q('leaves_agent_'+currentAgent.id,30000,()=>_db.from('leave_requests').select(C.leave).eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).then(r=>r.data));
   const statusColor={pending:'var(--yl)',approved:'var(--gr)',rejected:'var(--rd)'};
-  const statusIcon={pending:'⏳',approved:'✅',rejected:'❌'};
+  const statusIcon={pending:_i('clock',12),approved:_i('check-circle',12),rejected:_i('x-circle',12)};
   c.innerHTML=`
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-    <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">➕ Apply Leave</button>
+    <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">${_i('plus')} Apply Leave</button>
   </div>
-  ${!leaves?.length?'<div class="empty-state"><div class="icon">🏖️</div><p>No leave requests yet.</p></div>':leaves.map(l=>`
+  ${!leaves?.length?'<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>No leave requests yet.</p></div>':leaves.map(l=>`
   <div class="card" style="margin-bottom:12px;border-left:3px solid ${statusColor[l.status]||'var(--mu)'}">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="font-weight:700">${l.date_from} → ${l.date_to}</div>
-      <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44">${statusIcon[l.status]||'⏳'} ${l.status||'pending'}</span>
+      <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44;display:inline-flex;align-items:center;gap:4px">${statusIcon[l.status]||_i('clock',12)} ${l.status||'pending'}</span>
     </div>
     ${l.reason?`<div style="font-size:13px;color:var(--mu)">${l.reason}</div>`:''}
     ${l.status!=='pending'?`<div style="font-size:11px;color:var(--mu);margin-top:6px">Reviewed by: ${l.reviewed_by||'Admin'}</div>`:''}
@@ -1562,27 +1617,27 @@ async function renderAdminLeaves(){
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
       <div>
         <div style="font-weight:700;margin-bottom:4px">${l.agent_name} <span style="font-size:12px;color:var(--mu);font-weight:400">(${l.dept||'—'})</span></div>
-        <div style="font-size:13px;margin-bottom:4px">📅 ${l.date_from} → ${l.date_to}</div>
+        <div style="font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:4px">${_i('calendar',12)} ${l.date_from} → ${l.date_to}</div>
         ${l.reason?`<div style="font-size:12px;color:var(--mu)">${l.reason}</div>`:''}
       </div>
       ${l.status==='pending'?`
       <div style="display:flex;gap:8px;flex-shrink:0">
-        <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="reviewLeave('${l.id}','approved')">✅ Approve</button>
-        <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="reviewLeave('${l.id}','rejected')">❌ Reject</button>
-      </div>`:`<span class="badge" style="font-size:11px;color:${statusColor[l.status]};background:${statusColor[l.status]}22;border:1px solid ${statusColor[l.status]}44">${l.status==='approved'?'✅ Approved':'❌ Rejected'}</span>`}
+        <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="reviewLeave('${l.id}','approved')">${_i('check',12)} Approve</button>
+        <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="reviewLeave('${l.id}','rejected')">${_i('x',12)} Reject</button>
+      </div>`:`<span class="badge" style="font-size:11px;color:${statusColor[l.status]};background:${statusColor[l.status]}22;border:1px solid ${statusColor[l.status]}44;display:inline-flex;align-items:center;gap:4px">${l.status==='approved'?_i('check-circle',11)+' Approved':_i('x-circle',11)+' Rejected'}</span>`}
     </div>
   </div>`;
   c.innerHTML=`
-  ${pending.length?`<div class="card-title" style="margin-bottom:12px">⏳ Pending (${pending.length})</div>${pending.map(card).join('')}`:''}
-  ${others.length?`<div class="card-title" style="margin:16px 0 12px">📋 Reviewed</div>${others.map(card).join('')}`:''}
-  ${!leaves?.length?'<div class="empty-state"><div class="icon">🏖️</div><p>No leave requests yet.</p></div>':''}`;
+  ${pending.length?`<div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:6px">${_i('clock')} Pending (${pending.length})</div>${pending.map(card).join('')}`:''}
+  ${others.length?`<div class="card-title" style="margin:16px 0 12px;display:flex;align-items:center;gap:6px">${_i('file-text')} Reviewed</div>${others.map(card).join('')}`:''}
+  ${!leaves?.length?'<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>No leave requests yet.</p></div>':''}`;
 }
 
 async function reviewLeave(id,status){
   const{error}=await _db.from('leave_requests').update({status,reviewed_by:'Admin',reviewed_at:new Date().toISOString()}).eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('leaves_all','leaves_agent_approved_'+id);
-  showToast(status==='approved'?'✅ Leave approved':'❌ Leave rejected','ok');
+  showToast(status==='approved'?_i('check')+' Leave approved':_i('x')+' Leave rejected','ok');
   renderAdminLeaves();
 }
 
@@ -1606,7 +1661,7 @@ async function renderChat(){
   // Load agents — exclude own record and admin record
   const agents=await _getAgents('id,name,dept,type');
   const recipients=[
-    ...(isAdmin?[]:[{id:'admin',name:'Admin',icon:'👤'}]),
+    ...(isAdmin?[]:[{id:'admin',name:'Admin',icon:null}]),
     ...(agents||[]).filter(a=>a.type!=='admin'&&a.id!==myId).map(a=>({...a,icon:null}))
   ];
   // Admin sees individual agents (no admin-broadcast self entry)
@@ -1729,7 +1784,7 @@ async function renderChat(){
   <div style="display:flex;height:100%;background:var(--s)">
     <!-- Contacts sidebar -->
     <div style="width:280px;min-width:280px;border-right:1px solid var(--b);display:flex;flex-direction:column;background:var(--s)">
-      <div style="padding:14px 16px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;flex-shrink:0">💬 Messages</div>
+      <div style="padding:14px 16px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700;flex-shrink:0">${_i('chat',12)} Messages</div>
       <div style="flex:1;overflow-y:auto">${recipientTabs||'<div style="padding:20px;color:var(--mu);font-size:13px">No contacts yet</div>'}</div>
     </div>
     <!-- Chat area -->
@@ -1746,7 +1801,7 @@ async function renderChat(){
       <!-- Input -->
       <div style="padding:10px 14px;border-top:1px solid var(--b);background:var(--s);display:flex;gap:8px;align-items:center;flex-shrink:0">
         <input id="chatInput" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMessage()" style="flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:9px 16px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none">
-        <button class="btn btn-primary btn-sm" onclick="sendMessage()" style="border-radius:20px;padding:9px 18px;flex-shrink:0">Send ➤</button>
+        <button class="btn btn-primary btn-sm" onclick="sendMessage()" style="border-radius:20px;padding:9px 18px;flex-shrink:0">Send</button>
       </div>
     </div>
   </div>`;
@@ -1813,26 +1868,26 @@ async function renderMyShift(){
 
   // ── Action buttons ────────────────────────────────────────────
   const breakBtn=(shiftN,onBrk)=>onBrk
-    ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--gr),#059669);color:#fff">▶️ Resume Work</button>`
-    :`<button onclick="doBreakStart(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--b2);font-family:var(--font);background:transparent;color:var(--mu)">☕ Take Break</button>`;
+    ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--gr),#059669);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('check')} Resume Work</button>`
+    :`<button onclick="doBreakStart(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--b2);font-family:var(--font);background:transparent;color:var(--mu);display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} Take Break</button>`;
 
   let actionBtn='';
   if(!s1In){
-    actionBtn='<button class="checkin-btn checkin" onclick="doCheckIn(1)">✅ Check In — Shift 1</button>';
+    actionBtn=`<button class="checkin-btn checkin" onclick="doCheckIn(1)" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('check')} Check In — Shift 1</button>`;
   } else if(!s1Out){
     actionBtn=`<div style="display:flex;gap:8px;margin-top:4px">
       ${breakBtn(1,onBreak1)}
-      <button class="checkin-btn checkout" style="flex:1;margin-top:0" onclick="doCheckOut(1)">🔴 Check Out</button>
+      <button class="checkin-btn checkout" style="flex:1;margin-top:0;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="doCheckOut(1)">${_i('x')} Check Out</button>
     </div>`;
   } else if(!s2In){
     actionBtn=`<div style="text-align:center;padding:14px 0 4px">
-      <div style="color:var(--gr);font-weight:600;margin-bottom:12px">✅ Shift 1 Complete for Today</div>
-      <button onclick="doCheckIn(2)" style="background:transparent;border:1px dashed var(--b2);color:var(--mu);padding:8px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--font);transition:var(--tr)" onmouseover="this.style.borderColor='var(--gr)';this.style.color='var(--gr)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mu)'">➕ Start 2nd Shift <span style="font-size:11px;opacity:.6">(optional)</span></button>
+      <div style="color:var(--gr);font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px">${_i('check-circle')} Shift 1 Complete for Today</div>
+      <button onclick="doCheckIn(2)" style="background:transparent;border:1px dashed var(--b2);color:var(--mu);padding:8px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--font);transition:var(--tr);display:inline-flex;align-items:center;gap:6px" onmouseover="this.style.borderColor='var(--gr)';this.style.color='var(--gr)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mu)'">${_i('plus')} Start 2nd Shift <span style="font-size:11px;opacity:.6">(optional)</span></button>
     </div>`;
   } else if(!s2Out){
     actionBtn=`<div style="display:flex;gap:8px;margin-top:4px">
       ${breakBtn(2,onBreak2)}
-      <button class="checkin-btn checkout" style="flex:1;margin-top:0" onclick="doCheckOut(2)">🔴 Check Out</button>
+      <button class="checkin-btn checkout" style="flex:1;margin-top:0;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="doCheckOut(2)">${_i('x')} Check Out</button>
     </div>`;
   } else {
     actionBtn='';
@@ -1843,7 +1898,7 @@ async function renderMyShift(){
     if(!inn)return '';
     const isActive=inn&&!out;
     const onBrk=brkStart&&!brkEnd;
-    const locBadge=loc?`<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${loc==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.15)'};color:${loc==='WFH'?'var(--ac)':'var(--gr)'};border:1px solid ${loc==='WFH'?'rgba(108,99,255,.3)':'rgba(16,185,129,.3)'}">${loc==='WFH'?'🏠 Work From Home':'🏢 Office'}</span>`:'';
+    const locBadge=loc?`<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${loc==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.15)'};color:${loc==='WFH'?'var(--ac)':'var(--gr)'};border:1px solid ${loc==='WFH'?'rgba(108,99,255,.3)':'rgba(16,185,129,.3)'};display:inline-flex;align-items:center;gap:4px">${loc==='WFH'?_i('home',11)+' Work From Home':_i('building',11)+' Office'}</span>`:'';
     return `
     <div style="background:var(--s2);border:1px solid ${onBrk?'rgba(251,191,36,.4)':isActive?'rgba(16,185,129,.25)':'var(--b)'};border-radius:var(--r);padding:14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
@@ -1851,7 +1906,7 @@ async function renderMyShift(){
           <div style="font-size:12px;font-weight:700;color:var(--mu);letter-spacing:.5px">SHIFT ${num}</div>
           ${locBadge}
         </div>
-        ${onBrk?'<span style="font-size:11px;font-weight:700;color:var(--yl);background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);padding:2px 8px;border-radius:20px">☕ On Break</span>':isActive?'<span style="font-size:11px;font-weight:700;color:var(--gr)">● ACTIVE</span>':''}
+        ${onBrk?`<span style="font-size:11px;font-weight:700;color:var(--yl);background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px">${_i('coffee',11)} On Break</span>`:isActive?'<span style="font-size:11px;font-weight:700;color:var(--gr)">● ACTIVE</span>':''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
         <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--gr);font-size:14px">${fmtTime(inn)}</div><div class="stat-label">Check In</div></div>
@@ -1866,28 +1921,28 @@ async function renderMyShift(){
   c.innerHTML=`
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:16px">
-      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div>
+      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
       <div>
         <div style="font-size:18px;font-weight:800">${currentAgent.name}</div>
         <div style="color:var(--mu);font-size:13px">${currentAgent.role||'Agent'} • ${currentAgent.dept||''}</div>
         <div style="color:var(--mu);font-size:12px">${currentAgent.email||''}</div>
       </div>
       <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <span class="badge ${isIn?'badge-online':'badge-offline'}">${isIn?'🟢 Online':'⚫ Offline'}</span>
-        ${isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3)">🟡 Idle</span>':''}
+        <span class="badge ${isIn?'badge-online':'badge-offline'}" style="display:inline-flex;align-items:center;gap:4px">${isIn?_dot('var(--gr)')+' Online':_dot('#6b728e')+' Offline'}</span>
+        ${isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3);display:inline-flex;align-items:center;gap:4px">'+_dot('var(--yl)')+' Idle</span>':''}
       </div>
     </div>
   </div>
 
   <div class="shift-panel" style="margin-bottom:16px">
-    <div class="shift-card"><h3>⏰ Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">${countryLabel}</div></div>
-    <div class="shift-card"><h3>📅 Shift Start</h3><div class="shift-time">${currentAgent.shift_start||'09:00'}</div><div class="shift-status-text">${countryLabel}</div></div>
+    <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('clock',13)} Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">${countryLabel}</div></div>
+    <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('calendar',13)} Shift Start</h3><div class="shift-time">${currentAgent.shift_start||'09:00'}</div><div class="shift-status-text">${countryLabel}</div></div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="card-title" style="margin:0">📅 Today's Shifts</div>
-      ${totalMins>0?`<div style="font-size:13px;font-weight:700;color:var(--ac)">⏱️ Total: ${totalHrsLabel}</div>`:''}
+      <div class="card-title" style="margin:0;display:flex;align-items:center;gap:6px">${_i('calendar')} Today's Shifts</div>
+      ${totalMins>0?`<div style="font-size:13px;font-weight:700;color:var(--ac);display:flex;align-items:center;gap:4px">${_i('clock',13)} Total: ${totalHrsLabel}</div>`:''}
     </div>
     ${s1In?shiftRow(1,s1In,s1Out,lateInfo1,s1Mins,b1Start,b1End,b1Mins,s?.work_location):''}
     ${s2In?shiftRow(2,s2In,s2Out,null,s2Mins,b2Start,s2BreakEnd,b2Mins,s?.work_location_2):''}
@@ -1895,12 +1950,12 @@ async function renderMyShift(){
   </div>
 
   ${onBreak?`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:var(--r);padding:14px;margin-bottom:16px;text-align:center">
-    <div style="font-size:20px;margin-bottom:4px">☕</div>
+    <div style="font-size:20px;margin-bottom:4px;display:flex;align-items:center;justify-content:center">${_i('coffee',20)}</div>
     <div style="font-weight:700;color:var(--yl)">Break started at ${fmtTime(onBreak1?b1Start:b2Start)}</div>
     <div style="font-size:12px;color:var(--mu);margin-top:4px">Click "Resume Work" when you're back</div>
   </div>`:''}
 
-  <div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>`;
+  <div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('file-text')} Recent Activity</div><div id="myActivityLog">Loading...</div></div>`;
 
   startClock();loadMyActivity();
 }
@@ -1923,8 +1978,8 @@ async function confirmCheckIn(location){
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'check_in',detail:'Check In Shift '+shiftNum+' ('+location+')',date:today,time:now});
   startTracking();
   const _li=getCheckinStatus(now,currentAgent.shift_start,currentAgent.timezone);
-  const locEmoji=location==='WFH'?'🏠':'🏢';
-  const _ciMsg=_li?.status==='late'?'⚠️ Late by '+_li.diff+' min — '+locEmoji+' '+location:locEmoji+' '+location+' — Shift '+shiftNum+' started!';
+  const locEmoji=location==='WFH'?'${_i('home',12)}':'${_i('building',12)}';
+  const _ciMsg=_li?.status==='late'?_i('alert',12)+' Late by '+_li.diff+' min — '+locEmoji+' '+location:locEmoji+' '+location+' — Shift '+shiftNum+' started!';
   showToast(_ciMsg,_li?.status==='late'?'info':'ok');renderMyShift();
 }
 
@@ -1951,7 +2006,7 @@ async function doBreakStart(shiftNum){
   _cDel('myshift_today_'+currentAgent.id,'shift_today');
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now});
   stopTracking();
-  showToast('☕ Break started! Take a rest.','info');renderMyShift();
+  showToast(_i('coffee')+' Break started! Take a rest.','info');renderMyShift();
 }
 
 async function doBreakEnd(shiftNum){
@@ -1963,14 +2018,14 @@ async function doBreakEnd(shiftNum){
   _cDel('myshift_today_'+currentAgent.id,'shift_today');
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_end',detail:'Break End Shift '+shiftNum,date:today,time:now});
   startTracking();
-  showToast('▶️ Welcome back! Shift resumed.','ok');renderMyShift();
+  showToast(_i('check')+' Welcome back! Shift resumed.','ok');renderMyShift();
 }
 
 async function loadMyActivity(){
   const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent.id).order('time',{ascending:false}).limit(20).then(r=>r.data));
   const el=document.getElementById('myActivityLog');if(!el)return;
-  if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">📭</div>No activity yet</div>';return;}
-  const actionLabel={check_in:'✅ Checked In',check_out:'🔴 Checked Out',break_start:'☕ Break Started',break_end:'▶️ Break Ended'};
+  if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">${_i('mail')}</div>No activity yet</div>';return;}
+  const actionLabel={check_in:_i('check-circle',12)+' Checked In',check_out:_i('x-circle',12)+' Checked Out',break_start:_i('coffee',12)+' Break Started',break_end:_i('check',12)+' Break Ended'};
   const actionDot={check_in:'dot-in',check_out:'dot-out',break_start:'dot-out',break_end:'dot-in'};
   el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>').join('');
 }
@@ -1988,8 +2043,8 @@ async function renderActivity(){
   ]);
   const agentMap={};
   if(agents)agents.forEach(a=>{agentMap[a.id]=a;});
-  const actionLabel={check_in:'✅ Checked In',check_out:'🔴 Checked Out',break_start:'☕ Break Started',break_end:'▶️ Break Ended'};
-  c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No check-in/out activity recorded yet</div>':logs.map(l=>{const ag=agentMap[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin&&ag?'<b>'+ag.name+'</b> — ':'')+( actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+(isAdmin&&ag?ag.dept+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
+  const actionLabel={check_in:_i('check-circle',12)+' Checked In',check_out:_i('x-circle',12)+' Checked Out',break_start:_i('coffee',12)+' Break Started',break_end:_i('check',12)+' Break Ended'};
+  c.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">'+_i('file-text')+' Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">${_i('mail')}</div>No check-in/out activity recorded yet</div>':logs.map(l=>{const ag=agentMap[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin&&ag?'<b>'+ag.name+'</b> — ':'')+( actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+(isAdmin&&ag?ag.dept+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
 }
 
 // ── ACTIVITY TRACKING ────────────────────────────────────────
@@ -2051,7 +2106,7 @@ async function pingActivity(){
   },{onConflict:'agent_id,date'});
   // Update badge in My Shift if visible
   const badge=document.getElementById('trackingBadge');
-  if(badge){badge.className='badge '+(status==='active'?'badge-online':'');badge.textContent=status==='active'?'🟢 Active':'🟡 Idle';}
+  if(badge){badge.className='badge '+(status==='active'?'badge-online':'');badge.innerHTML=(status==='active'?_dot('var(--gr)')+' Active':_dot('var(--yl)')+' Idle');badge.style.display='inline-flex';badge.style.alignItems='center';badge.style.gap='4px';}
 }
 
 async function renderTracking(){
@@ -2065,7 +2120,7 @@ async function renderTracking(){
   ]);
   c.innerHTML=`
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title">📡 Agent Activity — Today (${today})</div>
+    <div class="card-title">${_i('globe')} Agent Activity — Today (${today})</div>
     <div class="table-wrap"><table>
       <thead><tr><th>Agent</th><th>Dept</th><th>Check-In Status</th><th>Activity</th><th>Active Time</th><th>Last Seen</th></tr></thead>
       <tbody>
@@ -2076,14 +2131,14 @@ async function renderTracking(){
           const status=t?.activity_status||'offline';
           const lastSeen=t?.last_seen?new Date(t.last_seen).toLocaleTimeString('en-US',{hour12:true,hour:'2-digit',minute:'2-digit'}):'—';
           const statusColor=status==='active'?'badge-online':status==='idle'?'':'badge-offline';
-          const statusLabel=status==='active'?'🟢 Active':status==='idle'?'🟡 Idle':'⚫ Offline';
+          const statusLabel=status==='active'?_dot('var(--gr)')+' Active':status==='idle'?_dot('var(--yl)')+' Idle':_dot('#6b728e')+' Offline';
           // Late check-in status
           const li=sh?.check_in?getCheckinStatus(sh.check_in,a.shift_start,a.timezone):null;
           let ciStatusHtml='<span style="color:var(--mu);font-size:12px">— not checked in</span>';
           if(li){
-            if(li.status==='late')ciStatusHtml='<span style="color:var(--yl);font-weight:600;font-size:12px">⚠️ Late +'+li.diff+'m</span><br><span style="font-size:11px;color:var(--mu)">Shift: '+a.shift_start+' • Grace: 15m</span>';
-            else if(li.status==='ontime')ciStatusHtml='<span style="color:var(--gr);font-weight:600;font-size:12px">✅ On Time</span><br><span style="font-size:11px;color:var(--mu)">Checked in within grace period</span>';
-            else ciStatusHtml='<span style="color:var(--gr);font-weight:600;font-size:12px">🟢 Early +'+li.diff+'m</span>';
+            if(li.status==='late')ciStatusHtml='<span style="color:var(--yl);font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:3px">'+_i('alert',12)+' Late +'+li.diff+'m</span><br><span style="font-size:11px;color:var(--mu)">Shift: '+a.shift_start+' • Grace: 15m</span>';
+            else if(li.status==='ontime')ciStatusHtml='<span style="color:var(--gr);font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:3px">'+_i('check',12)+' On Time</span><br><span style="font-size:11px;color:var(--mu)">Checked in within grace period</span>';
+            else ciStatusHtml='<span style="color:var(--gr);font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:3px">'+_dot('var(--gr)')+' Early +'+li.diff+'m</span>';
           }
           return `<tr>
             <td><b>${a.name}</b><br><span style="font-size:11px;color:var(--mu)">${a.dept||'—'}</span></td>
@@ -2105,7 +2160,7 @@ async function renderTracking(){
 
 // ── TASK MANAGEMENT ──────────────────────────────────────────
 const PRIORITY_COLOR={Urgent:'var(--rd)',High:'var(--or)',Normal:'var(--yl)',Low:'var(--gr)'};
-const PRIORITY_ICON={Urgent:'🔴',High:'🟠',Normal:'🟡',Low:'🟢'};
+const PRIORITY_ICON={Urgent:`${_i('zap',12)}`,High:`${_i('info',12)}`,Normal:`${_i('info',12)}`,Low:`${_i('arrow-right',12)}`};
 
 async function renderTasks(){
   const c=document.getElementById('pageContent');
@@ -2117,7 +2172,7 @@ async function renderTasks(){
   const pending=tasks?.filter(t=>!t.status||t.status==='pending')||[];
   const done=tasks?.filter(t=>t.status&&t.status!=='pending')||[];
   const STATUS_STYLE={pending:'badge-online',completed:'',rejected:''};
-  const STATUS_LABEL={pending:'⏳ Pending',completed:'✅ Completed',rejected:'❌ Rejected'};
+  const STATUS_LABEL={pending:_i('clock',12)+' Pending',completed:_i('check',12)+' Completed',rejected:_i('x',12)+' Rejected'};
   const STATUS_COLOR={pending:'',completed:'background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)',rejected:'background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)'};
   const rows=[...pending,...done].map(t=>{
     const ag=(agents||[]).find(a=>a.id===t.agent_id)||{};
@@ -2126,19 +2181,19 @@ async function renderTasks(){
       <td><b>${ag.name||'—'}</b></td>
       <td>${ag.dept||'—'}</td>
       <td style="max-width:200px;white-space:pre-wrap">${t.task||'—'}</td>
-      <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span></td>
+      <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'${_dot('var(--yl)')}'} ${t.priority||'Normal'}</span></td>
       <td style="font-size:12px;color:var(--mu)">${t.date||'—'}</td>
       <td><span class="badge" style="${STATUS_COLOR[st]}">${STATUS_LABEL[st]}</span></td>
       <td style="font-size:12px;color:var(--mu);max-width:160px">${t.remark||'—'}</td>
       <td><div class="td-actions">
-        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">🗑️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">${_i('trash',14)}</button>
       </div></td>
     </tr>`;
   }).join('');
   c.innerHTML=`
   <div class="agents-header">
     <h2>Tasks — ${pending.length} pending, ${done.length} done</h2>
-    <button class="btn btn-primary btn-sm" onclick="openTaskModal()">➕ Assign Task</button>
+    <button class="btn btn-primary btn-sm" onclick="openTaskModal()">${_i('plus')} Assign Task</button>
   </div>
   ${rows?`
   <div class="card" style="padding:0">
@@ -2147,7 +2202,7 @@ async function renderTasks(){
       <tbody>${rows}
       </tbody>
     </table></div>
-  </div>`:`<div class="empty-state"><div class="icon">📭</div><p>No tasks yet. Click Assign Task to add one.</p></div>`}`;
+  </div>`:`<div class="empty-state"><div class="icon">${_i('mail')}</div><p>No tasks yet. Click Assign Task to add one.</p></div>`}`;
 }
 
 async function openTaskModal(mode){
@@ -2175,7 +2230,7 @@ async function openTaskModal(mode){
   document.getElementById('tDate').value=new Date().toISOString().slice(0,10);
   document.getElementById('taskModalErr').classList.remove('show');
   document.getElementById('taskModal').dataset.calledBy=isAgentMode?'agent':'admin';
-  document.getElementById('taskModal').querySelector('h2').textContent=isSelf?'➕ New Task':'📋 Assign Task';
+  document.getElementById('taskModal').querySelector('h2').innerHTML=isSelf?_i('plus')+' New Task':_i('file-text')+' Assign Task';
   document.getElementById('taskModal').classList.add('open');
 }
 function closeTaskModal(){document.getElementById('taskModal').classList.remove('open');}
@@ -2202,7 +2257,7 @@ async function saveTask(){
   btn.disabled=false;btn.textContent='Assign Task';
   if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
   _cDel('tasks_all','tasks_agent_'+(currentAgent?.id||''),'tasks_by_'+(currentAgent?.id||''),'tasks_agent_status_'+(currentAgent?.id||''));
-  showToast('✅ Task assigned to '+agentName,'ok');
+  showToast(_i('check')+' Task assigned to '+agentName,'ok');
   closeTaskModal();
   if(calledBy==='agent') renderMyTasks();
   else renderTasks();
@@ -2212,7 +2267,7 @@ async function markTaskDone(id){
   const{error}=await _db.from('tasks').update({done:true}).eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('tasks_all');
-  showToast('Task marked as done ✅','ok');renderTasks();
+  showToast(_i('check')+' Task marked as done','ok');renderTasks();
 }
 
 async function deleteTask(id){
@@ -2241,7 +2296,7 @@ async function renderMyTasks(){
   <div style="margin-bottom:16px">
     ${activeAnn.map(a=>`
     <div style="background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(139,92,246,.08));border:1px solid rgba(108,99,255,.3);border-left:4px solid var(--ac);border-radius:var(--r);padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
-      <span style="font-size:20px;flex-shrink:0">📢</span>
+      <span style="font-size:20px;flex-shrink:0">${_i('bell')}</span>
       <div style="min-width:0">
         <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--tx)">${a.title}</div>
         <div style="font-size:12px;color:var(--mu);line-height:1.5">${a.message}</div>
@@ -2251,7 +2306,7 @@ async function renderMyTasks(){
   </div>`:'';
 
   const error=null;
-  if(error){c.innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Error loading tasks: '+error.message+'</p></div>';return;}
+  if(error){c.innerHTML='<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><p>Error loading tasks: '+error.message+'</p></div>';return;}
   // ── Task store: safe reference for onclick (avoids JSON.stringify breaking on quotes) ──
   window._taskStore={};
   (tasks||[]).forEach(t=>{window._taskStore[t.id]=t.task;});
@@ -2262,14 +2317,14 @@ async function renderMyTasks(){
   updateNotifBadge(pending.length);
   const assignedByMeList=assignedByMe||[];
   if(!tasks?.length&&!assignedByMeList.length){
-    c.innerHTML=`${announceBanner}<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTaskModal('self')">➕ New Task</button><button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openTaskModal('agent')">📤 Assign to Agent</button></div><div class="empty-state"><div class="icon">🎉</div><p>No tasks yet!</p></div>`;
+    c.innerHTML=`${announceBanner}<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTaskModal('self')">${_i('plus')} New Task</button><button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openTaskModal('agent')">${_i('upload')} Assign to Agent</button></div><div class="empty-state"><div class="icon">🎉</div><p>No tasks yet!</p></div>`;
     return;
   }
   c.innerHTML=`
   ${announceBanner}
   <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
-    <button class="btn btn-primary btn-sm" onclick="openTaskModal('self')">➕ New Task</button>
-    <button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openTaskModal('agent')">📤 Assign to Agent</button>
+    <button class="btn btn-primary btn-sm" onclick="openTaskModal('self')">${_i('plus')} New Task</button>
+    <button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openTaskModal('agent')">${_i('upload')} Assign to Agent</button>
   </div>
   <div style="margin-bottom:16px;display:flex;gap:12px">
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--yl)">${pending.length}</div><div class="stat-label">Pending</div></div>
@@ -2278,55 +2333,55 @@ async function renderMyTasks(){
   </div>
 
   ${pending.length?`<div class="card" style="margin-bottom:12px">
-    <div class="card-title">⏳ Pending Tasks</div>
+    <div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('clock')} Pending Tasks</div>
     ${pending.map(t=>`
     <div style="padding:14px 0;border-bottom:1px solid var(--b)">
-      ${t.date&&t.date<new Date().toISOString().slice(0,10)?`<div style="font-size:10px;font-weight:700;color:var(--rd);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:6px">⚠️ OVERDUE</div>`:''}
+      ${t.date&&t.date<new Date().toISOString().slice(0,10)?`<div style="font-size:10px;font-weight:700;color:var(--rd);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:4px;padding:2px 8px;display:inline-flex;align-items:center;gap:3px;margin-bottom:6px">${_i('alert',10)} OVERDUE</div>`:''}
       <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task.replace(/</g,'&lt;')}</div>
-      ${t.assigned_by_name?`<div style="font-size:11px;color:var(--mu);margin-bottom:6px">👤 Assigned by: ${t.assigned_by_name}</div>`:''}
+      ${t.assigned_by_name?`<div style="font-size:11px;color:var(--mu);margin-bottom:6px;display:flex;align-items:center;gap:3px">${_i('user',11)} Assigned by: ${t.assigned_by_name}</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span>
-          ${t.date?`<span style="font-size:11px;color:var(--mu);align-self:center">📅 ${t.date}</span>`:''}
+          <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22;display:inline-flex;align-items:center;gap:3px">${PRIORITY_ICON[t.priority]||_i('info',12)} ${t.priority||'Normal'}</span>
+          ${t.date?`<span style="font-size:11px;color:var(--mu);align-self:center;display:inline-flex;align-items:center;gap:3px">${_i('calendar',11)} ${t.date}</span>`:''}
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0">
-          <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openRemarkModal('${t.id}','completed')">✅ Complete</button>
-          <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="openRemarkModal('${t.id}','rejected')">❌ Reject</button>
-          <button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openReassignModal('${t.id}')">🔁 Re-assign</button>
+          <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openRemarkModal('${t.id}','completed')">${_i('check')} Complete</button>
+          <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="openRemarkModal('${t.id}','rejected')">${_i('x')} Reject</button>
+          <button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openReassignModal('${t.id}')">${_i('refresh',14)} Re-assign</button>
         </div>
       </div>
     </div>`).join('')}
   </div>`:''}
 
   ${completed.length?`<div class="card" style="margin-bottom:12px">
-    <div class="card-title" style="color:var(--gr)">✅ Completed (${completed.length})</div>
+    <div class="card-title" style="color:var(--gr);display:flex;align-items:center;gap:6px">${_i('check-circle')} Completed (${completed.length})</div>
     ${completed.map(t=>`
     <div style="padding:12px 0;border-bottom:1px solid var(--b)">
       <div style="font-size:13px;font-weight:600;color:var(--mu);text-decoration:line-through">${t.task.replace(/</g,'&lt;')}</div>
-      ${t.remark?`<div style="font-size:12px;color:var(--gr);margin-top:4px">💬 ${t.remark}</div>`:''}
+      ${t.remark?`<div style="font-size:12px;color:var(--gr);margin-top:4px;display:flex;align-items:center;gap:3px">${_i('chat',11)} ${t.remark}</div>`:''}
     </div>`).join('')}
   </div>`:''}
 
   ${rejected.length?`<div class="card" style="margin-bottom:12px">
-    <div class="card-title" style="color:var(--rd)">❌ Rejected (${rejected.length})</div>
+    <div class="card-title" style="color:var(--rd);display:flex;align-items:center;gap:6px">${_i('x-circle')} Rejected (${rejected.length})</div>
     ${rejected.map(t=>`
     <div style="padding:12px 0;border-bottom:1px solid var(--b)">
       <div style="font-size:13px;font-weight:600;color:var(--mu)">${t.task.replace(/</g,'&lt;')}</div>
-      ${t.remark?`<div style="font-size:12px;color:var(--rd);margin-top:4px">💬 ${t.remark}</div>`:''}
+      ${t.remark?`<div style="font-size:12px;color:var(--rd);margin-top:4px;display:flex;align-items:center;gap:3px">${_i('chat',11)} ${t.remark}</div>`:''}
     </div>`).join('')}
   </div>`:''}
 
   ${canAssign&&assignedByMeList.length?`<div class="card">
-    <div class="card-title" style="color:var(--ac)">📤 Tasks I Assigned (${assignedByMeList.length})</div>
+    <div class="card-title" style="color:var(--ac);display:flex;align-items:center;gap:6px">${_i('upload')} Tasks I Assigned (${assignedByMeList.length})</div>
     ${assignedByMeList.map(t=>`
     <div style="padding:12px 0;border-bottom:1px solid var(--b)">
       <div style="font-size:13px;font-weight:600;margin-bottom:4px">${t.task.replace(/</g,'&lt;')}</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--mu)">👤 To: <b>${t.agent?.name||'—'}</b>${t.agent?.dept?' ('+t.agent.dept+')':''}</span>
-        <span class="badge" style="font-size:10px;background:${t.status==='completed'?'rgba(16,185,129,.15)':t.status==='rejected'?'rgba(244,63,94,.15)':'rgba(251,191,36,.15)'};color:${t.status==='completed'?'var(--gr)':t.status==='rejected'?'var(--rd)':'var(--yl)'};border:1px solid ${t.status==='completed'?'rgba(16,185,129,.3)':t.status==='rejected'?'rgba(244,63,94,.3)':'rgba(251,191,36,.3)'}">${t.status==='completed'?'✅ Done':t.status==='rejected'?'❌ Rejected':'⏳ Pending'}</span>
-        ${t.date?`<span style="font-size:11px;color:var(--mu)">📅 ${t.date}</span>`:''}
+        <span style="font-size:11px;color:var(--mu);display:inline-flex;align-items:center;gap:3px">${_i('user',11)} To: <b>${t.agent?.name||'—'}</b>${t.agent?.dept?' ('+t.agent.dept+')':''}</span>
+        <span class="badge" style="font-size:10px;background:${t.status==='completed'?'rgba(16,185,129,.15)':t.status==='rejected'?'rgba(244,63,94,.15)':'rgba(251,191,36,.15)'};color:${t.status==='completed'?'var(--gr)':t.status==='rejected'?'var(--rd)':'var(--yl)'};border:1px solid ${t.status==='completed'?'rgba(16,185,129,.3)':t.status==='rejected'?'rgba(244,63,94,.3)':'rgba(251,191,36,.3)'};display:inline-flex;align-items:center;gap:3px">${t.status==='completed'?_i('check',10)+' Done':t.status==='rejected'?_i('x',10)+' Rejected':_i('clock',10)+' Pending'}</span>
+        ${t.date?`<span style="font-size:11px;color:var(--mu);display:inline-flex;align-items:center;gap:3px">${_i('calendar',11)} ${t.date}</span>`:''}
       </div>
-      ${t.remark?`<div style="font-size:12px;color:var(--mu);margin-top:4px">💬 "${t.remark}"</div>`:''}
+      ${t.remark?`<div style="font-size:12px;color:var(--mu);margin-top:4px;display:flex;align-items:center;gap:3px">${_i('chat',11)} "${t.remark}"</div>`:''}
     </div>`).join('')}
   </div>`:''}`;
 }
@@ -2338,7 +2393,7 @@ function openRemarkModal(taskId,action,taskDesc){
   _remarkTaskId=taskId;_remarkAction=action;
   // Use _taskStore first (safe), fallback to passed taskDesc
   const desc=window._taskStore?.[taskId]||taskDesc||'';
-  document.getElementById('remarkTitle').textContent=action==='completed'?'✅ Complete Task':'❌ Reject Task';
+  document.getElementById('remarkTitle').innerHTML=action==='completed'?_i('check')+' Complete Task':_i('x')+' Reject Task';
   document.getElementById('remarkSubmitBtn').style.background=action==='completed'?'linear-gradient(135deg,var(--gr),#059669)':'linear-gradient(135deg,var(--rd),#dc2626)';
   document.getElementById('remarkTaskDesc').textContent=desc;
   document.getElementById('remarkText').value='';
@@ -2378,7 +2433,7 @@ async function submitReassign(){
   }).eq('id',_reassignTaskId);
   btn.disabled=false;btn.textContent='Re-assign';
   if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
-  showToast('🔁 Task re-assigned to '+newAgentName,'ok');
+  showToast(_i('refresh')+' Task re-assigned to '+newAgentName,'ok');
   closeReassignModal();renderMyTasks();
 }
 
@@ -2391,7 +2446,7 @@ async function submitRemark(){
   btn.disabled=false;btn.textContent='Submit';
   if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
   _cDel('tasks_agent_'+currentAgent.id,'tasks_by_'+currentAgent.id,'tasks_agent_status_'+currentAgent.id,'tasks_all','mydash_shifts_'+currentAgent.id+'_'+new Date().toISOString().slice(0,7));
-  showToast(_remarkAction==='completed'?'✅ Task completed!':'❌ Task rejected','ok');
+  showToast(_remarkAction==='completed'?_i('check')+' Task completed!':_i('x')+' Task rejected','ok');
   closeRemarkModal();renderMyTasks();
 }
 
@@ -2456,13 +2511,13 @@ function parseCsv(input){
     // Show preview
     const preview=document.getElementById('bulkPreview');
     preview.innerHTML=`
-      <div style="margin-bottom:12px;font-size:13px;color:var(--gr);font-weight:600">✅ ${bulkAgents.length} agents ready to import${errors.length?' ('+errors.length+' rows skipped)':''}</div>
+      <div style="margin-bottom:12px;font-size:13px;color:var(--gr);font-weight:600">${_i("check")} ${bulkAgents.length} agents ready to import${errors.length?' ('+errors.length+' rows skipped)':''}</div>
       <div class="table-wrap" style="max-height:260px;overflow-y:auto;margin-bottom:12px">
         <table><thead><tr><th>#</th><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Country</th><th>Type</th></tr></thead>
         <tbody>${bulkAgents.map((a,i)=>`<tr><td style="color:var(--mu)">${i+1}</td><td><b>${a.name}</b></td><td style="font-size:11px;color:var(--mu)">${a.email}</td><td>${a.dept}</td><td>${a.role}</td><td>${a.country}</td><td>${a.type}</td></tr>`).join('')}</tbody>
         </table>
       </div>
-      <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);padding:10px;font-size:12px;color:var(--yl)">🔑 Default password will be set for all ${bulkAgents.length} agents</div>`;
+      <div style="background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);padding:10px;font-size:12px;color:var(--yl)">${_i('key',12)} Default password will be set for all ${bulkAgents.length} agents</div>`;
     document.getElementById('bulkStep1').classList.add('hidden');
     document.getElementById('bulkStep2').classList.remove('hidden');
   };
@@ -2489,7 +2544,7 @@ async function doBulkImport(){
   closeBulkModal();
   renderAgents();
   if(failed) showToast(`Imported ${success}, failed ${failed}`,'info');
-  else showToast(`✅ ${success} agents imported successfully!`,'ok');
+  else showToast(_i("check")+` ${success} agents imported successfully!`,'ok');
 }
 
 const _fmtCache={};
@@ -2497,7 +2552,7 @@ function _getFmts(tz){if(!_fmtCache[tz])_fmtCache[tz]={t:new Intl.DateTimeFormat
 function fmtTime(ts){if(!ts)return '—';try{const tz=currentAgent?.timezone||'Asia/Karachi';return _getFmts(tz).t.format(new Date(ts));}catch{return ts.slice(11,16);}}
 function fmtDate(ts){if(!ts)return '—';try{return _getFmts(currentAgent?.timezone||'Asia/Karachi').d.format(new Date(ts));}catch{return ts.slice(0,10);}}
 function calcHours(i,o){if(!i||!o)return '—';const d=(new Date(o)-new Date(i))/3600000;return d.toFixed(1)+'h';}
-function showToast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast toast-'+(type==='ok'?'ok':type==='err'?'err':'info');t.innerHTML=(type==='ok'?'✅':type==='err'?'❌':'ℹ️')+' '+msg;c.appendChild(t);setTimeout(()=>t.remove(),4000);}
+function showToast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast toast-'+(type==='ok'?'ok':type==='err'?'err':'info');t.innerHTML=(type==='ok'?_i('check'):type==='err'?_i('x'):_i('info'))+' '+msg;c.appendChild(t);setTimeout(()=>t.remove(),4000);}
 
 // ── Late check-in detection (15-min grace period) ─────────────
 // Returns: {status:'early'|'ontime'|'late', diff:minutes}
@@ -2522,10 +2577,10 @@ function getCheckinStatus(checkIn, shiftStart, timezone){
 function lateStatusBanner(li){
   if(!li)return '';
   if(li.status==='early')
-    return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--gr)">🟢 Early — '+li.diff+' min before shift</div>';
+    return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--gr)">${_dot('var(--gr)')} Early — '+li.diff+' min before shift</div>';
   if(li.status==='ontime')
-    return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--gr)">✅ On Time <span style="font-weight:400;font-size:12px">(within 15 min grace period)</span></div>';
-  return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--yl)">⚠️ Late Check-In — '+li.diff+' min late <span style="font-weight:400;font-size:11px">(grace: 15 min)</span></div>';
+    return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--gr)">'+_i('check-circle',14)+' On Time <span style="font-weight:400;font-size:12px">(within 15 min grace period)</span></div>';
+  return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--yl)">'+_i('alert',14)+' Late Check-In — '+li.diff+' min late <span style="font-weight:400;font-size:11px">(grace: 15 min)</span></div>';
 }
 
 // Small inline badge for dashboard cards
@@ -2533,8 +2588,8 @@ function lateBadge(checkIn, shiftStart, timezone){
   const li=getCheckinStatus(checkIn,shiftStart,timezone);
   if(!li)return '';
   if(li.status==='late')
-    return ' <span style="font-size:10px;color:var(--yl);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.28);padding:1px 6px;border-radius:10px">⚠️ +'+li.diff+'m late</span>';
-  return ' <span style="font-size:10px;color:var(--gr);background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);padding:1px 6px;border-radius:10px">✅ on time</span>';
+    return ' <span style="font-size:10px;color:var(--yl);background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.28);padding:1px 6px;border-radius:10px">&nbsp;+'+li.diff+'m late</span>';
+  return ' <span style="font-size:10px;color:var(--gr);background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.28);padding:1px 6px;border-radius:10px">on time</span>';
 }
 
 // ── REPORTS ──────────────────────────────────────────────────
@@ -2546,14 +2601,14 @@ async function renderReports(){
     <div class="form-group" style="margin:0;flex:1;min-width:140px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label><input type="month" id="rMonth" value="${defaultMonth}" style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"></div>
     <div class="form-group" style="margin:0;flex:1;min-width:140px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Department</label><select id="rDept" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"><option value="">All Departments</option><option value="Corporate">Corporate</option><option value="Retail">Retail</option><option value="Reseller">Reseller</option></select></div>
     <div class="form-group" style="margin:0;flex:2;min-width:160px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Agent</label><select id="rAgent" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"><option value="">All Agents</option></select></div>
-    <button class="btn btn-primary btn-sm no-print" onclick="applyReportFilters()" style="padding:9px 18px;white-space:nowrap">🔍 Apply Filter</button>
-    <button class="btn btn-sm no-print" onclick="exportReportPDF()" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);padding:9px 18px;white-space:nowrap">📄 Export PDF</button>
+    <button class="btn btn-primary btn-sm no-print" onclick="applyReportFilters()" style="padding:9px 18px;white-space:nowrap">${_i('search')} Apply Filter</button>
+    <button class="btn btn-sm no-print" onclick="exportReportPDF()" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);padding:9px 18px;white-space:nowrap">${_i('download')} Export PDF</button>
   </div>
   <div class="no-print" style="display:flex;gap:8px;margin-bottom:16px">
-    <button id="tabDetail" onclick="switchReportTab('detail')" class="btn btn-primary btn-sm">📋 Detail Report</button>
-    <button id="tabHeatmap" onclick="switchReportTab('heatmap')" class="btn btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--mu)">🔥 Monthly Heatmap</button>
+    <button id="tabDetail" onclick="switchReportTab('detail')" class="btn btn-primary btn-sm">${_i('file-text')} Detail Report</button>
+    <button id="tabHeatmap" onclick="switchReportTab('heatmap')" class="btn btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--mu)">${_i('bars')} Monthly Heatmap</button>
   </div>
-  <div id="reportBody"><div class="empty-state"><div class="icon">⏳</div>Loading...</div></div>`;
+  <div id="reportBody"><div class="empty-state"><div class="icon"><div class="spinner" style="width:48px;height:48px;border-width:4px;margin:0 auto"></div></div>Loading...</div></div>`;
   // Populate agent dropdown
   const agents=await _getAgents('id,name,dept');
   const sel=document.getElementById('rAgent');
@@ -2573,7 +2628,7 @@ async function applyReportFilters(){_reportTab==='heatmap'?loadHeatmapData():loa
 
 async function loadHeatmapData(){
   const body=document.getElementById('reportBody');
-  body.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading heatmap...</div>';
+  body.innerHTML='<div class="empty-state"><div class="spinner" style="width:36px;height:36px;margin:0 auto 12px"></div>Loading heatmap...</div>';
   const month=document.getElementById('rMonth')?.value||new Date().toISOString().slice(0,7);
   const deptFilter=document.getElementById('rDept')?.value||'';
   const [yr,mo]=month.split('-').map(Number);
@@ -2584,7 +2639,7 @@ async function loadHeatmapData(){
   let agents=(allAgents||[]).filter(a=>a.type==='regular');
   if(deptFilter)agents=agents.filter(a=>a.dept===deptFilter);
   agents.sort((a,b)=>(a.dept||'').localeCompare(b.dept||'')||(a.name||'').localeCompare(b.name||''));
-  if(!agents?.length){body.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>No agents found</p></div>';return;}
+  if(!agents?.length){body.innerHTML='<div class="empty-state"><div class="icon">${_i('mail')}</div><p>No agents found</p></div>';return;}
 
   // Load all shift rows for month (cached)
   const rows=await _q('heatmap_shifts_'+month+(deptFilter||''),60000,()=>_db.from('shift_status').select('agent_id,date,check_in,check_out,total_active_minutes').gte('date',month+'-01').lte('date',month+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data));
@@ -2629,7 +2684,7 @@ async function loadHeatmapData(){
       // Heat color: green=8h+, yellow=4-8h, orange=1-4h, red<1h
       const heat=mins>=480?'rgba(16,185,129,.7)':mins>=240?'rgba(16,185,129,.35)':mins>=60?'rgba(251,191,36,.5)':'rgba(244,63,94,.4)';
       const border=isLate?'1px solid var(--yl)':'none';
-      return `<td style="padding:3px;text-align:center" title="${ds}: ${h}h ${mins%60}m${isLate?' ⚠️Late':''}"><div style="width:26px;height:26px;border-radius:4px;background:${heat};border:${border};margin:auto;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700">${h}h</div></td>`;
+      return `<td style="padding:3px;text-align:center" title="${ds}: ${h}h ${mins%60}m${isLate?' Late':''}"><div style="width:26px;height:26px;border-radius:4px;background:${heat};border:${border};margin:auto;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700">${h}h</div></td>`;
     }).join('');
     const avgH=worked>0?Math.floor(totalMins/worked/60):0;
     const avgM=worked>0?Math.floor((totalMins/worked)%60):0;
@@ -2646,7 +2701,7 @@ async function loadHeatmapData(){
   body.innerHTML=`
   <div class="card" style="padding:0;overflow:hidden">
     <div style="padding:14px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
-      <div class="card-title" style="margin:0">🔥 ${new Date(yr,mo-1).toLocaleString('en-US',{month:'long'})} ${yr} — Agent Attendance Heatmap</div>
+      <div class="card-title" style="margin:0;display:flex;align-items:center;gap:6px">${_i('trending-up')} ${new Date(yr,mo-1).toLocaleString('en-US',{month:'long'})} ${yr} — Agent Attendance Heatmap</div>
       <div style="display:flex;gap:12px;font-size:11px;align-items:center">
         <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(16,185,129,.7)"></span>8h+</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(16,185,129,.35)"></span>4-8h</span>
@@ -2717,9 +2772,9 @@ async function loadReportData(){
     const hours=r.shift.check_in&&r.shift.check_out?((new Date(r.shift.check_out)-new Date(r.shift.check_in))/3600000).toFixed(1):'—';
     let liHtml='—';
     if(r.li){
-      if(r.li.status==='late')liHtml='<span style="color:var(--yl);font-weight:600">⚠️ Late +'+r.li.diff+'m</span>';
-      else if(r.li.status==='ontime')liHtml='<span style="color:var(--gr);font-weight:600">✅ On Time</span>';
-      else liHtml='<span style="color:var(--gr)">🟢 Early +'+r.li.diff+'m</span>';
+      if(r.li.status==='late')liHtml='<span style="color:var(--yl);font-weight:600;display:inline-flex;align-items:center;gap:3px">'+_i('alert',12)+' Late +'+r.li.diff+'m</span>';
+      else if(r.li.status==='ontime')liHtml='<span style="color:var(--gr);font-weight:600;display:inline-flex;align-items:center;gap:3px">'+_i('check',12)+' On Time</span>';
+      else liHtml='<span style="color:var(--gr);display:inline-flex;align-items:center;gap:3px">'+_dot('var(--gr)')+' Early +'+r.li.diff+'m</span>';
     }
     return`<tr>
       <td><b>${r.agent.name}</b></td>
@@ -2744,7 +2799,7 @@ async function loadReportData(){
   <!-- Table -->
   <div class="card" style="padding:0" id="reportTable">
     <div style="padding:14px 20px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
-      <div style="font-size:14px;font-weight:700">📊 Report: ${month} ${dept?'• '+dept:''} ${agentId?'• 1 Agent':filteredAgents.length+' Agents'}</div>
+      <div style="font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">${_i('bars')} Report: ${month} ${dept?'• '+dept:''} ${agentId?'• 1 Agent':filteredAgents.length+' Agents'}</div>
     </div>
     <div class="table-wrap"><table>
       <thead><tr><th>Agent</th><th>Dept</th><th>Date</th><th>Check In</th><th>Check Out</th><th>Hours</th><th>Active</th><th>Punctuality</th></tr></thead>
