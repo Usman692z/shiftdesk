@@ -374,12 +374,12 @@ const C={
   agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions',
   agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw',
   shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2',
-  tracking:'agent_id,date,total_active_minutes,idle_minutes,activity_status,last_seen',
+  tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
   announce:'id,title,message,expires_at,created_at',
   leave:'id,agent_id,date_from,date_to,reason,status,created_at',
   messages:'id,from_id,from_name,to_id,message,created_at,is_broadcast',
-  logs:'id,agent_id,event,created_at',
+  logs:'id,agent_id,action,detail,date,time',
 };
 
 // Shared helpers: fetch agents (cached 5 min) ─────────────────────────────
@@ -733,7 +733,7 @@ async function startChatNotifChannel(){
     const{data:adminRow}=await _db.from('agents').select('id').eq('type','admin').maybeSingle();
     if(adminRow?.id)myId=adminRow.id;
   }
-  _chatNotifChannel=_db.channel('chat_notif_global');
+  _chatNotifChannel=_db.channel('chat_notif_'+Date.now());
   _chatNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},(payload)=>{
     const m=payload.new;
     if(!m)return;
@@ -776,7 +776,7 @@ function _incAnnounceUnread(title){
 function startAnnounceNotifChannel(){
   if(_announceNotifChannel){_db.removeChannel(_announceNotifChannel);_announceNotifChannel=null;}
   if(!currentAgent&&!isAdmin)return;
-  _announceNotifChannel=_db.channel('announce_notif_global');
+  _announceNotifChannel=_db.channel('announce_notif_'+Date.now());
   _announceNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'announcements'},(payload)=>{
     const a=payload.new;
     if(!a)return;
@@ -1646,7 +1646,7 @@ async function confirmCheckIn(location){
   const{error}=await _db.from('shift_status').upsert(payload,{onConflict:'agent_id,date'});
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('myshift_today_'+currentAgent.id,'shift_today','shift_checkin_today','logs_agent_'+currentAgent.id,'logs_all');
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',detail:'Check In Shift '+shiftNum+' ('+location+')',date:today,time:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'check_in',detail:'Check In Shift '+shiftNum+' ('+location+')',date:today,time:now});
   startTracking();
   const _li=getCheckinStatus(now,currentAgent.shift_start,currentAgent.timezone);
   const locEmoji=location==='WFH'?'🏠':'🏢';
@@ -1663,7 +1663,7 @@ async function doCheckOut(shiftNum){
   const{error}=await _db.from('shift_status').update(payload).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('myshift_today_'+currentAgent.id,'shift_today','shift_checkin_today','logs_agent_'+currentAgent.id,'logs_all');
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_out',detail:'Check Out Shift '+shiftNum,date:today,time:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'check_out',detail:'Check Out Shift '+shiftNum,date:today,time:now});
   stopTracking();
   showToast('Shift '+shiftNum+' complete! Great work 👏','ok');renderMyShift();
 }
@@ -1675,7 +1675,7 @@ async function doBreakStart(shiftNum){
   const{error}=await _db.from('shift_status').update({[col]:now,online:false}).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('myshift_today_'+currentAgent.id,'shift_today');
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now});
   stopTracking();
   showToast('☕ Break started! Take a rest.','info');renderMyShift();
 }
@@ -1687,32 +1687,35 @@ async function doBreakEnd(shiftNum){
   const{error}=await _db.from('shift_status').update({[col]:now,online:true}).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('myshift_today_'+currentAgent.id,'shift_today');
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'break_end',detail:'Break End Shift '+shiftNum,date:today,time:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_end',detail:'Break End Shift '+shiftNum,date:today,time:now});
   startTracking();
   showToast('▶️ Welcome back! Shift resumed.','ok');renderMyShift();
 }
 
 async function loadMyActivity(){
-  const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs+',action,time,agent_name,dept').eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).limit(20).then(r=>r.data));
+  const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent.id).order('time',{ascending:false}).limit(20).then(r=>r.data));
   const el=document.getElementById('myActivityLog');if(!el)return;
   if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">📭</div>No activity yet</div>';return;}
   const actionLabel={check_in:'✅ Checked In',check_out:'🔴 Checked Out',break_start:'☕ Break Started',break_end:'▶️ Break Ended'};
   const actionDot={check_in:'dot-in',check_out:'dot-out',break_start:'dot-out',break_end:'dot-in'};
-  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join('');
+  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>').join('');
 }
 
 async function renderActivity(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const cols_logs=C.logs+',action,time,agent_name,dept';
   const cacheKey=isAdmin?'logs_all':'logs_agent_'+(currentAgent?.id||'');
   const limit=isAdmin?100:50;
-  const logs=await _q(cacheKey,25000,()=>{
-    let q=isAdmin?_db.from('activity_logs').select(cols_logs).limit(limit):_db.from('activity_logs').select(cols_logs).eq('agent_id',currentAgent?.id).limit(limit);
-    return q.order('time',{ascending:false}).then(r=>r.data);
-  });
-  const logErr=null;
-  if(logErr){c.innerHTML='<div class="card"><div class="empty-state"><div class="icon">⚠️</div><p style="color:var(--rd)">Error: '+logErr.message+'</p></div></div>';return;}
-  c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No check-in/out activity recorded yet</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+(l.agent_name||'—')+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+(l.dept?' • ':'')+fmtDate(l.time||l.created_at)+'</div></div><div class="activity-time">'+fmtTime(l.time||l.created_at)+'</div></div>').join(''))+'</div>';
+  const [logs, agents]=await Promise.all([
+    _q(cacheKey,25000,()=>{
+      let q=isAdmin?_db.from('activity_logs').select(C.logs).limit(limit):_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent?.id).limit(limit);
+      return q.order('time',{ascending:false}).then(r=>r.data);
+    }),
+    isAdmin?_getAgents('id,name,dept'):Promise.resolve(null)
+  ]);
+  const agentMap={};
+  if(agents)agents.forEach(a=>{agentMap[a.id]=a;});
+  const actionLabel={check_in:'✅ Checked In',check_out:'🔴 Checked Out',break_start:'☕ Break Started',break_end:'▶️ Break Ended'};
+  c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No check-in/out activity recorded yet</div>':logs.map(l=>{const ag=agentMap[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin&&ag?'<b>'+ag.name+'</b> — ':'')+( actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+(isAdmin&&ag?ag.dept+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
 }
 
 // ── ACTIVITY TRACKING ────────────────────────────────────────
@@ -2126,7 +2129,7 @@ function parseCsv(input){
   const reader=new FileReader();
   reader.onload=e=>{
     const lines=e.target.result.trim().split('\n').map(l=>l.trim()).filter(Boolean);
-    if(lines.length<2){showErr('CSV must have header + at least 1 row');return;}
+    if(lines.length<2){showToast('CSV must have header + at least 1 row','err');return;}
     const headers=lines[0].toLowerCase().split(',').map(h=>h.trim());
     const required=['name','email','dept'];
     const missing=required.filter(r=>!headers.includes(r));
