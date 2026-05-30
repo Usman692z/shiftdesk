@@ -842,7 +842,7 @@ async function renderMyShift(){
   const s2In=s?.check_in_2||null, s2Out=s?.check_out_2||null;
 
   const lateInfo1=s1In?getCheckinStatus(s1In,currentAgent.shift_start,currentAgent.timezone):null;
-  const lateInfo2=s2In?getCheckinStatus(s2In,currentAgent.shift_start,currentAgent.timezone):null;
+  const lateInfo2=null; // 2nd shift is optional — no late check-in penalty
 
   // Total hours helper
   function shiftDurMins(inn,out){
