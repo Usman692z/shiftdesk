@@ -335,25 +335,40 @@ async function agentLogin(){
   if(!email||!pass){showAuthErr('Please fill all fields');return;}
   const btn=document.getElementById('loginBtn');
   btn.disabled=true;btn.textContent='Logging in...';
+
+  // Auto-reset after 15s if stuck (mobile networks can hang)
+  const resetBtn=()=>{btn.disabled=false;btn.textContent='Login';};
+  const hangTimer=setTimeout(()=>{resetBtn();showAuthErr('Connection timeout. Please try again.');},15000);
+
   try{
-    // Check agents table directly — admin sets password here
-    const{data:ag,error}=await _db.from('agents').select('*').eq('email',email).maybeSingle();
-    if(error||!ag){showAuthErr('Account not found. Contact your admin.');btn.disabled=false;btn.textContent='Login';return;}
-    if(!ag.pw){showAuthErr('Password not set. Contact your admin.');btn.disabled=false;btn.textContent='Login';return;}
+    // Fetch agent via REST directly (faster on mobile than realtime client)
+    const res=await fetch(
+      `https://lasnonlixtvmarubbegf.supabase.co/rest/v1/agents?email=eq.${encodeURIComponent(email)}&select=*&limit=1`,
+      {headers:{'apikey':'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx','Authorization':'Bearer sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx'}}
+    );
+    const rows=await res.json();
+    const ag=rows?.[0]||null;
+    clearTimeout(hangTimer);
+    if(!ag){showAuthErr('Account not found. Contact your admin.');resetBtn();return;}
+    if(!ag.pw){showAuthErr('Password not set. Contact your admin.');resetBtn();return;}
     const hashed=await hashPw(pass);
     if(ag.pw===hashed){
-      // ✅ SHA-256 match (new format)
+      // ✅ SHA-256 match
     } else if(ag.pw===btoa(pass)){
-      // Old btoa format — auto-upgrade to SHA-256 silently
-      await _db.from('agents').update({pw:hashed}).eq('id',ag.id);
+      // Old btoa — auto-upgrade silently
+      await _db.from('agents').update({pw:hashed}).eq('id',ag.id).catch(()=>{});
       ag.pw=hashed;
     } else {
-      showAuthErr('Invalid password.');btn.disabled=false;btn.textContent='Login';return;
+      showAuthErr('Invalid password.');resetBtn();return;
     }
     currentAgent=ag;isAdmin=(ag.type==='admin');
     saveAgentSession(ag);
     showApp();
-  }catch(e){showAuthErr('Connection error. Try again.');btn.disabled=false;btn.textContent='Login';}
+  }catch(e){
+    clearTimeout(hangTimer);
+    showAuthErr('Connection error: '+e.message+'. Try again.');
+    resetBtn();
+  }
 }
 
 async function adminLogin(){
