@@ -111,9 +111,12 @@ tr:hover td{background:var(--b)}
 .toast-err{border-color:rgba(244,63,94,.4);color:var(--rd)}
 .toast-info{border-color:rgba(108,99,255,.4);color:var(--ac)}
 @keyframes slideIn{from{transform:translateX(100px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .hidden{display:none!important}
 .empty-state{text-align:center;padding:40px;color:var(--mu)}
 .empty-state .icon{font-size:48px;margin-bottom:12px}
+.spinner{width:40px;height:40px;border:3px solid var(--b2);border-top-color:var(--ac);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 14px}
+.loading-wrap{text-align:center;padding:60px 20px;color:var(--mu);font-size:13px}
 @media(max-width:700px){.sidebar{width:60px;min-width:60px}.nav-label,.logo small,.sidebar-user-name,.sidebar-user-role{display:none}.logo h2{font-size:14px}.shift-panel{grid-template-columns:1fr}.stats-grid{grid-template-columns:1fr 1fr}}
 /* Notification badge */
 .notif-wrap{position:relative;cursor:pointer;padding:5px 10px;background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);font-size:18px;line-height:1;transition:var(--tr)}
@@ -971,7 +974,7 @@ function startClock(){
 
 async function renderDashboard(){
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
   const[agents,ts,tracking]=await Promise.all([
     _getAgents(),
@@ -1095,7 +1098,7 @@ async function renderDashboard(){
 }
 
 async function renderAgents(){
-  const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const c=document.getElementById('pageContent');c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const agents=await _getAgents(C.agents_full);
   const permLabel=p=>{
     if(!p)return'<span style="font-size:10px;color:var(--mu)">all</span>';
@@ -1217,7 +1220,7 @@ async function resetAgentPassword(agentId,name){
 async function renderMyDashboard(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const now=new Date();
   const yr=now.getFullYear(),mo=now.getMonth();
   const monthStr=yr+'-'+String(mo+1).padStart(2,'0');
@@ -1459,7 +1462,7 @@ function renderHelp(){
 
 async function renderMyAnnouncements(){
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
   const list=await _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).then(r=>r.data));
   const active=(list||[]).filter(a=>!a.expires_at||a.expires_at>=today);
@@ -1528,7 +1531,7 @@ async function submitLeave(){
 async function renderMyLeave(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const leaves=await _q('leaves_agent_'+currentAgent.id,30000,()=>_db.from('leave_requests').select(C.leave).eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).then(r=>r.data));
   const statusColor={pending:'var(--yl)',approved:'var(--gr)',rejected:'var(--rd)'};
   const statusIcon={pending:'⏳',approved:'✅',rejected:'❌'};
@@ -1549,7 +1552,7 @@ async function renderMyLeave(){
 
 async function renderAdminLeaves(){
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const leaves=await _q('leaves_all',30000,()=>_db.from('leave_requests').select(C.leave).order('created_at',{ascending:false}).then(r=>r.data));
   const pending=leaves?.filter(l=>l.status==='pending')||[];
   const others=leaves?.filter(l=>l.status!=='pending')||[];
@@ -1973,7 +1976,7 @@ async function loadMyActivity(){
 }
 
 async function renderActivity(){
-  const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const c=document.getElementById('pageContent');c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const cacheKey=isAdmin?'logs_all':'logs_agent_'+(currentAgent?.id||'');
   const limit=isAdmin?100:50;
   const [logs, agents]=await Promise.all([
@@ -2053,7 +2056,7 @@ async function pingActivity(){
 
 async function renderTracking(){
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
   const[agents,tracking,shifts]=await Promise.all([
     _getAgents('id,name,dept,country,shift_start,timezone'),
@@ -2106,7 +2109,7 @@ const PRIORITY_ICON={Urgent:'🔴',High:'🟠',Normal:'🟡',Low:'🟢'};
 
 async function renderTasks(){
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const[tasks,agents]=await Promise.all([
     _q('tasks_all',20000,()=>_db.from('tasks').select(C.tasks).order('date',{ascending:false}).then(r=>r.data)),
     _getAgents('id,name,dept'),
@@ -2223,7 +2226,7 @@ async function deleteTask(id){
 async function renderMyTasks(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const canAssign=(currentAgent.permissions||'').split(',').includes('assign_task');
   const aid=currentAgent.id;
   const today=new Date().toISOString().slice(0,10);
@@ -2671,7 +2674,7 @@ async function loadHeatmapData(){
 async function loadReportData(){
   const rb=document.getElementById('reportBody');
   if(!rb)return;
-  rb.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  rb.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const month=document.getElementById('rMonth')?.value||new Date().toISOString().slice(0,7);
   const dept=document.getElementById('rDept')?.value||'';
   const agentId=document.getElementById('rAgent')?.value||'';
