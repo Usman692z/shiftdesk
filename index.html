@@ -505,7 +505,7 @@ async function agentLogin(){
       // ✅ SHA-256 match
     } else if(ag.pw===btoa(pass)){
       // Old btoa — auto-upgrade silently
-      await _db.from('agents').update({pw:hashed}).eq('id',ag.id).catch(()=>{});
+      await _db.from('agents').update({pw:hashed}).eq('id',ag.id).then(()=>{},()=>{});
       ag.pw=hashed;
     } else {
       showAuthErr('Invalid password.');resetBtn();return;
