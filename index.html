@@ -726,7 +726,7 @@ function _incChatUnread(){
 
 function startChatNotifChannel(){
   if(_chatNotifChannel){_db.removeChannel(_chatNotifChannel);_chatNotifChannel=null;}
-  if(!currentAgent)return;
+  if(!currentAgent&&!isAdmin)return;
   const myId=isAdmin?'admin':currentAgent.id;
   _chatNotifChannel=_db.channel('chat_notif_global');
   _chatNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},(payload)=>{
@@ -768,7 +768,7 @@ function _incAnnounceUnread(title){
 
 function startAnnounceNotifChannel(){
   if(_announceNotifChannel){_db.removeChannel(_announceNotifChannel);_announceNotifChannel=null;}
-  if(!currentAgent)return;
+  if(!currentAgent&&!isAdmin)return;
   _announceNotifChannel=_db.channel('announce_notif_global');
   _announceNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'announcements'},(payload)=>{
     const a=payload.new;
