@@ -167,9 +167,6 @@ tr:hover td{background:var(--b)}
     <div class="sidebar-user">
       <div class="sidebar-user-name" id="sideUserName">—</div>
       <div class="sidebar-user-role" id="sideUserRole">—</div>
-      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-Setup-1.0.3.exe" download style="display:block;width:100%;margin-top:8px;margin-bottom:4px;background:rgba(108,99,255,.12);color:var(--ac);border:1px solid rgba(108,99,255,.25);padding:8px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;text-align:center;text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.22)'" onmouseout="this.style.background='rgba(108,99,255,.12)'">💻 Download for Windows</a>
-      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-1.0.3-mac-apple-silicon.dmg" download style="display:block;width:100%;margin-bottom:4px;background:rgba(16,185,129,.08);color:var(--gr);border:1px solid rgba(16,185,129,.2);padding:8px;border-radius:var(--r);cursor:pointer;font-size:12px;font-weight:600;text-align:center;text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.18)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">🍎 Download for Mac (Apple Silicon)</a>
-      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-1.0.3-mac-intel.dmg" download style="display:block;width:100%;margin-bottom:4px;background:rgba(16,185,129,.06);color:var(--gr);border:1px solid rgba(16,185,129,.15);padding:7px;border-radius:var(--r);cursor:pointer;font-size:11px;font-weight:600;text-align:center;text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.14)'" onmouseout="this.style.background='rgba(16,185,129,.06)'">🍎 Download for Mac (Intel)</a>
       <button class="sidebar-logout" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -564,15 +561,15 @@ function buildNav(){
     {id:'activity',    icon:'📋', label:'Activity Log'},
   ];
   const items=isAdmin
-    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'leaves',icon:'🏖️',label:'Leaves'},{id:'announce',icon:'📢',label:'Announce'},{id:'chat',icon:'💬',label:'Chat'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'}]
-    :allAgentPages;
+    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'leaves',icon:'🏖️',label:'Leaves'},{id:'announce',icon:'📢',label:'Announce'},{id:'chat',icon:'💬',label:'Chat'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'},{id:'help',icon:'❓',label:'Help'}]
+    :[...allAgentPages,{id:'help',icon:'❓',label:'Help'}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></div>`).join('');
 }
 
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',myannounce:'Announcements',chat:'Chat'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',myannounce:'Announcements',chat:'Chat',help:'Help & Downloads'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   startRealtime(page);
@@ -590,6 +587,7 @@ function navTo(page){
   else if(page==='announce')renderAnnouncements();
   else if(page==='myannounce')renderMyAnnouncements();
   else if(page==='chat')renderChat();
+  else if(page==='help')renderHelp();
 }
 
 function startRealtime(page){
@@ -1081,6 +1079,53 @@ async function renderAnnouncements(){
     </div>`;
   }).join('')}`;
 }
+function renderHelp(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML=`
+  <!-- Downloads -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">💻 Download Desktop App</div>
+    <p style="font-size:13px;color:var(--mu);margin-bottom:16px">Desktop app installs on your PC/Mac and tracks activity system-wide — even when browser is closed.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-Setup-1.0.3.exe" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.2)'" onmouseout="this.style.background='rgba(108,99,255,.1)'">
+        <span style="font-size:28px">💻</span>
+        <div><div style="font-weight:700;color:var(--ac);font-size:14px">Windows</div><div style="font-size:11px;color:var(--mu)">ShiftDesk-Setup-1.0.3.exe</div></div>
+      </a>
+      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-1.0.3-mac-apple-silicon.dmg" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.18)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">
+        <span style="font-size:28px">🍎</span>
+        <div><div style="font-weight:700;color:var(--gr);font-size:14px">Mac — Apple Silicon</div><div style="font-size:11px;color:var(--mu)">M1/M2/M3 MacBook</div></div>
+      </a>
+      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.3/ShiftDesk-1.0.3-mac-intel.dmg" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.14)'" onmouseout="this.style.background='rgba(16,185,129,.06)'">
+        <span style="font-size:28px">🍎</span>
+        <div><div style="font-weight:700;color:var(--gr);font-size:14px">Mac — Intel</div><div style="font-size:11px;color:var(--mu)">Older Intel MacBook</div></div>
+      </a>
+    </div>
+    <div style="margin-top:12px;padding:10px 14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:var(--r);font-size:12px;color:var(--mu)">
+      💡 <b>Mac users:</b> If "damaged app" error aaye — Terminal mein run karo: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;color:var(--ac)">xattr -cr ~/Downloads/ShiftDesk*.dmg</code> then Right-click → Open
+    </div>
+  </div>
+
+  <!-- User Manual -->
+  <div class="card">
+    <div class="card-title">📖 How to Use ShiftDesk</div>
+    <div style="display:grid;gap:12px">
+      ${[
+        {icon:'⏱️',title:'My Shift',desc:'Har roz Check In karo shift start pe. Break le sakte ho. Shift khatam hone pe Check Out karo. 2nd shift optional hai.'},
+        {icon:'✅',title:'My Tasks',desc:'Admin ya koi agent tumhe task assign kare to yahan dikhega. Complete ya Reject karo remark ke saath. Khud bhi task bana sakte ho.'},
+        {icon:'📊',title:'My Dashboard',desc:'Monthly calendar — green=on time, yellow=late, red=absent, purple=leave, red=Friday off. Performance score aur overtime bhi dikh'ta hai.'},
+        {icon:'🏖️',title:'Leave',desc:'Leave apply karo from/to date select karke. Admin approve ya reject karega. Approved leave calendar mein purple rang mein dikhti hai.'},
+        {icon:'📢',title:'Announcements',desc:'Admin ki taraf se notices yahan aate hain — office timing, meeting, ya koi zaroori message.'},
+        {icon:'💬',title:'Chat',desc:'Admin ya kisi bhi agent ko message bhejo. Left mein naam select karo, message likho, Enter ya Send press karo.'},
+        {icon:'📋',title:'Activity Log',desc:'Tumhare saare check-in, check-out, break events ka record yahan dikhta hai.'},
+      ].map(s=>`
+      <div style="display:flex;gap:14px;padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
+        <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
+        <div><div style="font-weight:700;margin-bottom:4px">${s.title}</div><div style="font-size:13px;color:var(--mu);line-height:1.5">${s.desc}</div></div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
 async function renderMyAnnouncements(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
