@@ -187,7 +187,10 @@ tr:hover td{background:var(--b)}
     <div class="form-group"><label>Department</label><select id="mDept"><option value="">Select Department</option><option value="Corporate">Corporate</option><option value="Retail">Retail</option><option value="Reseller">Reseller</option></select></div>
     <div class="form-group"><label>Role / Designation</label><input type="text" id="mRole" placeholder="e.g. Senior Agent"></div>
     <div class="form-group"><label>Country</label><select id="mCountry"><option value="Pakistan">🇵🇰 Pakistan</option><option value="Saudi Arabia">🇸🇦 Saudi Arabia</option></select></div>
-    <div class="form-group"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group" style="margin:0"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
+      <div class="form-group" style="margin:0"><label>Shift End</label><input type="time" id="mShiftEnd" value="18:00"></div>
+    </div>
     <div class="form-group"><label>Agent Type</label><select id="mType"><option value="regular">Regular</option><option value="senior">Senior</option><option value="qa">QA</option><option value="manager">Manager</option><option value="admin">Admin</option></select></div>
     <div class="form-group" id="mPassGroup"><label>Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span></label><input type="password" id="mPass" placeholder="Set agent password"></div>
     <!-- Permissions -->
@@ -283,6 +286,36 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" onclick="closeRemarkModal()">Cancel</button>
       <button class="btn btn-primary btn-sm" id="remarkSubmitBtn" onclick="submitRemark()">Submit</button>
+    </div>
+  </div>
+</div>
+<!-- Leave Request Modal -->
+<div class="modal-bg" id="leaveModal">
+  <div class="modal" style="max-width:420px">
+    <h2>🏖️ Apply for Leave</h2>
+    <div id="leaveErr" class="auth-err"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group" style="margin:0"><label>From Date</label><input type="date" id="leaveFrom"></div>
+      <div class="form-group" style="margin:0"><label>To Date</label><input type="date" id="leaveTo"></div>
+    </div>
+    <div class="form-group"><label>Reason</label><textarea id="leaveReason" rows="3" placeholder="Reason for leave..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeLeaveModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="saveLeaveBtn" onclick="submitLeave()">Submit Request</button>
+    </div>
+  </div>
+</div>
+<!-- Announcement Modal -->
+<div class="modal-bg" id="announceModal">
+  <div class="modal" style="max-width:440px">
+    <h2>📢 New Announcement</h2>
+    <div id="announceErr" class="auth-err"></div>
+    <div class="form-group"><label>Title</label><input type="text" id="aTitle" placeholder="e.g. Office closed Friday"></div>
+    <div class="form-group"><label>Message</label><textarea id="aMsg" rows="3" placeholder="Write your announcement..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Expires On <span style="color:var(--mu);font-weight:400">(optional)</span></label><input type="date" id="aExpiry"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeAnnounceModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="saveAnnounceBtn" onclick="saveAnnouncement()">Post Announcement</button>
     </div>
   </div>
 </div>
@@ -525,18 +558,20 @@ function buildNav(){
     {id:'mydashboard',icon:'📊',label:'Dashboard'},
     {id:'myshift', icon:'⏱️', label:'My Shift'},
     {id:'mytasks', icon:'✅', label:'My Tasks'},
+    {id:'myleave', icon:'🏖️', label:'Leave'},
+    {id:'chat',    icon:'💬', label:'Chat'},
     {id:'activity',icon:'📋',label:'Activity Log'},
   ];
   const items=isAdmin
-    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'}]
-    :allAgentPages.filter(p=>agentPerms.includes(p.id));
+    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'leaves',icon:'🏖️',label:'Leaves'},{id:'announce',icon:'📢',label:'Announce'},{id:'chat',icon:'💬',label:'Chat'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'}]
+    :allAgentPages;
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span></div>`).join('');
 }
 
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',chat:'Chat'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   startRealtime(page);
@@ -549,6 +584,10 @@ function navTo(page){
   else if(page==='myshift')renderMyShift();
   else if(page==='mydashboard')renderMyDashboard();
   else if(page==='reports')renderReports();
+  else if(page==='myleave')renderMyLeave();
+  else if(page==='leaves')renderAdminLeaves();
+  else if(page==='announce')renderAnnouncements();
+  else if(page==='chat')renderChat();
 }
 
 function startRealtime(page){
@@ -558,7 +597,7 @@ function startRealtime(page){
   // Which tables to watch per page
   const watchMap={
     dashboard:['shift_status','activity_tracking'],
-    mydashboard:['shift_status'],
+    mydashboard:['shift_status','announcements','leave_requests'],
     tracking:['activity_tracking'],
     tasks:['tasks'],
     mytasks:['tasks'],
@@ -566,6 +605,10 @@ function startRealtime(page){
     myshift:['shift_status'],
     agents:['agents'],
     reports:['shift_status','activity_tracking'],
+    myleave:['leave_requests'],
+    leaves:['leave_requests'],
+    announce:['announcements'],
+    chat:['messages'],
   };
   const tables=watchMap[page]||[];
   if(!tables.length)return;
@@ -583,6 +626,10 @@ function startRealtime(page){
         else if(page==='myshift')renderMyShift();
         else if(page==='agents')renderAgents();
         else if(page==='mydashboard')renderMyDashboard();
+        else if(page==='myleave')renderMyLeave();
+        else if(page==='leaves')renderAdminLeaves();
+        else if(page==='announce')renderAnnouncements();
+        else if(page==='chat')renderChat();
       }
     });
   });
@@ -759,6 +806,7 @@ function openAddAgent(){
   document.getElementById('mDept').value='';
   document.getElementById('mCountry').value='Pakistan';
   document.getElementById('mShiftStart').value='09:00';
+  document.getElementById('mShiftEnd').value='18:00';
   document.getElementById('mType').value='regular';
   setPermCheckboxes('myshift,mytasks,activity,assign_task'); // all on by default
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
@@ -777,6 +825,7 @@ async function openEditAgent(id){
   document.getElementById('mRole').value=a.role||'';
   document.getElementById('mCountry').value=a.country||'Pakistan';
   document.getElementById('mShiftStart').value=a.shift_start||'09:00';
+  document.getElementById('mShiftEnd').value=a.shift_end||'18:00';
   document.getElementById('mType').value=a.type||'regular';
   document.getElementById('mPass').value='';
   setPermCheckboxes(a.permissions||'myshift,mytasks,activity');
@@ -794,6 +843,7 @@ async function saveAgent(){
   const role=document.getElementById('mRole').value.trim();
   const country=document.getElementById('mCountry').value;
   const shift_start=document.getElementById('mShiftStart').value;
+  const shift_end=document.getElementById('mShiftEnd').value||'18:00';
   const type=document.getElementById('mType').value;
   const permissions=getPermCheckboxes();
   const pw=document.getElementById('mPass').value;
@@ -808,13 +858,13 @@ async function saveAgent(){
   try{
     if(!editingAgentId){
       // Add new agent directly to agents table — no Supabase Auth needed
-      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,type,permissions,pw:await hashPw(pw)};
+      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw:await hashPw(pw)};
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       showToast('✅ Agent added: '+name,'ok');
     }else{
       // Update agent — only update pw if admin entered one
-      const updateData={name,email,dept,role,country,timezone,shift_start,type,permissions};
+      const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions};
       if(pw)updateData.pw=await hashPw(pw);
       const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
@@ -852,28 +902,46 @@ async function renderMyDashboard(){
   const daysInMonth=new Date(yr,mo+1,0).getDate();
   const today=now.toISOString().slice(0,10);
 
-  // Load all shift_status rows for this month
-  const{data:rows}=await _db.from('shift_status').select('*')
-    .eq('agent_id',currentAgent.id)
-    .gte('date',monthStr+'-01')
-    .lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0'));
-
+  // Load shift data, announcements, leave requests, tasks
+  const[{data:rows},{data:announcements},{data:leaves},{data:allTasks}]=await Promise.all([
+    _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).gte('date',monthStr+'-01').lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0')),
+    _db.from('announcements').select('*').or(`expires_at.is.null,expires_at.gte.${today}`).order('created_at',{ascending:false}).limit(5),
+    _db.from('leave_requests').select('*').eq('agent_id',currentAgent.id).eq('status','approved'),
+    _db.from('tasks').select('id,status').eq('agent_id',currentAgent.id),
+  ]);
   const byDate={};(rows||[]).forEach(r=>{byDate[r.date]=r;});
+  const leaveSet=new Set();
+  (leaves||[]).forEach(l=>{
+    let d=new Date(l.date_from);const end=new Date(l.date_to);
+    while(d<=end){leaveSet.add(d.toISOString().slice(0,10));d.setDate(d.getDate()+1);}
+  });
 
   // Stats
-  let workedDays=0,totalMinutes=0,lateDays=0,onTimeDays=0;
+  let workedDays=0,totalMinutes=0,lateDays=0,onTimeDays=0,totalOvertimeMins=0,workingDaysCount=0;
+  const shiftEndTime=currentAgent.shift_end||'18:00';
   for(let d=1;d<=daysInMonth;d++){
     const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const dow=new Date(ds).getDay(); // 0=Sun,5=Fri
-    if(dow===5)continue; // Friday off
+    const dow=new Date(ds).getDay();
+    if(dow===5)continue;
+    workingDaysCount++;
+    if(leaveSet.has(ds))continue;
     const r=byDate[ds];
     if(r?.check_in){
       workedDays++;
-      const s1=(r.check_out?new Date(r.check_out):new Date())- new Date(r.check_in);
+      const s1=(r.check_out?new Date(r.check_out):new Date())-new Date(r.check_in);
       const s2=r.check_in_2?((r.check_out_2?new Date(r.check_out_2):new Date())-new Date(r.check_in_2)):0;
       const brk1=r.break_start&&r.break_end?(new Date(r.break_end)-new Date(r.break_start)):0;
       const brk2=r.break_start_2&&r.break_end_2?(new Date(r.break_end_2)-new Date(r.break_start_2)):0;
-      totalMinutes+=Math.max(0,Math.floor((s1+s2-brk1-brk2)/60000));
+      const mins=Math.max(0,Math.floor((s1+s2-brk1-brk2)/60000));
+      totalMinutes+=mins;
+      // Overtime: minutes beyond shift_end
+      const lastOut=r.check_out_2||r.check_out;
+      if(lastOut){
+        const [eh,em]=shiftEndTime.split(':').map(Number);
+        const shiftEndMs=new Date(ds+'T'+shiftEndTime+':00').getTime();
+        const checkOutMs=new Date(lastOut).getTime();
+        if(checkOutMs>shiftEndMs)totalOvertimeMins+=Math.floor((checkOutMs-shiftEndMs)/60000);
+      }
       const li=getCheckinStatus(r.check_in,currentAgent.shift_start,currentAgent.timezone);
       if(li?.status==='late')lateDays++;else onTimeDays++;
     }
@@ -881,6 +949,16 @@ async function renderMyDashboard(){
   const totalH=Math.floor(totalMinutes/60),totalM=totalMinutes%60;
   const avgMins=workedDays>0?Math.round(totalMinutes/workedDays):0;
   const avgH=Math.floor(avgMins/60),avgM=avgMins%60;
+  const otH=Math.floor(totalOvertimeMins/60),otM=totalOvertimeMins%60;
+  // Performance score
+  const tasksDone=(allTasks||[]).filter(t=>t.status==='completed').length;
+  const tasksTotal=(allTasks||[]).length;
+  const attendScore=workingDaysCount>0?Math.round(workedDays/workingDaysCount*100):100;
+  const punctScore=workedDays>0?Math.round(onTimeDays/workedDays*100):100;
+  const taskScore=tasksTotal>0?Math.round(tasksDone/tasksTotal*100):100;
+  const perfScore=Math.round(attendScore*0.4+punctScore*0.4+taskScore*0.2);
+  const perfColor=perfScore>=80?'var(--gr)':perfScore>=60?'var(--yl)':'var(--rd)';
+  const perfLabel=perfScore>=80?'Excellent':perfScore>=60?'Good':'Needs Improvement';
 
   // Calendar
   const monthName=now.toLocaleString('en-US',{month:'long'});
@@ -905,6 +983,7 @@ async function renderMyDashboard(){
     if(isFri){bg='rgba(244,63,94,.1)';color='var(--rd)';label='Off';}
     else if(isSun){bg='var(--s2)';color='var(--mu)';}
     else if(isFuture){bg='transparent';color='var(--mu)';}
+    else if(leaveSet.has(ds)){bg='rgba(139,92,246,.2)';color='#a78bfa';label='Leave';}
     else if(r?.check_in){
       const s1=(r.check_out?new Date(r.check_out):new Date())-new Date(r.check_in);
       const mins=Math.floor(s1/60000);
@@ -924,39 +1003,265 @@ async function renderMyDashboard(){
   }
 
   c.innerHTML=`
-  <div style="margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-    <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${workedDays}</div><div class="stat-label">Days Worked</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${totalH}h ${totalM}m</div><div class="stat-label">Total Hours</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${avgH}h ${avgM}m</div><div class="stat-label">Avg/Day</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--rd)">${lateDays}</div><div class="stat-label">Late Days</div></div>
+  ${announcements?.length?`<div style="margin-bottom:16px">${announcements.map(a=>`
+    <div style="background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);border-left:3px solid var(--ac);border-radius:var(--r);padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
+      <span style="font-size:18px">📢</span>
+      <div><div style="font-weight:700;font-size:13px;margin-bottom:2px">${a.title}</div><div style="font-size:12px;color:var(--mu)">${a.message}</div></div>
+    </div>`).join('')}</div>`:''}
+
+  <div style="margin-bottom:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
+    <div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${workedDays}</div><div class="stat-label">Days Worked</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${totalH}h ${totalM}m</div><div class="stat-label">Total Hours</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${avgH}h ${avgM}m</div><div class="stat-label">Avg/Day</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--rd)">${lateDays}</div><div class="stat-label">Late Days</div></div>
+    </div>
+    <!-- Performance Score -->
+    <div class="card" style="margin:0;display:flex;align-items:center;gap:16px">
+      <div style="position:relative;width:70px;height:70px;flex-shrink:0">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="28" fill="none" stroke="var(--s3)" stroke-width="8"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="${perfColor}" stroke-width="8" stroke-dasharray="${2*Math.PI*28}" stroke-dashoffset="${2*Math.PI*28*(1-perfScore/100)}" stroke-linecap="round" transform="rotate(-90 35 35)"/>
+        </svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:14px;font-weight:800;color:${perfColor}">${perfScore}</div>
+      </div>
+      <div>
+        <div style="font-size:16px;font-weight:800;color:${perfColor}">${perfLabel}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:4px">⭐ Performance Score</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">Attend: ${attendScore}% · Punct: ${punctScore}% · Tasks: ${taskScore}%</div>
+      </div>
+    </div>
+    <!-- Overtime -->
+    <div class="card" style="margin:0">
+      <div style="font-size:11px;color:var(--mu);font-weight:700;letter-spacing:.5px;margin-bottom:8px">⏰ OVERTIME THIS MONTH</div>
+      <div style="font-size:28px;font-weight:800;color:${totalOvertimeMins>0?'var(--ac)':'var(--mu)'}">${totalOvertimeMins>0?otH+'h '+otM+'m':'—'}</div>
+      <div style="font-size:11px;color:var(--mu);margin-top:4px">Shift ends: ${shiftEndTime}</div>
+    </div>
   </div>
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div class="card-title" style="margin:0">📅 ${monthName} ${yr}</div>
-      <div style="display:flex;gap:10px;font-size:11px">
+      <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap">
         <span style="color:var(--gr)">🟢 On Time</span>
         <span style="color:var(--yl)">🟡 Late</span>
         <span style="color:var(--rd)">🔴 Absent</span>
-        <span style="color:var(--rd)">Off = Friday</span>
+        <span style="color:#a78bfa">🟣 Leave</span>
+        <span style="color:var(--rd)">Off=Fri</span>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${calCells}</div>
-  </div>
+  </div>`;
+}
 
-  <div class="card">
-    <div class="card-title">📊 This Month Summary</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div style="padding:10px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
-        <div style="font-size:11px;color:var(--mu);margin-bottom:4px">On Time Days</div>
-        <div style="font-size:20px;font-weight:800;color:var(--gr)">${onTimeDays}</div>
+// ── ANNOUNCEMENTS ────────────────────────────────────────────────
+async function renderAnnouncements(){
+  const c=document.getElementById('pageContent');
+  const today=new Date().toISOString().slice(0,10);
+  const{data:list}=await _db.from('announcements').select('*').order('created_at',{ascending:false});
+  c.innerHTML=`
+  <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+    <button class="btn btn-primary btn-sm" onclick="openAnnounceModal()">📢 New Announcement</button>
+  </div>
+  ${!list?.length?'<div class="empty-state"><div class="icon">📢</div><p>No announcements yet.</p></div>':list.map(a=>{
+    const expired=a.expires_at&&a.expires_at<today;
+    return `<div class="card" style="margin-bottom:12px;border-left:3px solid ${expired?'var(--mu)':'var(--ac)'}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px">${a.title} ${expired?'<span style="font-size:11px;color:var(--mu)">(Expired)</span>':''}</div>
+          <div style="font-size:13px;color:var(--mu);margin-bottom:8px">${a.message}</div>
+          <div style="font-size:11px;color:var(--mu)">📅 ${new Date(a.created_at).toLocaleDateString()} ${a.expires_at?'· Expires: '+a.expires_at:''}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" style="flex-shrink:0" onclick="deleteAnnouncement('${a.id}')">🗑️</button>
       </div>
-      <div style="padding:10px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
-        <div style="font-size:11px;color:var(--mu);margin-bottom:4px">Late Days</div>
-        <div style="font-size:20px;font-weight:800;color:var(--yl)">${lateDays}</div>
+    </div>`;
+  }).join('')}`;
+}
+function openAnnounceModal(){document.getElementById('aTitle').value='';document.getElementById('aMsg').value='';document.getElementById('aExpiry').value='';document.getElementById('announceErr').classList.remove('show');document.getElementById('announceModal').classList.add('open');}
+function closeAnnounceModal(){document.getElementById('announceModal').classList.remove('open');}
+async function saveAnnouncement(){
+  const title=document.getElementById('aTitle').value.trim();
+  const message=document.getElementById('aMsg').value.trim();
+  const expires_at=document.getElementById('aExpiry').value||null;
+  const errEl=document.getElementById('announceErr');
+  if(!title){errEl.textContent='Title required';errEl.classList.add('show');return;}
+  if(!message){errEl.textContent='Message required';errEl.classList.add('show');return;}
+  const btn=document.getElementById('saveAnnounceBtn');btn.disabled=true;btn.textContent='Posting...';
+  const{error}=await _db.from('announcements').insert({title,message,expires_at,created_by:'Admin'});
+  btn.disabled=false;btn.textContent='Post Announcement';
+  if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
+  showToast('📢 Announcement posted!','ok');closeAnnounceModal();renderAnnouncements();
+}
+async function deleteAnnouncement(id){
+  if(!confirm('Delete this announcement?'))return;
+  await _db.from('announcements').delete().eq('id',id);
+  showToast('Deleted','ok');renderAnnouncements();
+}
+
+// ── LEAVE REQUESTS ───────────────────────────────────────────────
+function openLeaveModal(){
+  document.getElementById('leaveFrom').value='';
+  document.getElementById('leaveTo').value='';
+  document.getElementById('leaveReason').value='';
+  document.getElementById('leaveErr').classList.remove('show');
+  document.getElementById('leaveModal').classList.add('open');
+}
+function closeLeaveModal(){document.getElementById('leaveModal').classList.remove('open');}
+
+async function submitLeave(){
+  const from=document.getElementById('leaveFrom').value;
+  const to=document.getElementById('leaveTo').value;
+  const reason=document.getElementById('leaveReason').value.trim();
+  const errEl=document.getElementById('leaveErr');
+  if(!from||!to){errEl.textContent='Please select dates';errEl.classList.add('show');return;}
+  if(to<from){errEl.textContent='To date must be after From date';errEl.classList.add('show');return;}
+  const btn=document.getElementById('saveLeaveBtn');btn.disabled=true;btn.textContent='Submitting...';
+  const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:from,date_to:to,reason,status:'pending'});
+  btn.disabled=false;btn.textContent='Submit Request';
+  if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
+  showToast('🏖️ Leave request submitted!','ok');closeLeaveModal();renderMyLeave();
+}
+
+async function renderMyLeave(){
+  if(!currentAgent)return;
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const{data:leaves}=await _db.from('leave_requests').select('*').eq('agent_id',currentAgent.id).order('created_at',{ascending:false});
+  const statusColor={pending:'var(--yl)',approved:'var(--gr)',rejected:'var(--rd)'};
+  const statusIcon={pending:'⏳',approved:'✅',rejected:'❌'};
+  c.innerHTML=`
+  <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+    <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">➕ Apply Leave</button>
+  </div>
+  ${!leaves?.length?'<div class="empty-state"><div class="icon">🏖️</div><p>No leave requests yet.</p></div>':leaves.map(l=>`
+  <div class="card" style="margin-bottom:12px;border-left:3px solid ${statusColor[l.status]||'var(--mu)'}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-weight:700">${l.date_from} → ${l.date_to}</div>
+      <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44">${statusIcon[l.status]||'⏳'} ${l.status||'pending'}</span>
+    </div>
+    ${l.reason?`<div style="font-size:13px;color:var(--mu)">${l.reason}</div>`:''}
+    ${l.status!=='pending'?`<div style="font-size:11px;color:var(--mu);margin-top:6px">Reviewed by: ${l.reviewed_by||'Admin'}</div>`:''}
+  </div>`).join('')}`;
+}
+
+async function renderAdminLeaves(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const{data:leaves}=await _db.from('leave_requests').select('*').order('created_at',{ascending:false});
+  const pending=leaves?.filter(l=>l.status==='pending')||[];
+  const others=leaves?.filter(l=>l.status!=='pending')||[];
+  const statusColor={pending:'var(--yl)',approved:'var(--gr)',rejected:'var(--rd)'};
+  const card=(l)=>`
+  <div class="card" style="margin-bottom:10px;border-left:3px solid ${statusColor[l.status]||'var(--mu)'}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div>
+        <div style="font-weight:700;margin-bottom:4px">${l.agent_name} <span style="font-size:12px;color:var(--mu);font-weight:400">(${l.dept||'—'})</span></div>
+        <div style="font-size:13px;margin-bottom:4px">📅 ${l.date_from} → ${l.date_to}</div>
+        ${l.reason?`<div style="font-size:12px;color:var(--mu)">${l.reason}</div>`:''}
+      </div>
+      ${l.status==='pending'?`
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="reviewLeave('${l.id}','approved')">✅ Approve</button>
+        <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="reviewLeave('${l.id}','rejected')">❌ Reject</button>
+      </div>`:`<span class="badge" style="font-size:11px;color:${statusColor[l.status]};background:${statusColor[l.status]}22;border:1px solid ${statusColor[l.status]}44">${l.status==='approved'?'✅ Approved':'❌ Rejected'}</span>`}
+    </div>
+  </div>`;
+  c.innerHTML=`
+  ${pending.length?`<div class="card-title" style="margin-bottom:12px">⏳ Pending (${pending.length})</div>${pending.map(card).join('')}`:''}
+  ${others.length?`<div class="card-title" style="margin:16px 0 12px">📋 Reviewed</div>${others.map(card).join('')}`:''}
+  ${!leaves?.length?'<div class="empty-state"><div class="icon">🏖️</div><p>No leave requests yet.</p></div>':''}`;
+}
+
+async function reviewLeave(id,status){
+  const{error}=await _db.from('leave_requests').update({status,reviewed_by:'Admin',reviewed_at:new Date().toISOString()}).eq('id',id);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  showToast(status==='approved'?'✅ Leave approved':'❌ Leave rejected','ok');
+  renderAdminLeaves();
+}
+
+// ── CHAT ─────────────────────────────────────────────────────────
+let chatRecipient=null;
+async function renderChat(){
+  const c=document.getElementById('pageContent');
+  const myId=isAdmin?'admin':(currentAgent?.id||'');
+  const myName=isAdmin?'Admin':(currentAgent?.name||'');
+
+  // Load agents for recipient list
+  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+  const recipients=[
+    {id:'admin',name:'Admin (Broadcast)'},
+    ...(agents||[]).filter(a=>a.id!==myId)
+  ];
+  if(!chatRecipient)chatRecipient=recipients[0]?.id||null;
+
+  // Load messages for selected conversation
+  let msgsQ=_db.from('messages').select('*').order('created_at',{ascending:true}).limit(100);
+  if(chatRecipient==='admin'){
+    if(isAdmin) msgsQ=msgsQ.eq('is_broadcast',true);
+    else msgsQ=msgsQ.or(`from_id.eq.${myId},to_id.eq.${myId}`).or('is_broadcast.eq.true');
+  } else {
+    msgsQ=msgsQ.or(`and(from_id.eq.${myId},to_id.eq.${chatRecipient}),and(from_id.eq.${chatRecipient},to_id.eq.${myId})`);
+  }
+  const{data:msgs}=await msgsQ;
+
+  const recipientTabs=recipients.map(r=>`
+    <div onclick="setChatRecipient('${r.id}')" style="padding:10px 14px;cursor:pointer;border-radius:var(--r);background:${chatRecipient===r.id?'var(--s3)':'transparent'};margin-bottom:4px;font-size:13px;font-weight:${chatRecipient===r.id?'700':'500'};color:${chatRecipient===r.id?'var(--tx)':'var(--mu)'}">
+      ${r.id==='admin'?'📢':r.name.charAt(0).toUpperCase()} ${r.name}
+    </div>`).join('');
+
+  const msgBubbles=(msgs||[]).map(m=>{
+    const isMe=m.from_id===myId||(isAdmin&&m.from_id==='admin');
+    return `<div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px">
+      <div style="max-width:70%;background:${isMe?'var(--ac)':'var(--s2)'};color:${isMe?'#fff':'var(--tx)'};padding:10px 14px;border-radius:${isMe?'16px 16px 4px 16px':'16px 16px 16px 4px'};font-size:13px">
+        ${!isMe?`<div style="font-size:10px;font-weight:700;margin-bottom:4px;opacity:.7">${m.from_name}</div>`:''}
+        ${m.message}
+        <div style="font-size:10px;opacity:.6;margin-top:4px;text-align:right">${new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  c.innerHTML=`
+  <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;height:calc(100vh - 140px)">
+    <div class="card" style="padding:12px;overflow-y:auto">
+      <div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:10px;letter-spacing:.5px">CONVERSATIONS</div>
+      ${recipientTabs}
+    </div>
+    <div class="card" style="padding:0;display:flex;flex-direction:column">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--b);font-weight:700">
+        💬 ${recipients.find(r=>r.id===chatRecipient)?.name||'Chat'}
+      </div>
+      <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px">
+        ${msgBubbles||'<div style="text-align:center;color:var(--mu);padding:40px">No messages yet. Say hi! 👋</div>'}
+      </div>
+      <div style="padding:12px;border-top:1px solid var(--b);display:flex;gap:8px">
+        <input id="chatInput" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMessage()" style="flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none">
+        <button class="btn btn-primary btn-sm" onclick="sendMessage()">Send ➤</button>
       </div>
     </div>
   </div>`;
+  // Scroll to bottom
+  setTimeout(()=>{const el=document.getElementById('chatMessages');if(el)el.scrollTop=el.scrollHeight;},50);
+}
+
+function setChatRecipient(id){chatRecipient=id;renderChat();}
+
+async function sendMessage(){
+  const input=document.getElementById('chatInput');
+  const msg=input?.value?.trim();
+  if(!msg)return;
+  const myId=isAdmin?'admin':(currentAgent?.id||'');
+  const myName=isAdmin?'Admin':(currentAgent?.name||'');
+  const isBroadcast=chatRecipient==='admin'&&isAdmin;
+  const{error}=await _db.from('messages').insert({
+    from_id:myId,from_name:myName,
+    to_id:isBroadcast?null:chatRecipient,
+    to_name:isBroadcast?null:null,
+    message:msg,
+    is_broadcast:isBroadcast
+  });
+  if(error){showToast('Error: '+error.message,'err');return;}
+  if(input)input.value='';
+  renderChat();
 }
 
 async function renderMyShift(){
@@ -1421,6 +1726,7 @@ async function renderMyTasks(){
     <div class="card-title">⏳ Pending Tasks</div>
     ${pending.map(t=>`
     <div style="padding:14px 0;border-bottom:1px solid var(--b)">
+      ${t.date&&t.date<new Date().toISOString().slice(0,10)?`<div style="font-size:10px;font-weight:700;color:var(--rd);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:4px;padding:2px 8px;display:inline-block;margin-bottom:6px">⚠️ OVERDUE</div>`:''}
       <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task.replace(/</g,'&lt;')}</div>
       ${t.assigned_by_name?`<div style="font-size:11px;color:var(--mu);margin-bottom:6px">👤 Assigned by: ${t.assigned_by_name}</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
