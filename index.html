@@ -353,7 +353,37 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 
 const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx';
-const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const _db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
+  realtime:{timeout:30000},
+  global:{headers:{'x-client-info':'shiftdesk/1.0'}}
+});
+
+// ── In-memory cache with TTL ──────────────────────────────────────────────
+const _cache=new Map();
+function _cGet(k){const c=_cache.get(k);return(c&&Date.now()-c.ts<c.ttl)?c.d:null;}
+function _cSet(k,d,ttl=30000){_cache.set(k,{d,ts:Date.now(),ttl});}
+function _cDel(...keys){keys.forEach(k=>_cache.delete(k));}
+async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await fn();_cSet(k,r,ttl);return r;}
+
+// ── Column selects (no select('*') — fetch only what we need) ────────────
+const C={
+  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,online',
+  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,online,pw',
+  shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2',
+  tracking:'agent_id,date,total_active_minutes,idle_minutes,activity_status,last_seen',
+  tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
+  announce:'id,title,message,expires_at,created_at',
+  leave:'id,agent_id,date_from,date_to,reason,status,created_at',
+  messages:'id,from_id,from_name,to_id,message,created_at,is_broadcast',
+  logs:'id,agent_id,event,created_at',
+};
+
+// Shared helpers: fetch agents (cached 5 min) ─────────────────────────────
+async function _getAgents(cols){
+  const k='agents_list_'+(cols||C.agents);
+  return _q(k,300000,()=>_db.from('agents').select(cols||C.agents).order('name').then(r=>r.data));
+}
+
 // Separate client for creating new auth users — isolated storage key
 let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
 let lastActivityTime=Date.now(),trackingInterval=null,isTracking=false;
@@ -634,7 +664,16 @@ function startRealtime(page){
   tables.forEach(table=>{
     realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{
       if(currentPage!==page)return;
-      // Debounce: avoid rapid re-renders (wait 800ms)
+      // Invalidate relevant cache on realtime push
+      if(table==='shift_status'){_cDel('shift_today','myshift_today_'+(currentAgent?.id||''));}
+      if(table==='activity_tracking'){_cDel('tracking_today');}
+      if(table==='tasks'){_cDel('tasks_all','tasks_agent_'+(currentAgent?.id||''));}
+      if(table==='agents'){_cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full);}
+      if(table==='announcements'){_cDel('announcements');}
+      if(table==='leave_requests'){_cDel('leaves_all','leaves_agent_'+(currentAgent?.id||''));}
+      if(table==='messages'){_cDel('chat_msgs_'+(chatRecipient||''));}
+      if(table==='activity_logs'){_cDel('logs_agent_'+(currentAgent?.id||''),'logs_all');}
+      // Debounce re-render (800ms)
       clearTimeout(_realtimeDebounce[page]);
       _realtimeDebounce[page]=setTimeout(()=>{
         if(currentPage!==page)return;
@@ -651,7 +690,7 @@ function startRealtime(page){
         else if(page==='announce')renderAnnouncements();
         else if(page==='myannounce')renderMyAnnouncements();
         else if(page==='chat')renderChat();
-      },800); // 800ms debounce
+      },800);
     });
   });
   realtimeChannel.subscribe();
@@ -674,10 +713,10 @@ async function renderDashboard(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  const[{data:agents},{data:ts},{data:tracking}]=await Promise.all([
-    _db.from('agents').select('*').order('name'),
-    _db.from('shift_status').select('*').eq('date',today),
-    _db.from('activity_tracking').select('*').eq('date',today)
+  const[agents,ts,tracking]=await Promise.all([
+    _getAgents(),
+    _q('shift_today',15000,()=>_db.from('shift_status').select(C.shift).eq('date',today).then(r=>r.data)),
+    _q('tracking_today',10000,()=>_db.from('activity_tracking').select(C.tracking).eq('date',today).then(r=>r.data)),
   ]);
   const total=agents?.length||0;
   const online=ts?.filter(s=>s.online).length||0;
@@ -797,7 +836,7 @@ async function renderDashboard(){
 
 async function renderAgents(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const{data:agents}=await _db.from('agents').select('*').order('name');
+  const agents=await _getAgents(C.agents_full);
   const permLabel=p=>{
     if(!p)return'<span style="font-size:10px;color:var(--mu)">all</span>';
     const icons={myshift:'⏱️',mytasks:'✅',activity:'📋',assign_task:'📤'};
@@ -837,7 +876,7 @@ function openAddAgent(){
 }
 
 async function openEditAgent(id){
-  const{data:a}=await _db.from('agents').select('*').eq('id',id).single();
+  const{data:a}=await _db.from('agents').select(C.agents_full+',shift_end').eq('id',id).single();
   if(!a){showToast('Agent not found','err');return;}
   editingAgentId=id;
   document.getElementById('mName').value=a.name||'';
@@ -882,13 +921,14 @@ async function saveAgent(){
       const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw:await hashPw(pw)};
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
       showToast('✅ Agent added: '+name,'ok');
     }else{
-      // Update agent — only update pw if admin entered one
       const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions};
       if(pw)updateData.pw=await hashPw(pw);
       const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
+      _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
       showToast('✅ Agent updated: '+name,'ok');
     }
     closeAgentModal();renderAgents();
@@ -900,6 +940,7 @@ async function deleteAgent(id,name){
   if(!confirm('Delete agent "'+name+'"?'))return;
   const{error}=await _db.from('agents').delete().eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
   showToast('Agent deleted: '+name,'ok');renderAgents();
 }
 
@@ -924,11 +965,12 @@ async function renderMyDashboard(){
   const today=now.toISOString().slice(0,10);
 
   // Load shift data, announcements, leave requests, tasks
-  const[{data:rows},{data:announcements},{data:leaves},{data:allTasks}]=await Promise.all([
-    _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).gte('date',monthStr+'-01').lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0')),
-    _db.from('announcements').select('id,title,message,expires_at,created_at').order('created_at',{ascending:false}).limit(5),
-    _db.from('leave_requests').select('date_from,date_to').eq('agent_id',currentAgent.id).eq('status','approved'),
-    _db.from('tasks').select('status').eq('agent_id',currentAgent.id),
+  const aid=currentAgent.id;
+  const[rows,announcements,leaves,allTasks]=await Promise.all([
+    _q('mydash_shifts_'+aid+'_'+monthStr,20000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',aid).gte('date',monthStr+'-01').lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data)),
+    _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).limit(5).then(r=>r.data)),
+    _q('leaves_agent_approved_'+aid,60000,()=>_db.from('leave_requests').select('date_from,date_to').eq('agent_id',aid).eq('status','approved').then(r=>r.data)),
+    _q('tasks_agent_status_'+aid,20000,()=>_db.from('tasks').select('status').eq('agent_id',aid).then(r=>r.data)),
   ]);
   const byDate={};(rows||[]).forEach(r=>{byDate[r.date]=r;});
   const leaveSet=new Set();
@@ -1079,7 +1121,7 @@ async function renderMyDashboard(){
 async function renderAnnouncements(){
   const c=document.getElementById('pageContent');
   const today=new Date().toISOString().slice(0,10);
-  const{data:list}=await _db.from('announcements').select('*').order('created_at',{ascending:false});
+  const list=await _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).then(r=>r.data));
   c.innerHTML=`
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
     <button class="btn btn-primary btn-sm" onclick="openAnnounceModal()">📢 New Announcement</button>
@@ -1159,7 +1201,7 @@ async function renderMyAnnouncements(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  const{data:list}=await _db.from('announcements').select('*').order('created_at',{ascending:false});
+  const list=await _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).then(r=>r.data));
   const active=(list||[]).filter(a=>!a.expires_at||a.expires_at>=today);
   if(!active.length){c.innerHTML='<div class="empty-state"><div class="icon">📢</div><p>No announcements right now.</p></div>';return;}
   c.innerHTML=active.map(a=>`
@@ -1188,11 +1230,13 @@ async function saveAnnouncement(){
   const{error}=await _db.from('announcements').insert({title,message,expires_at,created_by:'Admin'});
   btn.disabled=false;btn.textContent='Post Announcement';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
+  _cDel('announcements');
   showToast('📢 Announcement posted!','ok');closeAnnounceModal();renderAnnouncements();
 }
 async function deleteAnnouncement(id){
   if(!confirm('Delete this announcement?'))return;
   await _db.from('announcements').delete().eq('id',id);
+  _cDel('announcements');
   showToast('Deleted','ok');renderAnnouncements();
 }
 
@@ -1217,6 +1261,7 @@ async function submitLeave(){
   const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:from,date_to:to,reason,status:'pending'});
   btn.disabled=false;btn.textContent='Submit Request';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
+  _cDel('leaves_agent_'+currentAgent.id,'leaves_all','leaves_agent_approved_'+currentAgent.id);
   showToast('🏖️ Leave request submitted!','ok');closeLeaveModal();renderMyLeave();
 }
 
@@ -1224,7 +1269,7 @@ async function renderMyLeave(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const{data:leaves}=await _db.from('leave_requests').select('*').eq('agent_id',currentAgent.id).order('created_at',{ascending:false});
+  const leaves=await _q('leaves_agent_'+currentAgent.id,30000,()=>_db.from('leave_requests').select(C.leave).eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).then(r=>r.data));
   const statusColor={pending:'var(--yl)',approved:'var(--gr)',rejected:'var(--rd)'};
   const statusIcon={pending:'⏳',approved:'✅',rejected:'❌'};
   c.innerHTML=`
@@ -1245,7 +1290,7 @@ async function renderMyLeave(){
 async function renderAdminLeaves(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const{data:leaves}=await _db.from('leave_requests').select('*').order('created_at',{ascending:false});
+  const leaves=await _q('leaves_all',30000,()=>_db.from('leave_requests').select(C.leave).order('created_at',{ascending:false}).then(r=>r.data));
   const pending=leaves?.filter(l=>l.status==='pending')||[];
   const others=leaves?.filter(l=>l.status!=='pending')||[];
   const statusColor={pending:'var(--yl)',approved:'var(--gr)',rejected:'var(--rd)'};
@@ -1273,6 +1318,7 @@ async function renderAdminLeaves(){
 async function reviewLeave(id,status){
   const{error}=await _db.from('leave_requests').update({status,reviewed_by:'Admin',reviewed_at:new Date().toISOString()}).eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('leaves_all','leaves_agent_approved_'+id);
   showToast(status==='approved'?'✅ Leave approved':'❌ Leave rejected','ok');
   renderAdminLeaves();
 }
@@ -1284,8 +1330,8 @@ async function renderChat(){
   const myId=isAdmin?'admin':(currentAgent?.id||'');
   const myName=isAdmin?'Admin':(currentAgent?.name||'');
 
-  // Load agents for recipient list
-  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+  // Load agents for recipient list (cached)
+  const agents=await _getAgents('id,name,dept');
   const recipients=[
     {id:'admin',name:'Admin (Broadcast)'},
     ...(agents||[]).filter(a=>a.id!==myId)
@@ -1293,7 +1339,7 @@ async function renderChat(){
   if(!chatRecipient)chatRecipient=recipients[0]?.id||null;
 
   // Load messages for selected conversation
-  let msgsQ=_db.from('messages').select('*').order('created_at',{ascending:true}).limit(100);
+  let msgsQ=_db.from('messages').select(C.messages).order('created_at',{ascending:true}).limit(60);
   if(chatRecipient==='admin'){
     if(isAdmin) msgsQ=msgsQ.eq('is_broadcast',true);
     else msgsQ=msgsQ.or(`from_id.eq.${myId},to_id.eq.${myId}`).or('is_broadcast.eq.true');
@@ -1367,7 +1413,7 @@ async function renderMyShift(){
   if(!currentAgent){return;}
   const c=document.getElementById('pageContent');
   const today=new Date().toISOString().slice(0,10);
-  const{data:s}=await _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
+  const s=await _q('myshift_today_'+currentAgent.id,12000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle().then(r=>r.data));
   const isIn=s?.online||false;
   if(isIn&&!isTracking)startTracking();
   const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'};
@@ -1507,6 +1553,7 @@ async function confirmCheckIn(location){
   else{payload.check_in_2=now;payload.work_location_2=location;}
   const{error}=await _db.from('shift_status').upsert(payload,{onConflict:'agent_id,date'});
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('myshift_today_'+currentAgent.id,'shift_today','shift_checkin_today','logs_agent_'+currentAgent.id,'logs_all');
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',detail:'Check In Shift '+shiftNum+' ('+location+')',date:today,time:now});
   startTracking();
   const _li=getCheckinStatus(now,currentAgent.shift_start,currentAgent.timezone);
@@ -1523,6 +1570,7 @@ async function doCheckOut(shiftNum){
   else{payload.check_out_2=now;}
   const{error}=await _db.from('shift_status').update(payload).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('myshift_today_'+currentAgent.id,'shift_today','shift_checkin_today','logs_agent_'+currentAgent.id,'logs_all');
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_out',detail:'Check Out Shift '+shiftNum,date:today,time:now});
   stopTracking();
   showToast('Shift '+shiftNum+' complete! Great work 👏','ok');renderMyShift();
@@ -1534,6 +1582,7 @@ async function doBreakStart(shiftNum){
   const col=shiftNum===1?'break_start':'break_start_2';
   const{error}=await _db.from('shift_status').update({[col]:now,online:false}).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('myshift_today_'+currentAgent.id,'shift_today');
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now});
   stopTracking();
   showToast('☕ Break started! Rest karo.','info');renderMyShift();
@@ -1545,13 +1594,14 @@ async function doBreakEnd(shiftNum){
   const col=shiftNum===1?'break_end':'break_end_2';
   const{error}=await _db.from('shift_status').update({[col]:now,online:true}).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('myshift_today_'+currentAgent.id,'shift_today');
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'break_end',detail:'Break End Shift '+shiftNum,date:today,time:now});
   startTracking();
   showToast('▶️ Welcome back! Shift resumed.','ok');renderMyShift();
 }
 
 async function loadMyActivity(){
-  const{data:logs}=await _db.from('activity_logs').select('*').eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).limit(20);
+  const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs+',action,time,agent_name,dept').eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).limit(20).then(r=>r.data));
   const el=document.getElementById('myActivityLog');if(!el)return;
   if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">📭</div>No activity yet</div>';return;}
   const actionLabel={check_in:'✅ Checked In',check_out:'🔴 Checked Out',break_start:'☕ Break Started',break_end:'▶️ Break Ended'};
@@ -1561,9 +1611,14 @@ async function loadMyActivity(){
 
 async function renderActivity(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  let q=isAdmin?_db.from('activity_logs').select('*').limit(200):_db.from('activity_logs').select('*').eq('agent_id',currentAgent?.id).limit(100);
-  q=q.order('time',{ascending:false});
-  const{data:logs,error:logErr}=await q;
+  const cols_logs=C.logs+',action,time,agent_name,dept';
+  const cacheKey=isAdmin?'logs_all':'logs_agent_'+(currentAgent?.id||'');
+  const limit=isAdmin?100:50;
+  const logs=await _q(cacheKey,25000,()=>{
+    let q=isAdmin?_db.from('activity_logs').select(cols_logs).limit(limit):_db.from('activity_logs').select(cols_logs).eq('agent_id',currentAgent?.id).limit(limit);
+    return q.order('time',{ascending:false}).then(r=>r.data);
+  });
+  const logErr=null;
   if(logErr){c.innerHTML='<div class="card"><div class="empty-state"><div class="icon">⚠️</div><p style="color:var(--rd)">Error: '+logErr.message+'</p></div></div>';return;}
   c.innerHTML='<div class="card"><div class="card-title">📋 Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">📭</div>No check-in/out activity recorded yet</div>':logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin?'<b>'+(l.agent_name||'—')+'</b> — ':'')+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+(l.dept||'')+(l.dept?' • ':'')+fmtDate(l.time||l.created_at)+'</div></div><div class="activity-time">'+fmtTime(l.time||l.created_at)+'</div></div>').join(''))+'</div>';
 }
@@ -1634,10 +1689,10 @@ async function renderTracking(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  const[{data:agents},{data:tracking},{data:shifts}]=await Promise.all([
-    _db.from('agents').select('id,name,dept,country,shift_start,timezone').order('name'),
-    _db.from('activity_tracking').select('*').eq('date',today),
-    _db.from('shift_status').select('agent_id,check_in,check_out').eq('date',today)
+  const[agents,tracking,shifts]=await Promise.all([
+    _getAgents('id,name,dept,country,shift_start,timezone'),
+    _q('tracking_today',10000,()=>_db.from('activity_tracking').select(C.tracking).eq('date',today).then(r=>r.data)),
+    _q('shift_checkin_today',15000,()=>_db.from('shift_status').select('agent_id,check_in,check_out').eq('date',today).then(r=>r.data)),
   ]);
   c.innerHTML=`
   <div class="card" style="margin-bottom:16px">
@@ -1686,9 +1741,9 @@ const PRIORITY_ICON={Urgent:'🔴',High:'🟠',Normal:'🟡',Low:'🟢'};
 async function renderTasks(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const[{data:tasks},{data:agents}]=await Promise.all([
-    _db.from('tasks').select('*').order('date',{ascending:false}),
-    _db.from('agents').select('id,name,dept').order('name')
+  const[tasks,agents]=await Promise.all([
+    _q('tasks_all',20000,()=>_db.from('tasks').select(C.tasks).order('date',{ascending:false}).then(r=>r.data)),
+    _getAgents('id,name,dept'),
   ]);
   const pending=tasks?.filter(t=>!t.status||t.status==='pending')||[];
   const done=tasks?.filter(t=>t.status&&t.status!=='pending')||[];
@@ -1741,7 +1796,7 @@ async function openTaskModal(mode){
     sel.innerHTML=`<option value="${currentAgent.id}" data-name="${currentAgent.name}" data-dept="${currentAgent.dept||''}" selected>${currentAgent.name}</option>`;
   } else {
     if(agentRow)agentRow.style.display='';
-    const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+    const agents=await _getAgents('id,name,dept');
     const list=agents||[];
     sel.innerHTML='<option value="">Select Agent</option>'+list.map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
   }
@@ -1777,9 +1832,9 @@ async function saveTask(){
   const{error}=await _db.from('tasks').insert(row);
   btn.disabled=false;btn.textContent='Assign Task';
   if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
+  _cDel('tasks_all','tasks_agent_'+(currentAgent?.id||''),'tasks_by_'+(currentAgent?.id||''),'tasks_agent_status_'+(currentAgent?.id||''));
   showToast('✅ Task assigned to '+agentName,'ok');
   closeTaskModal();
-  // Refresh the right view
   if(calledBy==='agent') renderMyTasks();
   else renderTasks();
 }
@@ -1787,6 +1842,7 @@ async function saveTask(){
 async function markTaskDone(id){
   const{error}=await _db.from('tasks').update({done:true}).eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('tasks_all');
   showToast('Task marked as done ✅','ok');renderTasks();
 }
 
@@ -1794,6 +1850,7 @@ async function deleteTask(id){
   if(!confirm('Delete this task?'))return;
   const{error}=await _db.from('tasks').delete().eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
+  _cDel('tasks_all');
   showToast('Task deleted','ok');renderTasks();
 }
 
@@ -1802,11 +1859,12 @@ async function renderMyTasks(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
   const canAssign=(currentAgent.permissions||'').split(',').includes('assign_task');
-  // Load tasks assigned TO this agent + tasks assigned BY this agent (if canAssign)
-  const[{data:tasks,error},{data:assignedByMe}]=await Promise.all([
-    _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false}),
-    canAssign?_db.from('tasks').select('id,task,status,priority,date,remark,agent_id').eq('assigned_by_id',currentAgent.id).order('date',{ascending:false}):{data:[]},
+  const aid=currentAgent.id;
+  const[tasks,assignedByMe]=await Promise.all([
+    _q('tasks_agent_'+aid,20000,()=>_db.from('tasks').select(C.tasks).eq('agent_id',aid).order('date',{ascending:false}).then(r=>r.data||[])),
+    canAssign?_q('tasks_by_'+aid,20000,()=>_db.from('tasks').select(C.tasks).eq('assigned_by_id',aid).order('date',{ascending:false}).then(r=>r.data||[])):Promise.resolve([]),
   ]);
+  const error=null;
   if(error){c.innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Error loading tasks: '+error.message+'</p></div>';return;}
   // ── Task store: safe reference for onclick (avoids JSON.stringify breaking on quotes) ──
   window._taskStore={};
@@ -1911,7 +1969,7 @@ async function openReassignModal(taskId){
   document.getElementById('reassignTaskDesc').textContent=desc;
   document.getElementById('reassignErr').classList.remove('show');
   // Load agents excluding self
-  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+  const agents=await _getAgents('id,name,dept');
   const sel=document.getElementById('reassignAgent');
   sel.innerHTML='<option value="">Select Agent</option>'+(agents||[]).filter(a=>a.id!==currentAgent?.id).map(a=>`<option value="${a.id}" data-name="${a.name}">${a.name} (${a.dept||'—'})</option>`).join('');
   document.getElementById('reassignModal').classList.add('open');
@@ -1945,6 +2003,7 @@ async function submitRemark(){
   const{error}=await _db.from('tasks').update({status:_remarkAction,done:_remarkAction==='completed',remark}).eq('id',_remarkTaskId);
   btn.disabled=false;btn.textContent='Submit';
   if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
+  _cDel('tasks_agent_'+currentAgent.id,'tasks_by_'+currentAgent.id,'tasks_agent_status_'+currentAgent.id,'tasks_all','mydash_shifts_'+currentAgent.id+'_'+new Date().toISOString().slice(0,7));
   showToast(_remarkAction==='completed'?'✅ Task completed!':'❌ Task rejected','ok');
   closeRemarkModal();renderMyTasks();
 }
@@ -2107,7 +2166,7 @@ async function renderReports(){
   </div>
   <div id="reportBody"><div class="empty-state"><div class="icon">⏳</div>Loading...</div></div>`;
   // Populate agent dropdown
-  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+  const agents=await _getAgents('id,name,dept');
   const sel=document.getElementById('rAgent');
   if(sel&&agents)agents.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name+(a.dept?' ('+a.dept+')':'');sel.appendChild(o);});
   await loadReportData();
@@ -2131,16 +2190,15 @@ async function loadHeatmapData(){
   const [yr,mo]=month.split('-').map(Number);
   const daysInMonth=new Date(yr,mo,0).getDate();
 
-  // Load agents
-  let aq=_db.from('agents').select('id,name,dept').eq('type','regular').order('dept').order('name');
-  if(deptFilter)aq=aq.eq('dept',deptFilter);
-  const{data:agents}=await aq;
+  // Load agents (cached)
+  let allAgents=await _getAgents('id,name,dept,type');
+  let agents=(allAgents||[]).filter(a=>a.type==='regular');
+  if(deptFilter)agents=agents.filter(a=>a.dept===deptFilter);
+  agents.sort((a,b)=>(a.dept||'').localeCompare(b.dept||'')||(a.name||'').localeCompare(b.name||''));
   if(!agents?.length){body.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>No agents found</p></div>';return;}
 
-  // Load all shift rows for month
-  const{data:rows}=await _db.from('shift_status').select('*')
-    .gte('date',month+'-01')
-    .lte('date',month+'-'+String(daysInMonth).padStart(2,'0'));
+  // Load all shift rows for month (cached)
+  const rows=await _q('heatmap_shifts_'+month+(deptFilter||''),60000,()=>_db.from('shift_status').select('agent_id,date,check_in,check_out,total_active_minutes').gte('date',month+'-01').lte('date',month+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data));
   const byAgentDate={};
   (rows||[]).forEach(r=>{byAgentDate[r.agent_id+'|'+r.date]=r;});
 
@@ -2234,10 +2292,10 @@ async function loadReportData(){
   const from=month+'-01';
   const lastDay=new Date(parseInt(month.split('-')[0]),parseInt(month.split('-')[1]),0).getDate();
   const to=month+'-'+String(lastDay).padStart(2,'0');
-  const[{data:agents},{data:shifts},{data:tracking}]=await Promise.all([
-    _db.from('agents').select('id,name,dept,shift_start,timezone').order('name'),
-    _db.from('shift_status').select('*').gte('date',from).lte('date',to),
-    _db.from('activity_tracking').select('*').gte('date',from).lte('date',to)
+  const[agents,shifts,tracking]=await Promise.all([
+    _getAgents('id,name,dept,shift_start,timezone'),
+    _q('report_shifts_'+month,60000,()=>_db.from('shift_status').select(C.shift).gte('date',from).lte('date',to).then(r=>r.data)),
+    _q('report_tracking_'+month,60000,()=>_db.from('activity_tracking').select(C.tracking).gte('date',from).lte('date',to).then(r=>r.data)),
   ]);
   let filteredAgents=agents||[];
   if(dept)filteredAgents=filteredAgents.filter(a=>a.dept===dept);
