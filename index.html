@@ -529,7 +529,7 @@ function showApp(){
   applyTheme(saved);
   buildNav();
   fetchNotifBadge();
-  navTo(isAdmin?'dashboard':'mydashboard');
+  navTo(isAdmin?'dashboard':'myshift');
 }
 
 function applyTheme(theme){
@@ -608,26 +608,24 @@ function navTo(page){
   else if(page==='help')renderHelp();
 }
 
+let _realtimeDebounce={};
 function startRealtime(page){
-  // Remove old channel
   if(realtimeChannel){_db.removeChannel(realtimeChannel);realtimeChannel=null;}
-
-  // Which tables to watch per page
   const watchMap={
     dashboard:['shift_status','activity_tracking'],
-    mydashboard:['shift_status','announcements','leave_requests'],
-    myannounce:['announcements'],
-    tracking:['activity_tracking'],
-    tasks:['tasks'],
-    mytasks:['tasks'],
-    activity:['activity_logs'],
+    mydashboard:['shift_status'], // lightweight — only re-render on own shift change
     myshift:['shift_status'],
+    mytasks:['tasks'],
+    tasks:['tasks'],
+    tracking:['activity_tracking'],
+    activity:['activity_logs'],
     agents:['agents'],
-    reports:['shift_status','activity_tracking'],
-    myleave:['leave_requests'],
     leaves:['leave_requests'],
+    myleave:['leave_requests'],
     announce:['announcements'],
+    myannounce:['announcements'],
     chat:['messages'],
+    reports:['shift_status','activity_tracking'],
   };
   const tables=watchMap[page]||[];
   if(!tables.length)return;
@@ -635,8 +633,11 @@ function startRealtime(page){
   realtimeChannel=_db.channel('realtime_'+page);
   tables.forEach(table=>{
     realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{
-      // Silently re-render current page on any DB change
-      if(currentPage===page){
+      if(currentPage!==page)return;
+      // Debounce: avoid rapid re-renders (wait 800ms)
+      clearTimeout(_realtimeDebounce[page]);
+      _realtimeDebounce[page]=setTimeout(()=>{
+        if(currentPage!==page)return;
         if(page==='dashboard')renderDashboard();
         else if(page==='tasks')renderTasks();
         else if(page==='mytasks')renderMyTasks();
@@ -650,7 +651,7 @@ function startRealtime(page){
         else if(page==='announce')renderAnnouncements();
         else if(page==='myannounce')renderMyAnnouncements();
         else if(page==='chat')renderChat();
-      }
+      },800); // 800ms debounce
     });
   });
   realtimeChannel.subscribe();
@@ -925,9 +926,9 @@ async function renderMyDashboard(){
   // Load shift data, announcements, leave requests, tasks
   const[{data:rows},{data:announcements},{data:leaves},{data:allTasks}]=await Promise.all([
     _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).gte('date',monthStr+'-01').lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0')),
-    _db.from('announcements').select('*').order('created_at',{ascending:false}).limit(10),
-    _db.from('leave_requests').select('*').eq('agent_id',currentAgent.id).eq('status','approved'),
-    _db.from('tasks').select('id,status').eq('agent_id',currentAgent.id),
+    _db.from('announcements').select('id,title,message,expires_at,created_at').order('created_at',{ascending:false}).limit(5),
+    _db.from('leave_requests').select('date_from,date_to').eq('agent_id',currentAgent.id).eq('status','approved'),
+    _db.from('tasks').select('status').eq('agent_id',currentAgent.id),
   ]);
   const byDate={};(rows||[]).forEach(r=>{byDate[r.date]=r;});
   const leaveSet=new Set();
@@ -1804,7 +1805,7 @@ async function renderMyTasks(){
   // Load tasks assigned TO this agent + tasks assigned BY this agent (if canAssign)
   const[{data:tasks,error},{data:assignedByMe}]=await Promise.all([
     _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false}),
-    canAssign?_db.from('tasks').select('*,agent:agent_id(name,dept)').eq('assigned_by_id',currentAgent.id).order('date',{ascending:false}):{data:[]},
+    canAssign?_db.from('tasks').select('id,task,status,priority,date,remark,agent_id').eq('assigned_by_id',currentAgent.id).order('date',{ascending:false}):{data:[]},
   ]);
   if(error){c.innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Error loading tasks: '+error.message+'</p></div>';return;}
   // ── Task store: safe reference for onclick (avoids JSON.stringify breaking on quotes) ──
