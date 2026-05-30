@@ -291,7 +291,7 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
   <div class="modal">
     <h2>📋 Assign Task</h2>
     <div id="taskModalErr" class="auth-err"></div>
-    <div class="form-group"><label>Assign To</label><select id="tAgent"><option value="">Select Agent</option></select></div>
+    <div class="form-group" id="tAgentRow"><label>Assign To</label><select id="tAgent"><option value="">Select Agent</option></select></div>
     <div class="form-group"><label>Task Description</label><textarea id="tDesc" rows="3" placeholder="Describe the task..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
     <div class="form-group"><label>Priority</label><select id="tPriority"><option value="Normal">🟡 Normal</option><option value="High">🟠 High</option><option value="Urgent">🔴 Urgent</option><option value="Low">🟢 Low</option></select></div>
     <div class="form-group"><label>Due Date</label><input type="date" id="tDate"></div>
@@ -1311,19 +1311,32 @@ async function renderTasks(){
   </div>`:`<div class="empty-state"><div class="icon">📭</div><p>No tasks yet. Click Assign Task to add one.</p></div>`}`;
 }
 
-async function openTaskModal(calledByAgent){
-  // calledByAgent=true when an agent (not admin) opens this modal
-  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+async function openTaskModal(mode){
+  // mode: undefined/'admin' = admin assigns any agent
+  //       'self'  = agent creates task for themselves (no agent selector)
+  //       'agent' = agent assigns to someone else
+  const isSelf=mode==='self';
+  const isAgentMode=mode==='agent'||mode==='self';
   const sel=document.getElementById('tAgent');
-  // If agent is assigning: exclude self from list
-  const filtered=agents||[];
-  sel.innerHTML='<option value="">Select Agent</option>'+filtered.map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
+  const agentRow=document.getElementById('tAgentRow');
+
+  if(isSelf){
+    // Hide agent selector, pre-set to self
+    if(agentRow)agentRow.style.display='none';
+    sel.innerHTML=`<option value="${currentAgent.id}" data-name="${currentAgent.name}" data-dept="${currentAgent.dept||''}" selected>${currentAgent.name}</option>`;
+  } else {
+    if(agentRow)agentRow.style.display='';
+    const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+    const list=agents||[];
+    sel.innerHTML='<option value="">Select Agent</option>'+list.map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
+  }
+
   document.getElementById('tDesc').value='';
   document.getElementById('tPriority').value='Normal';
   document.getElementById('tDate').value=new Date().toISOString().slice(0,10);
   document.getElementById('taskModalErr').classList.remove('show');
-  // Store context so saveTask knows who triggered it
-  document.getElementById('taskModal').dataset.calledBy=calledByAgent?'agent':'admin';
+  document.getElementById('taskModal').dataset.calledBy=isAgentMode?'agent':'admin';
+  document.getElementById('taskModal').querySelector('h2').textContent=isSelf?'➕ New Task':'📋 Assign Task';
   document.getElementById('taskModal').classList.add('open');
 }
 function closeTaskModal(){document.getElementById('taskModal').classList.remove('open');}
@@ -1390,11 +1403,14 @@ async function renderMyTasks(){
   updateNotifBadge(pending.length);
   const assignedByMeList=assignedByMe||[];
   if(!tasks?.length&&!assignedByMeList.length){
-    c.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">${canAssign?`<button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">➕ Create / Assign Task</button>`:''}</div><div class="empty-state"><div class="icon">🎉</div><p>No tasks yet!</p></div>`;
+    c.innerHTML=`<div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTaskModal('self')">➕ New Task</button>${canAssign?`<button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openTaskModal('agent')">📤 Assign to Agent</button>`:''}</div><div class="empty-state"><div class="icon">🎉</div><p>No tasks yet!</p></div>`;
     return;
   }
   c.innerHTML=`
-  ${canAssign?`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">➕ Create / Assign Task</button></div>`:''}
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px">
+    <button class="btn btn-primary btn-sm" onclick="openTaskModal('self')">➕ New Task</button>
+    ${canAssign?`<button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openTaskModal('agent')">📤 Assign to Agent</button>`:''}
+  </div>
   <div style="margin-bottom:16px;display:flex;gap:12px">
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--yl)">${pending.length}</div><div class="stat-label">Pending</div></div>
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--gr)">${completed.length}</div><div class="stat-label">Completed</div></div>
