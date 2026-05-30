@@ -864,9 +864,9 @@ async function renderMyShift(){
     actionBtn='<button class="checkin-btn checkout" onclick="doCheckOut(1)">🔴 Check Out — Shift 1</button>';
   } else if(!s2In){
     // Shift 1 done, shift 2 not started
-    actionBtn=`<div style="text-align:center;padding:10px 0 4px">
-      <div style="color:var(--gr);font-weight:600;margin-bottom:10px">✅ Shift 1 Complete</div>
-      <button class="checkin-btn checkin" style="margin-top:0" onclick="doCheckIn(2)">✅ Check In — Shift 2</button>
+    actionBtn=`<div style="text-align:center;padding:14px 0 4px">
+      <div style="color:var(--gr);font-weight:600;margin-bottom:12px">✅ Shift 1 Complete for Today</div>
+      <button onclick="doCheckIn(2)" style="background:transparent;border:1px dashed var(--b2);color:var(--mu);padding:8px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--font);transition:var(--tr)" onmouseover="this.style.borderColor='var(--gr)';this.style.color='var(--gr)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mu)'">➕ Start 2nd Shift <span style="font-size:11px;opacity:.6">(optional)</span></button>
     </div>`;
   } else if(!s2Out){
     // Shift 2 active
