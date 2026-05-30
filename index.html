@@ -206,6 +206,10 @@ tr:hover td{background:var(--b)}
           <input type="checkbox" id="pActivity" value="activity" style="width:16px;height:16px;accent-color:var(--ac)">
           <span>📋 Activity Log</span>
         </label>
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:500;color:var(--tx)">
+          <input type="checkbox" id="pAssignTask" value="assign_task" style="width:16px;height:16px;accent-color:var(--ac)">
+          <span>📤 Assign Tasks <span style="font-size:11px;color:var(--mu)">(can assign to others)</span></span>
+        </label>
       </div>
     </div>
     <div class="modal-footer">
@@ -707,7 +711,7 @@ async function renderAgents(){
   const{data:agents}=await _db.from('agents').select('*').order('name');
   const permLabel=p=>{
     if(!p)return'<span style="font-size:10px;color:var(--mu)">all</span>';
-    const icons={myshift:'⏱️',mytasks:'✅',activity:'📋'};
+    const icons={myshift:'⏱️',mytasks:'✅',activity:'📋',assign_task:'📤'};
     return p.split(',').map(x=>`<span style="font-size:11px;background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:1px 5px">${icons[x]||x}</span>`).join(' ');
   };
   c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">📥 Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">➕ Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)">🔑 Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">✏️ Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">🔑 Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">🗑️</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
@@ -718,11 +722,13 @@ function setPermCheckboxes(perms){
   const p=perms?perms.split(','):['myshift','mytasks','activity'];
   document.getElementById('pMytasks').checked=p.includes('mytasks');
   document.getElementById('pActivity').checked=p.includes('activity');
+  document.getElementById('pAssignTask').checked=p.includes('assign_task');
 }
 function getPermCheckboxes(){
   const p=['myshift']; // always included
   if(document.getElementById('pMytasks').checked)p.push('mytasks');
   if(document.getElementById('pActivity').checked)p.push('activity');
+  if(document.getElementById('pAssignTask').checked)p.push('assign_task');
   return p.join(',');
 }
 
@@ -733,7 +739,7 @@ function openAddAgent(){
   document.getElementById('mCountry').value='Pakistan';
   document.getElementById('mShiftStart').value='09:00';
   document.getElementById('mType').value='regular';
-  setPermCheckboxes('myshift,mytasks,activity'); // all on by default
+  setPermCheckboxes('myshift,mytasks,activity,assign_task'); // all on by default
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
   document.getElementById('modalTitle').textContent='➕ Add New Agent';
   document.getElementById('agentModalErr').classList.remove('show');
@@ -1024,14 +1030,21 @@ async function renderTasks(){
   </div>`:`<div class="empty-state"><div class="icon">📭</div><p>No tasks yet. Click Assign Task to add one.</p></div>`}`;
 }
 
-async function openTaskModal(){
+async function openTaskModal(calledByAgent){
+  // calledByAgent=true when an agent (not admin) opens this modal
   const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
   const sel=document.getElementById('tAgent');
-  sel.innerHTML='<option value="">Select Agent</option>'+(agents||[]).map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
+  // If agent is assigning: exclude self from list
+  const filtered=calledByAgent
+    ?(agents||[]).filter(a=>a.id!==currentAgent?.id)
+    :(agents||[]);
+  sel.innerHTML='<option value="">Select Agent</option>'+filtered.map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
   document.getElementById('tDesc').value='';
   document.getElementById('tPriority').value='Normal';
   document.getElementById('tDate').value=new Date().toISOString().slice(0,10);
   document.getElementById('taskModalErr').classList.remove('show');
+  // Store context so saveTask knows who triggered it
+  document.getElementById('taskModal').dataset.calledBy=calledByAgent?'agent':'admin';
   document.getElementById('taskModal').classList.add('open');
 }
 function closeTaskModal(){document.getElementById('taskModal').classList.remove('open');}
@@ -1040,7 +1053,6 @@ async function saveTask(){
   const sel=document.getElementById('tAgent');
   const agentId=sel.value;
   const agentName=sel.options[sel.selectedIndex]?.dataset?.name||'';
-  const agentDept=sel.options[sel.selectedIndex]?.dataset?.dept||'';
   const task=document.getElementById('tDesc').value.trim();
   const priority=document.getElementById('tPriority').value;
   const date=document.getElementById('tDate').value;
@@ -1048,11 +1060,21 @@ async function saveTask(){
   if(!agentId){errEl.textContent='Please select an agent';errEl.classList.add('show');return;}
   if(!task){errEl.textContent='Task description is required';errEl.classList.add('show');return;}
   const btn=document.getElementById('saveTaskBtn');btn.disabled=true;btn.textContent='Assigning...';
-  const{error}=await _db.from('tasks').insert({agent_id:agentId,task,priority,date,done:false});
+  const calledBy=document.getElementById('taskModal').dataset.calledBy;
+  const row={agent_id:agentId,task,priority,date,done:false};
+  // If an agent is assigning, record who assigned it
+  if(calledBy==='agent'&&currentAgent){
+    row.assigned_by_id=currentAgent.id;
+    row.assigned_by_name=currentAgent.name;
+  }
+  const{error}=await _db.from('tasks').insert(row);
   btn.disabled=false;btn.textContent='Assign Task';
   if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
   showToast('✅ Task assigned to '+agentName,'ok');
-  closeTaskModal();renderTasks();
+  closeTaskModal();
+  // Refresh the right view
+  if(calledBy==='agent') renderMyTasks();
+  else renderTasks();
 }
 
 async function markTaskDone(id){
@@ -1072,7 +1094,12 @@ async function renderMyTasks(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
-  const{data:tasks,error}=await _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false});
+  const canAssign=(currentAgent.permissions||'').split(',').includes('assign_task');
+  // Load tasks assigned TO this agent + tasks assigned BY this agent (if canAssign)
+  const[{data:tasks,error},{data:assignedByMe}]=await Promise.all([
+    _db.from('tasks').select('*').eq('agent_id',currentAgent.id).order('date',{ascending:false}),
+    canAssign?_db.from('tasks').select('*,agent:agent_id(name,dept)').eq('assigned_by_id',currentAgent.id).order('date',{ascending:false}):{data:[]},
+  ]);
   if(error){c.innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Error loading tasks: '+error.message+'</p></div>';return;}
   // ── Task store: safe reference for onclick (avoids JSON.stringify breaking on quotes) ──
   window._taskStore={};
@@ -1082,8 +1109,13 @@ async function renderMyTasks(){
   const rejected=tasks?.filter(t=>t.status==='rejected')||[];
   // Update notification badge
   updateNotifBadge(pending.length);
-  if(!tasks?.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>No tasks assigned yet!</p></div>';return;}
+  const assignedByMeList=assignedByMe||[];
+  if(!tasks?.length&&!assignedByMeList.length){
+    c.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">${canAssign?`<button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">📤 Assign Task to Agent</button>`:''}</div><div class="empty-state"><div class="icon">🎉</div><p>No tasks assigned yet!</p></div>`;
+    return;
+  }
   c.innerHTML=`
+  ${canAssign?`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="openTaskModal(true)">📤 Assign Task to Agent</button></div>`:''}
   <div style="margin-bottom:16px;display:flex;gap:12px">
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--yl)">${pending.length}</div><div class="stat-label">Pending</div></div>
     <div class="stat-card" style="flex:1"><div class="stat-num" style="color:var(--gr)">${completed.length}</div><div class="stat-label">Completed</div></div>
@@ -1095,6 +1127,7 @@ async function renderMyTasks(){
     ${pending.map(t=>`
     <div style="padding:14px 0;border-bottom:1px solid var(--b)">
       <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task.replace(/</g,'&lt;')}</div>
+      ${t.assigned_by_name?`<div style="font-size:11px;color:var(--mu);margin-bottom:6px">👤 Assigned by: ${t.assigned_by_name}</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'🟡'} ${t.priority||'Normal'}</span>
@@ -1117,12 +1150,26 @@ async function renderMyTasks(){
     </div>`).join('')}
   </div>`:''}
 
-  ${rejected.length?`<div class="card">
+  ${rejected.length?`<div class="card" style="margin-bottom:12px">
     <div class="card-title" style="color:var(--rd)">❌ Rejected (${rejected.length})</div>
     ${rejected.map(t=>`
     <div style="padding:12px 0;border-bottom:1px solid var(--b)">
       <div style="font-size:13px;font-weight:600;color:var(--mu)">${t.task.replace(/</g,'&lt;')}</div>
       ${t.remark?`<div style="font-size:12px;color:var(--rd);margin-top:4px">💬 ${t.remark}</div>`:''}
+    </div>`).join('')}
+  </div>`:''}
+
+  ${canAssign&&assignedByMeList.length?`<div class="card">
+    <div class="card-title" style="color:var(--ac)">📤 Tasks I Assigned (${assignedByMeList.length})</div>
+    ${assignedByMeList.map(t=>`
+    <div style="padding:12px 0;border-bottom:1px solid var(--b)">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">${t.task.replace(/</g,'&lt;')}</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--mu)">👤 To: <b>${t.agent?.name||'—'}</b>${t.agent?.dept?' ('+t.agent.dept+')':''}</span>
+        <span class="badge" style="font-size:10px;background:${t.status==='completed'?'rgba(16,185,129,.15)':t.status==='rejected'?'rgba(244,63,94,.15)':'rgba(251,191,36,.15)'};color:${t.status==='completed'?'var(--gr)':t.status==='rejected'?'var(--rd)':'var(--yl)'};border:1px solid ${t.status==='completed'?'rgba(16,185,129,.3)':t.status==='rejected'?'rgba(244,63,94,.3)':'rgba(251,191,36,.3)'}">${t.status==='completed'?'✅ Done':t.status==='rejected'?'❌ Rejected':'⏳ Pending'}</span>
+        ${t.date?`<span style="font-size:11px;color:var(--mu)">📅 ${t.date}</span>`:''}
+      </div>
+      ${t.remark?`<div style="font-size:12px;color:var(--mu);margin-top:4px">💬 "${t.remark}"</div>`:''}
     </div>`).join('')}
   </div>`:''}`;
 }
