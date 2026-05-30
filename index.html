@@ -409,7 +409,7 @@ const C={
   tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
   announce:'id,title,message,expires_at,created_at',
-  leave:'id,agent_id,date_from,date_to,reason,status,created_at',
+  leave:'id,agent_id,agent_name,date_from,date_to,reason,status,leave_type,created_at',
   messages:'id,from_id,from_name,to_id,message,created_at,is_broadcast',
   logs:'id,agent_id,action,detail,date,time',
 };
@@ -1602,10 +1602,9 @@ async function submitLeave(){
   if(!from){errEl.textContent='Please select a date';errEl.classList.add('show');return;}
   if(_leaveType==='full'&&!to){errEl.textContent='Please select To date';errEl.classList.add('show');return;}
   if(to<from){errEl.textContent='To date must be after From date';errEl.classList.add('show');return;}
-  const typeLabel=_leaveType==='half_am'?'[Half Day - Morning]':_leaveType==='half_pm'?'[Half Day - Evening]':'';
-  const fullReason=(typeLabel?(typeLabel+(reason?' '+reason:'')):(reason||'')).trim();
+  const leaveTypeVal=_leaveType==='half_am'?'half_am':_leaveType==='half_pm'?'half_pm':'full';
   const btn=document.getElementById('saveLeaveBtn');btn.disabled=true;btn.textContent='Submitting...';
-  const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:from,date_to:to,reason:fullReason,status:'pending'});
+  const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:from,date_to:to,reason:reason||'',leave_type:leaveTypeVal,status:'pending'});
   btn.disabled=false;btn.textContent='Submit Request';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('leaves_agent_'+currentAgent.id,'leaves_all','leaves_agent_approved_'+currentAgent.id);
@@ -1632,8 +1631,8 @@ async function renderMyLeave(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span style="font-weight:700">${l.date_from}${l.date_from!==l.date_to?' → '+l.date_to:''}</span>
-        <span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.reason)} day${_leaveDays(l.date_from,l.date_to,l.reason)>0.5?'s':''}</span>
-        ${_leaveTypeTag(l.reason)}
+        <span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.leave_type)} day${_leaveDays(l.date_from,l.date_to,l.leave_type)>0.5?'s':''}</span>
+        ${_leaveTypeTag(l.leave_type)}
       </div>
       <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44;display:inline-flex;align-items:center;gap:4px">${statusIcon[l.status]||_i('clock',12)} ${l.status||'pending'}</span>
     </div>
@@ -1642,21 +1641,18 @@ async function renderMyLeave(){
   </div>`).join('')}`;
 }
 
-function _leaveDays(from,to,reason){
-  if(reason&&(reason.startsWith('[Half Day')))return 0.5;
+function _leaveDays(from,to,leaveType){
+  if(leaveType==='half_am'||leaveType==='half_pm')return 0.5;
   if(!from||!to)return 1;
   const d=Math.round((new Date(to)-new Date(from))/(1000*60*60*24))+1;
   return d>0?d:1;
 }
-function _leaveTypeTag(reason){
-  if(!reason)return '';
-  if(reason.startsWith('[Half Day - Morning]'))return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:4px">½ Morning</span>';
-  if(reason.startsWith('[Half Day - Evening]'))return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:4px">½ Evening</span>';
+function _leaveTypeTag(leaveType){
+  if(leaveType==='half_am')return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700">½ Morning</span>';
+  if(leaveType==='half_pm')return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700">½ Evening</span>';
   return '';
 }
-function _leaveReasonClean(reason){
-  return (reason||'').replace(/^\[Half Day - (Morning|Evening)\]\s*/,'');
-}
+function _leaveReasonClean(reason){return reason||'';}
 
 async function renderAdminLeaves(){
   const c=document.getElementById('pageContent');
@@ -1673,7 +1669,7 @@ async function renderAdminLeaves(){
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
       <div>
         <div style="font-weight:700;margin-bottom:4px">${l.agent_name} <span style="font-size:12px;color:var(--mu);font-weight:400">(${l.dept||'—'})</span></div>
-        <div style="font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${_i('calendar',12)} ${l.date_from}${l.date_from!==l.date_to?' → '+l.date_to:''}<span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.reason)} day${_leaveDays(l.date_from,l.date_to,l.reason)>0.5?'s':''}</span>${_leaveTypeTag(l.reason)}</div>
+        <div style="font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${_i('calendar',12)} ${l.date_from}${l.date_from!==l.date_to?' → '+l.date_to:''}<span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.leave_type)} day${_leaveDays(l.date_from,l.date_to,l.leave_type)>0.5?'s':''}</span>${_leaveTypeTag(l.leave_type)}</div>
         ${_leaveReasonClean(l.reason)?`<div style="font-size:12px;color:var(--mu)">${_leaveReasonClean(l.reason)}</div>`:''}
       </div>
       ${l.status==='pending'?`
