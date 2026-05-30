@@ -1601,12 +1601,21 @@ async function renderMyLeave(){
   ${!leaves?.length?'<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>No leave requests yet.</p></div>':leaves.map(l=>`
   <div class="card" style="margin-bottom:12px;border-left:3px solid ${statusColor[l.status]||'var(--mu)'}">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-weight:700">${l.date_from} → ${l.date_to}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-weight:700">${l.date_from} → ${l.date_to}</span>
+        <span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to)} day${_leaveDays(l.date_from,l.date_to)>1?'s':''}</span>
+      </div>
       <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44;display:inline-flex;align-items:center;gap:4px">${statusIcon[l.status]||_i('clock',12)} ${l.status||'pending'}</span>
     </div>
     ${l.reason?`<div style="font-size:13px;color:var(--mu)">${l.reason}</div>`:''}
     ${l.status!=='pending'?`<div style="font-size:11px;color:var(--mu);margin-top:6px">Reviewed by: ${l.reviewed_by||'Admin'}</div>`:''}
   </div>`).join('')}`;
+}
+
+function _leaveDays(from,to){
+  if(!from||!to)return 1;
+  const d=Math.round((new Date(to)-new Date(from))/(1000*60*60*24))+1;
+  return d>0?d:1;
 }
 
 async function renderAdminLeaves(){
@@ -1624,7 +1633,7 @@ async function renderAdminLeaves(){
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
       <div>
         <div style="font-weight:700;margin-bottom:4px">${l.agent_name} <span style="font-size:12px;color:var(--mu);font-weight:400">(${l.dept||'—'})</span></div>
-        <div style="font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:4px">${_i('calendar',12)} ${l.date_from} → ${l.date_to}</div>
+        <div style="font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px">${_i('calendar',12)} ${l.date_from} → ${l.date_to}<span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to)} day${_leaveDays(l.date_from,l.date_to)>1?'s':''}</span></div>
         ${l.reason?`<div style="font-size:12px;color:var(--mu)">${l.reason}</div>`:''}
       </div>
       ${l.status==='pending'?`
