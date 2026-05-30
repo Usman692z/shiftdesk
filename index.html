@@ -1162,7 +1162,7 @@ function renderHelp(){
       </a>
     </div>
     <div style="margin-top:12px;padding:10px 14px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:var(--r);font-size:12px;color:var(--mu)">
-      💡 <b>Mac users:</b> If "damaged app" error aaye — Terminal mein run karo: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;color:var(--ac)">xattr -cr ~/Downloads/ShiftDesk*.dmg</code> then Right-click → Open
+      💡 <b>Mac users:</b> If you see a "damaged app" error — open Terminal and run: <code style="background:var(--s3);padding:2px 6px;border-radius:4px;color:var(--ac)">xattr -cr ~/Downloads/ShiftDesk*.dmg</code> then Right-click → Open
     </div>
   </div>
 
@@ -1171,23 +1171,23 @@ function renderHelp(){
     <div class="card-title">📖 How to Use ShiftDesk</div>
     <div style="display:grid;gap:12px">
       ${(isAdmin?[
-        {icon:'📊',title:'Dashboard',desc:'Sab agents ka live status dekho — online/offline, active/idle, check-in time, aur daily hours. Real-time update hota hai.'},
-        {icon:'👥',title:'Manage Agents',desc:'Naye agents add karo, edit karo, password reset karo. Permissions set karo — kaunsa agent kya dekh sakta hai. Bulk CSV import bhi available hai.'},
-        {icon:'✅',title:'Task Management',desc:'Kisi bhi agent ko task assign karo with priority aur due date. Tasks complete/reject hone pe status update hota hai.'},
-        {icon:'🏖️',title:'Leave Requests',desc:'Agents ki leave requests yahan aati hain. Approve ya Reject karo ek click mein. Approved leave agent ke calendar mein dikhti hai.'},
-        {icon:'📢',title:'Announcements',desc:'Poori team ko notice bhejo — title, message, aur expiry date ke saath. Sab agents ko dashboard pe dikhta hai.'},
-        {icon:'💬',title:'Chat',desc:'Kisi bhi agent se directly baat karo ya "Admin Broadcast" se poori team ko ek saath message karo.'},
-        {icon:'🖥️',title:'Activity Tracking',desc:'Desktop app se automatically track hota hai — active time, idle time. Har agent ki daily productivity bar chart mein dikhti hai.'},
-        {icon:'📋',title:'Activity Log',desc:'Sab agents ke check-in, check-out, break events chronological order mein.'},
-        {icon:'📈',title:'Reports',desc:'Month/dept/agent filter karo. Detail report ya Heatmap view. PDF export available hai payroll ke liye.'},
+        {icon:'📊',title:'Dashboard',desc:'Live status of all agents — online/offline, active/idle, check-in time, and daily hours. Updates in real time.'},
+        {icon:'👥',title:'Manage Agents',desc:'Add new agents, edit details, and reset passwords. Set permissions to control what each agent can see. Bulk CSV import is also available.'},
+        {icon:'✅',title:'Task Management',desc:'Assign tasks to any agent with priority and due date. Task status updates automatically when completed or rejected.'},
+        {icon:'🏖️',title:'Leave Requests',desc:'All agent leave requests appear here. Approve or reject with one click. Approved leave is shown on the agent\'s calendar.'},
+        {icon:'📢',title:'Announcements',desc:'Send notices to the entire team — with a title, message, and expiry date. All agents see it on their dashboard.'},
+        {icon:'💬',title:'Chat',desc:'Chat directly with any agent or use "Admin Broadcast" to send a message to the entire team at once.'},
+        {icon:'🖥️',title:'Activity Tracking',desc:'Tracked automatically via the desktop app — active time and idle time. Each agent\'s daily productivity is shown in a bar chart.'},
+        {icon:'📋',title:'Activity Log',desc:'All agent check-in, check-out, and break events in chronological order.'},
+        {icon:'📈',title:'Reports',desc:'Filter by month, department, or agent. View detailed reports or a heatmap. PDF export available for payroll.'},
       ]:[
-        {icon:'⏱️',title:'My Shift',desc:'Har roz Check In karo shift start pe. Break lena ho to "Take Break" click karo — resume karo wapas aane pe. Shift khatam pe Check Out. 2nd shift optional hai.'},
-        {icon:'✅',title:'My Tasks',desc:'Admin ya koi agent tumhe task assign kare to yahan aata hai. Complete ya Reject karo remark ke saath. Khud bhi "New Task" se apna kaam track kar sakte ho.'},
-        {icon:'📊',title:'My Dashboard',desc:'Monthly calendar — 🟢 On time, 🟡 Late, 🔴 Absent, 🟣 Leave, Off=Friday. Performance score (attendance+punctuality+tasks) aur overtime bhi dikhta hai.'},
-        {icon:'🏖️',title:'Leave',desc:'"Apply Leave" click karo, from/to date aur reason bharo. Admin approve karega. Approved leave calendar mein purple rang mein aur "Leave" label ke saath dikhti hai.'},
-        {icon:'📢',title:'Announcements',desc:'Admin ki taraf se koi notice aaye to yahan dikhta hai — office meeting, holiday, ya koi zaroori update.'},
-        {icon:'💬',title:'Chat',desc:'Left mein kisi ka naam select karo, message likho, Enter ya Send press karo. Admin se ya kisi colleague se baat kar sakte ho.'},
-        {icon:'📋',title:'Activity Log',desc:'Tumhare saare check-in, check-out, break ka complete record yahan hai.'},
+        {icon:'⏱️',title:'My Shift',desc:'Check in at the start of your shift every day. Click "Take Break" when you need a break — then resume when you return. Check out when your shift ends. A 2nd shift is optional.'},
+        {icon:'✅',title:'My Tasks',desc:'Tasks assigned to you by admin or other agents appear here. Mark them complete or reject with a remark. You can also track your own work using "New Task".'},
+        {icon:'📊',title:'My Dashboard',desc:'Monthly calendar — 🟢 On time, 🟡 Late, 🔴 Absent, 🟣 Leave, Off=Friday. Shows your performance score (attendance + punctuality + tasks) and overtime.'},
+        {icon:'🏖️',title:'Leave',desc:'Click "Apply Leave", fill in the from/to dates and reason, and submit. Admin will approve it. Approved leave appears on your calendar in purple with a "Leave" label.'},
+        {icon:'📢',title:'Announcements',desc:'Any notices from admin appear here — office meetings, holidays, or important updates.'},
+        {icon:'💬',title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
+        {icon:'📋',title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
       ]).map(s=>`
       <div style="display:flex;gap:14px;padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
         <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
@@ -1585,7 +1585,7 @@ async function doBreakStart(shiftNum){
   _cDel('myshift_today_'+currentAgent.id,'shift_today');
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now});
   stopTracking();
-  showToast('☕ Break started! Rest karo.','info');renderMyShift();
+  showToast('☕ Break started! Take a rest.','info');renderMyShift();
 }
 
 async function doBreakEnd(shiftNum){
