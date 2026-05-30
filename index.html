@@ -195,7 +195,7 @@ tr:hover td{background:var(--b)}
     </div>
   </div>
   <div class="main">
-    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span>🔔</span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)">💬 <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span>💬 Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
+    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span>🔔</span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap" style="display:none"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)">💬 <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span>💬 Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
     <div class="content" id="pageContent"></div>
   </div>
 </div>
@@ -638,11 +638,11 @@ function buildNav(){
     {id:'mytasks',     icon:'✅', label:'My Tasks'},
     {id:'myleave',     icon:'🏖️', label:'Leave'},
     {id:'myannounce',  icon:'📢', label:'Announcements'},
-    {id:'chat',        icon:'💬', label:'Chat'},
+    // {id:'chat',        icon:'💬', label:'Chat'},  // temporarily hidden
     {id:'activity',    icon:'📋', label:'Activity Log'},
   ];
   const items=isAdmin
-    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'leaves',icon:'🏖️',label:'Leaves'},{id:'announce',icon:'📢',label:'Announce'},{id:'chat',icon:'💬',label:'Chat'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'},{id:'help',icon:'❓',label:'Help'}]
+    ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'leaves',icon:'🏖️',label:'Leaves'},{id:'announce',icon:'📢',label:'Announce'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'},{id:'help',icon:'❓',label:'Help'}]
     :[...allAgentPages,{id:'help',icon:'❓',label:'Help'}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span>${i.id==='chat'?'<span class="chat-unread" id="chatUnreadBadge"></span>':(i.id==='announce'||i.id==='myannounce')?'<span class="chat-unread" id="announceUnreadBadge"></span>':''}</div>`).join('');
 }
