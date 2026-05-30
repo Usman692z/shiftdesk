@@ -371,8 +371,8 @@ async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await 
 
 // ── Column selects (no select('*') — fetch only what we need) ────────────
 const C={
-  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,online',
-  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,online,pw',
+  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions',
+  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw',
   shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2',
   tracking:'agent_id,date,total_active_minutes,idle_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
