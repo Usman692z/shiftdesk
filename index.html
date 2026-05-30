@@ -610,6 +610,10 @@ async function renderDashboard(){
       const end=s.check_out?new Date(s.check_out):new Date();
       shiftMins=Math.max(0,Math.floor((end-new Date(s.check_in))/60000));
     }
+    if(s.check_in_2){
+      const end2=s.check_out_2?new Date(s.check_out_2):new Date();
+      shiftMins+=Math.max(0,Math.floor((end2-new Date(s.check_in_2))/60000));
+    }
     const idleMins=Math.max(0,shiftMins-activeMins);
     const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
     const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
@@ -824,36 +828,132 @@ async function renderMyShift(){
   if(!currentAgent){return;}
   const c=document.getElementById('pageContent');
   const today=new Date().toISOString().slice(0,10);
-  const{data:status}=await _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
-  const isIn=status?.online||false,hasIn=!!status?.check_in,hasOut=!!status?.check_out;
-  const lateInfo=hasIn?getCheckinStatus(status.check_in,currentAgent.shift_start,currentAgent.timezone):null;
-  // Auto-start tracking if already checked in
+  const{data:s}=await _db.from('shift_status').select('*').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
+  const isIn=s?.online||false;
   if(isIn&&!isTracking)startTracking();
   const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'};
   const flag=countryFlag[currentAgent.country]||'🌍';
   const countryLabel=flag+' '+(currentAgent.country||'Pakistan');
-  c.innerHTML='<div class="card" style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:16px"><div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div><div><div style="font-size:18px;font-weight:800">'+currentAgent.name+'</div><div style="color:var(--mu);font-size:13px">'+(currentAgent.role||'Agent')+' • '+(currentAgent.dept||'')+'</div><div style="color:var(--mu);font-size:12px">'+(currentAgent.email||'')+'</div></div><div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end"><span class="badge '+(isIn?'badge-online':'badge-offline')+'">'+(isIn?'🟢 Online':'⚫ Offline')+'</span>'+(isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3)">🟡 Idle</span>':'')+'</div></div></div><div class="shift-panel"><div class="shift-card"><h3>⏰ Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">'+countryLabel+'</div></div><div class="shift-card"><h3>📅 Shift Start</h3><div class="shift-time">'+(currentAgent.shift_start||'09:00')+'</div><div class="shift-status-text">'+countryLabel+'</div></div></div><div class="card" style="margin-bottom:16px"><div class="card-title">Today&#39;s Shift</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px"><div class="stat-card"><div class="stat-num" style="color:var(--gr);font-size:18px">'+(status?.check_in?fmtTime(status.check_in):'—')+'</div><div class="stat-label">Check In</div></div><div class="stat-card"><div class="stat-num" style="color:var(--rd);font-size:18px">'+(status?.check_out?fmtTime(status.check_out):'—')+'</div><div class="stat-label">Check Out</div></div><div class="stat-card"><div class="stat-num" style="color:var(--ac);font-size:18px">'+(status?.check_in&&status?.check_out?calcHours(status.check_in,status.check_out):(status?.check_in?'Active':'—'))+'</div><div class="stat-label">Hours</div></div></div>'+lateStatusBanner(lateInfo)+(!hasIn?'<button class="checkin-btn checkin" onclick="doCheckIn()">✅ Check In</button>':(!hasOut?'<button class="checkin-btn checkout" onclick="doCheckOut()">🔴 Check Out</button>':'<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Shift Complete for Today</div>'))+'</div><div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>';
+
+  // ── Determine shift state ─────────────────────────────────────
+  // Shift 1
+  const s1In=s?.check_in||null, s1Out=s?.check_out||null;
+  // Shift 2
+  const s2In=s?.check_in_2||null, s2Out=s?.check_out_2||null;
+
+  const lateInfo1=s1In?getCheckinStatus(s1In,currentAgent.shift_start,currentAgent.timezone):null;
+  const lateInfo2=s2In?getCheckinStatus(s2In,currentAgent.shift_start,currentAgent.timezone):null;
+
+  // Total hours helper
+  function shiftDurMins(inn,out){
+    if(!inn)return 0;
+    return Math.max(0,Math.floor((new Date(out||new Date())-new Date(inn))/60000));
+  }
+  const s1Mins=shiftDurMins(s1In,s1Out);
+  const s2Mins=shiftDurMins(s2In,s2Out);
+  const totalMins=s1Mins+s2Mins;
+  const totalHrsLabel=totalMins>0?(Math.floor(totalMins/60)+'h '+(totalMins%60)+'m'):'—';
+
+  // ── What button to show? ──────────────────────────────────────
+  let actionBtn='';
+  if(!s1In){
+    // Never checked in
+    actionBtn='<button class="checkin-btn checkin" onclick="doCheckIn(1)">✅ Check In — Shift 1</button>';
+  } else if(!s1Out){
+    // Shift 1 active
+    actionBtn='<button class="checkin-btn checkout" onclick="doCheckOut(1)">🔴 Check Out — Shift 1</button>';
+  } else if(!s2In){
+    // Shift 1 done, shift 2 not started
+    actionBtn=`<div style="text-align:center;padding:10px 0 4px">
+      <div style="color:var(--gr);font-weight:600;margin-bottom:10px">✅ Shift 1 Complete</div>
+      <button class="checkin-btn checkin" style="margin-top:0" onclick="doCheckIn(2)">✅ Check In — Shift 2</button>
+    </div>`;
+  } else if(!s2Out){
+    // Shift 2 active
+    actionBtn='<button class="checkin-btn checkout" onclick="doCheckOut(2)">🔴 Check Out — Shift 2</button>';
+  } else {
+    // Both shifts done
+    actionBtn='<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Both Shifts Complete for Today</div>';
+  }
+
+  // ── Build shift rows ──────────────────────────────────────────
+  function shiftRow(num,inn,out,lateInfo,mins){
+    if(!inn)return '';
+    const isActive=inn&&!out;
+    return `
+    <div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:14px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--mu);margin-bottom:10px;letter-spacing:.5px">SHIFT ${num} ${isActive?'<span style="color:var(--gr)">● ACTIVE</span>':''}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--gr);font-size:16px">${fmtTime(inn)}</div><div class="stat-label">Check In</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--rd);font-size:16px">${out?fmtTime(out):'—'}</div><div class="stat-label">Check Out</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--ac);font-size:16px">${mins>0?(Math.floor(mins/60)+'h '+(mins%60)+'m'):(isActive?'Active':'—')}</div><div class="stat-label">Duration</div></div>
+      </div>
+      ${lateInfo?lateStatusBanner(lateInfo):''}
+    </div>`;
+  }
+
+  c.innerHTML=`
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👤</div>
+      <div>
+        <div style="font-size:18px;font-weight:800">${currentAgent.name}</div>
+        <div style="color:var(--mu);font-size:13px">${currentAgent.role||'Agent'} • ${currentAgent.dept||''}</div>
+        <div style="color:var(--mu);font-size:12px">${currentAgent.email||''}</div>
+      </div>
+      <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+        <span class="badge ${isIn?'badge-online':'badge-offline'}">${isIn?'🟢 Online':'⚫ Offline'}</span>
+        ${isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3)">🟡 Idle</span>':''}
+      </div>
+    </div>
+  </div>
+
+  <div class="shift-panel" style="margin-bottom:16px">
+    <div class="shift-card"><h3>⏰ Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">${countryLabel}</div></div>
+    <div class="shift-card"><h3>📅 Shift Start</h3><div class="shift-time">${currentAgent.shift_start||'09:00'}</div><div class="shift-status-text">${countryLabel}</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="card-title" style="margin:0">📅 Today's Shifts</div>
+      ${totalMins>0?`<div style="font-size:13px;font-weight:700;color:var(--ac)">⏱️ Total: ${totalHrsLabel}</div>`:''}
+    </div>
+    ${s1In?shiftRow(1,s1In,s1Out,lateInfo1,s1Mins):''}
+    ${s2In?shiftRow(2,s2In,s2Out,lateInfo2,s2Mins):''}
+    ${actionBtn}
+  </div>
+
+  <div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>`;
+
   startClock();loadMyActivity();
 }
 
-async function doCheckIn(){
+async function doCheckIn(shiftNum){
+  shiftNum=shiftNum||1;
   const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
-  const{error}=await _db.from('shift_status').upsert({agent_id:currentAgent.id,date:today,online:true,check_in:now},{onConflict:'agent_id,date'});
+  let payload={agent_id:currentAgent.id,date:today,online:true};
+  if(shiftNum===1){payload.check_in=now;}
+  else{payload.check_in_2=now;}
+  const{error}=await _db.from('shift_status').upsert(payload,{onConflict:'agent_id,date'});
   if(error){showToast('Error: '+error.message,'err');return;}
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',detail:'Check In',date:today,time:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_in',detail:'Check In Shift '+shiftNum,date:today,time:now});
   startTracking();
   const _li=getCheckinStatus(now,currentAgent.shift_start,currentAgent.timezone);
-  const _ciMsg=_li?.status==='late'?'⚠️ Late by '+_li.diff+' min (grace: 15 min)':_li?.status==='early'?'🟢 Early bird! Great dedication!':'✅ Checked in on time!';
+  const _ciMsg=_li?.status==='late'?'⚠️ Shift '+shiftNum+' late by '+_li.diff+' min':_li?.status==='early'?'🟢 Early bird! Great!':'✅ Shift '+shiftNum+' started on time!';
   showToast(_ciMsg,_li?.status==='late'?'info':'ok');renderMyShift();
 }
 
-async function doCheckOut(){
+async function doCheckOut(shiftNum){
+  shiftNum=shiftNum||1;
   const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
-  const{error}=await _db.from('shift_status').update({online:false,check_out:now}).eq('agent_id',currentAgent.id).eq('date',today);
+  let payload={online:false};
+  if(shiftNum===1){payload.check_out=now;}
+  else{payload.check_out_2=now;}
+  const{error}=await _db.from('shift_status').update(payload).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_out',detail:'Check Out',date:today,time:now});
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'check_out',detail:'Check Out Shift '+shiftNum,date:today,time:now});
   stopTracking();
-  showToast('Checked out! Great work 👏','ok');renderMyShift();
+  showToast('Shift '+shiftNum+' complete! Great work 👏','ok');renderMyShift();
 }
 
 async function loadMyActivity(){
