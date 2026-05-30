@@ -391,7 +391,7 @@ async function _getAgents(cols){
 // Separate client for creating new auth users — isolated storage key
 let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
 let lastActivityTime=Date.now(),trackingInterval=null,isTracking=false;
-let currentPage='',realtimeChannel=null;
+let currentPage='',realtimeChannel=null,_chatPollInterval=null,_bgPollInterval=null,_lastMsgTime=null;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
 
 // Agent session via localStorage (no Supabase Auth needed for agents)
@@ -540,6 +540,7 @@ async function logout(){
   if(realtimeChannel){_db.removeChannel(realtimeChannel);realtimeChannel=null;}
   if(_chatNotifChannel){_db.removeChannel(_chatNotifChannel);_chatNotifChannel=null;}
   if(_announceNotifChannel){_db.removeChannel(_announceNotifChannel);_announceNotifChannel=null;}
+  stopPolling();
   clearChatUnread();
   clearAnnounceUnread();
   clearAgentSession();
@@ -569,6 +570,8 @@ function showApp(){
   fetchNotifBadge();
   startChatNotifChannel();
   startAnnounceNotifChannel();
+  startChatPolling();
+  startBgPolling();
   navTo(isAdmin?'dashboard':'myshift');
 }
 
@@ -784,6 +787,67 @@ function startAnnounceNotifChannel(){
     if(currentPage!==navPage)_incAnnounceUnread(a.title);
   });
   _announceNotifChannel.subscribe();
+}
+
+// ── Polling fallback (Realtime not reliable without Supabase pub setup) ───
+function startChatPolling(){
+  if(_chatPollInterval)clearInterval(_chatPollInterval);
+  // Poll every 4s when on chat page — refreshes messages for both parties
+  _chatPollInterval=setInterval(()=>{
+    if(currentPage==='chat'){
+      _cDel('chat_msgs_'+(chatRecipient||''));
+      renderChat();
+    }
+  },4000);
+}
+
+async function _bgPollUnread(){
+  if(!currentAgent&&!isAdmin)return;
+  const myId=isAdmin?_adminAgentId:(currentAgent?.id||'');
+  if(!myId)return;
+  const since=_lastMsgTime||new Date(Date.now()-60000).toISOString();
+  // Check messages sent to me since last check
+  const{data:newMsgs}=await _db.from('messages')
+    .select('id,from_name,message,created_at,to_id,is_broadcast')
+    .gt('created_at',since)
+    .or(`to_id.eq.${myId},and(is_broadcast.eq.true,to_id.is.null)`)
+    .order('created_at',{ascending:false}).limit(10);
+  if(newMsgs?.length){
+    _lastMsgTime=newMsgs[0].created_at;
+    const mine=newMsgs.filter(m=>m.from_name!=='Admin'||!isAdmin).filter(m=>
+      (isAdmin&&m.to_id===myId)||(m.is_broadcast&&!m.to_id)||(!isAdmin&&m.to_id===myId)
+    );
+    if(mine.length&&currentPage!=='chat'){
+      mine.forEach(m=>_incChatUnread());
+    }
+  }
+  // Check new announcements
+  const navPage=isAdmin?'announce':'myannounce';
+  const{data:newAnn}=await _db.from('announcements')
+    .select('id,title,created_at').gt('created_at',since).limit(5);
+  if(newAnn?.length&&currentPage!==navPage){
+    newAnn.forEach(a=>_incAnnounceUnread(a.title));
+    _lastMsgTime=newAnn[0].created_at;
+  }
+}
+
+let _adminAgentId=null;
+async function startBgPolling(){
+  if(_bgPollInterval)clearInterval(_bgPollInterval);
+  if(!currentAgent&&!isAdmin)return;
+  // Resolve admin's actual UUID once
+  if(isAdmin&&!_adminAgentId){
+    const{data:ar}=await _db.from('agents').select('id').eq('type','admin').maybeSingle();
+    _adminAgentId=ar?.id||null;
+  }
+  _lastMsgTime=new Date(Date.now()-5000).toISOString();
+  // Poll every 20s for background unread badges
+  _bgPollInterval=setInterval(_bgPollUnread,20000);
+}
+
+function stopPolling(){
+  if(_chatPollInterval){clearInterval(_chatPollInterval);_chatPollInterval=null;}
+  if(_bgPollInterval){clearInterval(_bgPollInterval);_bgPollInterval=null;}
 }
 
 function startClock(){
@@ -1498,6 +1562,7 @@ async function sendMessage(){
   });
   if(error){showToast('Error: '+error.message,'err');return;}
   if(input)input.value='';
+  _cDel('chat_msgs_'+(chatRecipient||''));
   renderChat();
 }
 
