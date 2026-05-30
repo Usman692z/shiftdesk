@@ -1205,8 +1205,9 @@ async function renderChat(){
   const{data:msgs}=await msgsQ;
 
   const recipientTabs=recipients.map(r=>`
-    <div onclick="setChatRecipient('${r.id}')" style="padding:10px 14px;cursor:pointer;border-radius:var(--r);background:${chatRecipient===r.id?'var(--s3)':'transparent'};margin-bottom:4px;font-size:13px;font-weight:${chatRecipient===r.id?'700':'500'};color:${chatRecipient===r.id?'var(--tx)':'var(--mu)'}">
-      ${r.id==='admin'?'📢':r.name.charAt(0).toUpperCase()} ${r.name}
+    <div onclick="setChatRecipient('${r.id}')" style="padding:8px 12px;cursor:pointer;border-radius:var(--r);background:${chatRecipient===r.id?'var(--s3)':'transparent'};margin-bottom:2px;display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:50%;background:${r.id==='admin'?'linear-gradient(135deg,var(--ac),var(--ac2))':'linear-gradient(135deg,#6366f1,#8b5cf6)'};display:flex;align-items:center;justify-content:center;font-size:${r.id==='admin'?'14px':'12px'};font-weight:700;color:#fff;flex-shrink:0">${r.id==='admin'?'📢':r.name.charAt(0).toUpperCase()}</div>
+      <div style="font-size:13px;font-weight:${chatRecipient===r.id?'700':'500'};color:${chatRecipient===r.id?'var(--tx)':'var(--mu)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.name}</div>
     </div>`).join('');
 
   const msgBubbles=(msgs||[]).map(m=>{
