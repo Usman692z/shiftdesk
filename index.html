@@ -257,6 +257,19 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
     </div>
   </div>
 </div>
+<!-- Re-assign Modal -->
+<div class="modal-bg" id="reassignModal">
+  <div class="modal" style="max-width:400px">
+    <h2>🔁 Re-assign Task</h2>
+    <p id="reassignTaskDesc" style="color:var(--mu);font-size:13px;margin-bottom:16px;padding:10px;background:var(--s2);border-radius:var(--r)"></p>
+    <div class="form-group"><label>Assign To</label><select id="reassignAgent"><option value="">Select Agent</option></select></div>
+    <div id="reassignErr" class="auth-err"></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="closeReassignModal()">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="reassignBtn" onclick="submitReassign()">Re-assign</button>
+    </div>
+  </div>
+</div>
 <!-- Task Remark Modal (Complete / Reject) -->
 <div class="modal-bg" id="remarkModal">
   <div class="modal" style="max-width:420px">
@@ -468,7 +481,7 @@ function showApp(){
   applyTheme(saved);
   buildNav();
   fetchNotifBadge();
-  navTo(isAdmin?'dashboard':'myshift');
+  navTo(isAdmin?'dashboard':'mydashboard');
 }
 
 function applyTheme(theme){
@@ -507,8 +520,9 @@ function buildNav(){
   document.getElementById('sideUserName').textContent=isAdmin?'Admin':(currentAgent?.name||'Agent');
   document.getElementById('sideUserRole').textContent=isAdmin?'Administrator':(currentAgent?.role||'Agent');
   // Agent nav: filter based on permissions field
-  const agentPerms=(currentAgent?.permissions||'myshift,mytasks,activity').split(',');
+  const agentPerms=(currentAgent?.permissions||'myshift,mytasks,activity,mydashboard').split(',');
   const allAgentPages=[
+    {id:'mydashboard',icon:'📊',label:'Dashboard'},
     {id:'myshift', icon:'⏱️', label:'My Shift'},
     {id:'mytasks', icon:'✅', label:'My Tasks'},
     {id:'activity',icon:'📋',label:'Activity Log'},
@@ -522,7 +536,7 @@ function buildNav(){
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',reports:'Reports'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   startRealtime(page);
@@ -533,6 +547,7 @@ function navTo(page){
   else if(page==='mytasks')renderMyTasks();
   else if(page==='activity')renderActivity();
   else if(page==='myshift')renderMyShift();
+  else if(page==='mydashboard')renderMyDashboard();
   else if(page==='reports')renderReports();
 }
 
@@ -543,6 +558,7 @@ function startRealtime(page){
   // Which tables to watch per page
   const watchMap={
     dashboard:['shift_status','activity_tracking'],
+    mydashboard:['shift_status'],
     tracking:['activity_tracking'],
     tasks:['tasks'],
     mytasks:['tasks'],
@@ -566,6 +582,7 @@ function startRealtime(page){
         else if(page==='activity')renderActivity();
         else if(page==='myshift')renderMyShift();
         else if(page==='agents')renderAgents();
+        else if(page==='mydashboard')renderMyDashboard();
       }
     });
   });
@@ -824,6 +841,124 @@ async function resetAgentPassword(agentId,name){
   showToast('✅ Password updated for '+name,'ok');
 }
 
+// ── AGENT DASHBOARD ──────────────────────────────────────────────
+async function renderMyDashboard(){
+  if(!currentAgent)return;
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const now=new Date();
+  const yr=now.getFullYear(),mo=now.getMonth();
+  const monthStr=yr+'-'+String(mo+1).padStart(2,'0');
+  const daysInMonth=new Date(yr,mo+1,0).getDate();
+  const today=now.toISOString().slice(0,10);
+
+  // Load all shift_status rows for this month
+  const{data:rows}=await _db.from('shift_status').select('*')
+    .eq('agent_id',currentAgent.id)
+    .gte('date',monthStr+'-01')
+    .lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0'));
+
+  const byDate={};(rows||[]).forEach(r=>{byDate[r.date]=r;});
+
+  // Stats
+  let workedDays=0,totalMinutes=0,lateDays=0,onTimeDays=0;
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dow=new Date(ds).getDay(); // 0=Sun,5=Fri
+    if(dow===5)continue; // Friday off
+    const r=byDate[ds];
+    if(r?.check_in){
+      workedDays++;
+      const s1=(r.check_out?new Date(r.check_out):new Date())- new Date(r.check_in);
+      const s2=r.check_in_2?((r.check_out_2?new Date(r.check_out_2):new Date())-new Date(r.check_in_2)):0;
+      const brk1=r.break_start&&r.break_end?(new Date(r.break_end)-new Date(r.break_start)):0;
+      const brk2=r.break_start_2&&r.break_end_2?(new Date(r.break_end_2)-new Date(r.break_start_2)):0;
+      totalMinutes+=Math.max(0,Math.floor((s1+s2-brk1-brk2)/60000));
+      const li=getCheckinStatus(r.check_in,currentAgent.shift_start,currentAgent.timezone);
+      if(li?.status==='late')lateDays++;else onTimeDays++;
+    }
+  }
+  const totalH=Math.floor(totalMinutes/60),totalM=totalMinutes%60;
+  const avgMins=workedDays>0?Math.round(totalMinutes/workedDays):0;
+  const avgH=Math.floor(avgMins/60),avgM=avgMins%60;
+
+  // Calendar
+  const monthName=now.toLocaleString('en-US',{month:'long'});
+  const firstDow=new Date(yr,mo,1).getDay(); // 0=Sun
+  let calCells='';
+  // Headers Sun-Sat
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{
+    calCells+=`<div style="text-align:center;font-size:11px;font-weight:700;color:${d==='Fri'?'var(--rd)':'var(--mu)'};padding:4px 0">${d}</div>`;
+  });
+  // Empty cells before day 1
+  for(let i=0;i<firstDow;i++) calCells+='<div></div>';
+  // Day cells
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dow=new Date(ds).getDay();
+    const isFri=dow===5;
+    const isSun=dow===0;
+    const isFuture=ds>today;
+    const isToday=ds===today;
+    const r=byDate[ds];
+    let bg='transparent',color='var(--tx)',label='',title='';
+    if(isFri){bg='rgba(244,63,94,.1)';color='var(--rd)';label='Off';}
+    else if(isSun){bg='var(--s2)';color='var(--mu)';}
+    else if(isFuture){bg='transparent';color='var(--mu)';}
+    else if(r?.check_in){
+      const s1=(r.check_out?new Date(r.check_out):new Date())-new Date(r.check_in);
+      const mins=Math.floor(s1/60000);
+      const h=Math.floor(mins/60);
+      const li=getCheckinStatus(r.check_in,currentAgent.shift_start,currentAgent.timezone);
+      bg=li?.status==='late'?'rgba(251,191,36,.2)':'rgba(16,185,129,.2)';
+      color=li?.status==='late'?'var(--yl)':'var(--gr)';
+      label=h>0?h+'h':'<1h';
+      title=fmtTime(r.check_in)+(r.check_out?' → '+fmtTime(r.check_out):'');
+    } else {
+      bg='rgba(244,63,94,.08)';color='var(--mu)';label='—';
+    }
+    calCells+=`<div title="${title}" style="text-align:center;padding:6px 2px;border-radius:6px;background:${bg};border:${isToday?'2px solid var(--ac)':'1px solid transparent'};cursor:default">
+      <div style="font-size:12px;font-weight:${isToday?'800':'600'};color:${color}">${d}</div>
+      <div style="font-size:9px;color:${color};margin-top:1px">${label}</div>
+    </div>`;
+  }
+
+  c.innerHTML=`
+  <div style="margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+    <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${workedDays}</div><div class="stat-label">Days Worked</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${totalH}h ${totalM}m</div><div class="stat-label">Total Hours</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${avgH}h ${avgM}m</div><div class="stat-label">Avg/Day</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--rd)">${lateDays}</div><div class="stat-label">Late Days</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="card-title" style="margin:0">📅 ${monthName} ${yr}</div>
+      <div style="display:flex;gap:10px;font-size:11px">
+        <span style="color:var(--gr)">🟢 On Time</span>
+        <span style="color:var(--yl)">🟡 Late</span>
+        <span style="color:var(--rd)">🔴 Absent</span>
+        <span style="color:var(--rd)">Off = Friday</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${calCells}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📊 This Month Summary</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="padding:10px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
+        <div style="font-size:11px;color:var(--mu);margin-bottom:4px">On Time Days</div>
+        <div style="font-size:20px;font-weight:800;color:var(--gr)">${onTimeDays}</div>
+      </div>
+      <div style="padding:10px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
+        <div style="font-size:11px;color:var(--mu);margin-bottom:4px">Late Days</div>
+        <div style="font-size:20px;font-weight:800;color:var(--yl)">${lateDays}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
 async function renderMyShift(){
   if(!currentAgent){return;}
   const c=document.getElementById('pageContent');
@@ -884,7 +1019,7 @@ async function renderMyShift(){
       <button class="checkin-btn checkout" style="flex:1;margin-top:0" onclick="doCheckOut(2)">🔴 Check Out</button>
     </div>`;
   } else {
-    actionBtn='<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Both Shifts Complete for Today</div>';
+    actionBtn='';
   }
 
   // ── Build shift row ───────────────────────────────────────────
@@ -1282,6 +1417,7 @@ async function renderMyTasks(){
         <div style="display:flex;gap:8px;flex-shrink:0">
           <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openRemarkModal('${t.id}','completed')">✅ Complete</button>
           <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="openRemarkModal('${t.id}','rejected')">❌ Reject</button>
+          <button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openReassignModal('${t.id}')">🔁 Re-assign</button>
         </div>
       </div>
     </div>`).join('')}
@@ -1336,6 +1472,40 @@ function openRemarkModal(taskId,action,taskDesc){
   setTimeout(()=>document.getElementById('remarkText').focus(),100);
 }
 function closeRemarkModal(){document.getElementById('remarkModal').classList.remove('open');_remarkTaskId=null;_remarkAction=null;}
+
+// ── Task Re-assign ────────────────────────────────────────────
+let _reassignTaskId=null;
+async function openReassignModal(taskId){
+  _reassignTaskId=taskId;
+  const desc=window._taskStore?.[taskId]||'';
+  document.getElementById('reassignTaskDesc').textContent=desc;
+  document.getElementById('reassignErr').classList.remove('show');
+  // Load agents excluding self
+  const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
+  const sel=document.getElementById('reassignAgent');
+  sel.innerHTML='<option value="">Select Agent</option>'+(agents||[]).filter(a=>a.id!==currentAgent?.id).map(a=>`<option value="${a.id}" data-name="${a.name}">${a.name} (${a.dept||'—'})</option>`).join('');
+  document.getElementById('reassignModal').classList.add('open');
+}
+function closeReassignModal(){document.getElementById('reassignModal').classList.remove('open');_reassignTaskId=null;}
+async function submitReassign(){
+  const sel=document.getElementById('reassignAgent');
+  const newAgentId=sel.value;
+  const newAgentName=sel.options[sel.selectedIndex]?.dataset?.name||'';
+  const errEl=document.getElementById('reassignErr');
+  if(!newAgentId){errEl.textContent='Please select an agent';errEl.classList.add('show');return;}
+  const btn=document.getElementById('reassignBtn');btn.disabled=true;btn.textContent='Saving...';
+  const{error}=await _db.from('tasks').update({
+    agent_id:newAgentId,
+    status:'pending',
+    done:false,
+    assigned_by_id:currentAgent?.id||null,
+    assigned_by_name:currentAgent?.name||null
+  }).eq('id',_reassignTaskId);
+  btn.disabled=false;btn.textContent='Re-assign';
+  if(error){errEl.textContent='Error: '+error.message;errEl.classList.add('show');return;}
+  showToast('🔁 Task re-assigned to '+newAgentName,'ok');
+  closeReassignModal();renderMyTasks();
+}
 
 async function submitRemark(){
   const remark=document.getElementById('remarkText').value.trim();
@@ -1501,6 +1671,10 @@ async function renderReports(){
     <button class="btn btn-primary btn-sm no-print" onclick="applyReportFilters()" style="padding:9px 18px;white-space:nowrap">🔍 Apply Filter</button>
     <button class="btn btn-sm no-print" onclick="exportReportPDF()" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);padding:9px 18px;white-space:nowrap">📄 Export PDF</button>
   </div>
+  <div class="no-print" style="display:flex;gap:8px;margin-bottom:16px">
+    <button id="tabDetail" onclick="switchReportTab('detail')" class="btn btn-primary btn-sm">📋 Detail Report</button>
+    <button id="tabHeatmap" onclick="switchReportTab('heatmap')" class="btn btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--mu)">🔥 Monthly Heatmap</button>
+  </div>
   <div id="reportBody"><div class="empty-state"><div class="icon">⏳</div>Loading...</div></div>`;
   // Populate agent dropdown
   const{data:agents}=await _db.from('agents').select('id,name,dept').order('name');
@@ -1509,7 +1683,116 @@ async function renderReports(){
   await loadReportData();
 }
 
-async function applyReportFilters(){await loadReportData();}
+let _reportTab='detail';
+function switchReportTab(tab){
+  _reportTab=tab;
+  const dBtn=document.getElementById('tabDetail'),hBtn=document.getElementById('tabHeatmap');
+  if(dBtn)dBtn.style.cssText=tab==='detail'?'':'background:var(--s2);border:1px solid var(--b2);color:var(--mu)';
+  if(hBtn)hBtn.style.cssText=tab==='heatmap'?'':'background:var(--s2);border:1px solid var(--b2);color:var(--mu)';
+  if(tab==='heatmap')loadHeatmapData();else loadReportData();
+}
+async function applyReportFilters(){_reportTab==='heatmap'?loadHeatmapData():loadReportData();}
+
+async function loadHeatmapData(){
+  const body=document.getElementById('reportBody');
+  body.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading heatmap...</div>';
+  const month=document.getElementById('rMonth')?.value||new Date().toISOString().slice(0,7);
+  const deptFilter=document.getElementById('rDept')?.value||'';
+  const [yr,mo]=month.split('-').map(Number);
+  const daysInMonth=new Date(yr,mo,0).getDate();
+
+  // Load agents
+  let aq=_db.from('agents').select('id,name,dept').eq('type','regular').order('dept').order('name');
+  if(deptFilter)aq=aq.eq('dept',deptFilter);
+  const{data:agents}=await aq;
+  if(!agents?.length){body.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>No agents found</p></div>';return;}
+
+  // Load all shift rows for month
+  const{data:rows}=await _db.from('shift_status').select('*')
+    .gte('date',month+'-01')
+    .lte('date',month+'-'+String(daysInMonth).padStart(2,'0'));
+  const byAgentDate={};
+  (rows||[]).forEach(r=>{byAgentDate[r.agent_id+'|'+r.date]=r;});
+
+  // Day headers (skip Friday)
+  const days=[];
+  for(let d=1;d<=daysInMonth;d++){
+    const ds=yr+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const dow=new Date(ds).getDay();
+    days.push({d,ds,dow,isFri:dow===5});
+  }
+  const today=new Date().toISOString().slice(0,10);
+
+  const thStyle='padding:6px 4px;text-align:center;font-size:10px;font-weight:700;border-bottom:1px solid var(--b);white-space:nowrap;min-width:30px';
+  const dayHeaders=days.map(x=>`<th style="${thStyle};color:${x.isFri?'var(--rd)':x.dow===0?'var(--mu)':'var(--mu)'}">${x.d}<br><span style="font-size:9px;opacity:.7">${['Su','Mo','Tu','We','Th','Fr','Sa'][x.dow]}</span></th>`).join('');
+
+  const rows2=agents.map(a=>{
+    let totalMins=0,worked=0,late=0;
+    const cells=days.map(({d,ds,dow,isFri})=>{
+      if(isFri){
+        return `<td style="padding:3px;text-align:center"><div style="width:26px;height:26px;border-radius:4px;background:rgba(244,63,94,.12);margin:auto;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--rd);font-weight:700">Off</div></td>`;
+      }
+      const r=byAgentDate[a.id+'|'+ds];
+      const isFuture=ds>today;
+      if(isFuture){
+        return `<td style="padding:3px;text-align:center"><div style="width:26px;height:26px;border-radius:4px;background:var(--s2);margin:auto"></div></td>`;
+      }
+      if(!r?.check_in){
+        return `<td style="padding:3px;text-align:center" title="${ds}: Absent"><div style="width:26px;height:26px;border-radius:4px;background:rgba(244,63,94,.15);margin:auto;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--rd)">✗</div></td>`;
+      }
+      // Calc hours
+      const s1=(r.check_out?new Date(r.check_out):new Date())-new Date(r.check_in);
+      const s2=r.check_in_2?((r.check_out_2?new Date(r.check_out_2):new Date())-new Date(r.check_in_2)):0;
+      const brk=(r.break_start&&r.break_end?(new Date(r.break_end)-new Date(r.break_start)):0)+(r.break_start_2&&r.break_end_2?(new Date(r.break_end_2)-new Date(r.break_start_2)):0);
+      const mins=Math.max(0,Math.floor((s1+s2-brk)/60000));
+      totalMins+=mins;worked++;
+      const h=Math.floor(mins/60);
+      const li=getCheckinStatus(r.check_in,a.shift_start||'09:00',a.timezone||'Asia/Karachi');
+      const isLate=li?.status==='late'; if(isLate)late++;
+      // Heat color: green=8h+, yellow=4-8h, orange=1-4h, red<1h
+      const heat=mins>=480?'rgba(16,185,129,.7)':mins>=240?'rgba(16,185,129,.35)':mins>=60?'rgba(251,191,36,.5)':'rgba(244,63,94,.4)';
+      const border=isLate?'1px solid var(--yl)':'none';
+      return `<td style="padding:3px;text-align:center" title="${ds}: ${h}h ${mins%60}m${isLate?' ⚠️Late':''}"><div style="width:26px;height:26px;border-radius:4px;background:${heat};border:${border};margin:auto;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:700">${h}h</div></td>`;
+    }).join('');
+    const avgH=worked>0?Math.floor(totalMins/worked/60):0;
+    const avgM=worked>0?Math.floor((totalMins/worked)%60):0;
+    return `<tr>
+      <td style="padding:8px 10px;font-weight:700;white-space:nowrap;border-bottom:1px solid var(--b);position:sticky;left:0;background:var(--s);z-index:1">${a.name}</td>
+      <td style="padding:8px 6px;font-size:11px;color:var(--mu);border-bottom:1px solid var(--b);white-space:nowrap">${a.dept||'—'}</td>
+      ${cells}
+      <td style="padding:8px 8px;text-align:center;font-weight:700;color:var(--ac);border-bottom:1px solid var(--b);white-space:nowrap">${worked}d</td>
+      <td style="padding:8px 8px;text-align:center;font-weight:700;color:var(--gr);border-bottom:1px solid var(--b);white-space:nowrap">${avgH}h${avgM}m</td>
+      <td style="padding:8px 8px;text-align:center;font-weight:700;color:${late>0?'var(--yl)':'var(--gr)'};border-bottom:1px solid var(--b)">${late}</td>
+    </tr>`;
+  }).join('');
+
+  body.innerHTML=`
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between">
+      <div class="card-title" style="margin:0">🔥 ${new Date(yr,mo-1).toLocaleString('en-US',{month:'long'})} ${yr} — Agent Attendance Heatmap</div>
+      <div style="display:flex;gap:12px;font-size:11px;align-items:center">
+        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(16,185,129,.7)"></span>8h+</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(16,185,129,.35)"></span>4-8h</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(251,191,36,.5)"></span>1-4h</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(244,63,94,.4)"></span>&lt;1h</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(244,63,94,.12)"></span>Off</span>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="border-collapse:collapse;width:100%;min-width:800px">
+        <thead><tr>
+          <th style="${thStyle};text-align:left;position:sticky;left:0;background:var(--s)">Agent</th>
+          <th style="${thStyle};text-align:left">Dept</th>
+          ${dayHeaders}
+          <th style="${thStyle}">Days</th>
+          <th style="${thStyle}">Avg/Day</th>
+          <th style="${thStyle}">Late</th>
+        </tr></thead>
+        <tbody>${rows2}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
 
 async function loadReportData(){
   const rb=document.getElementById('reportBody');
