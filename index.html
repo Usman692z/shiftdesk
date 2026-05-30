@@ -836,57 +836,73 @@ async function renderMyShift(){
   const countryLabel=flag+' '+(currentAgent.country||'Pakistan');
 
   // ── Determine shift state ─────────────────────────────────────
-  // Shift 1
   const s1In=s?.check_in||null, s1Out=s?.check_out||null;
-  // Shift 2
   const s2In=s?.check_in_2||null, s2Out=s?.check_out_2||null;
+  const b1Start=s?.break_start||null, b1End=s?.break_end||null;
+  const b2Start=s?.break_start_2||null, s2BreakEnd=s?.break_end_2||null;
+
+  const onBreak1=b1Start&&!b1End;
+  const onBreak2=b2Start&&!s2BreakEnd;
+  const onBreak=onBreak1||onBreak2;
 
   const lateInfo1=s1In?getCheckinStatus(s1In,currentAgent.shift_start,currentAgent.timezone):null;
-  const lateInfo2=null; // 2nd shift is optional — no late check-in penalty
 
-  // Total hours helper
-  function shiftDurMins(inn,out){
-    if(!inn)return 0;
-    return Math.max(0,Math.floor((new Date(out||new Date())-new Date(inn))/60000));
-  }
-  const s1Mins=shiftDurMins(s1In,s1Out);
-  const s2Mins=shiftDurMins(s2In,s2Out);
-  const totalMins=s1Mins+s2Mins;
-  const totalHrsLabel=totalMins>0?(Math.floor(totalMins/60)+'h '+(totalMins%60)+'m'):'—';
+  // Duration helpers
+  function durMins(inn,out){ if(!inn)return 0; return Math.max(0,Math.floor((new Date(out||new Date())-new Date(inn))/60000)); }
+  function fmtMins(m){ return Math.floor(m/60)+'h '+(m%60)+'m'; }
 
-  // ── What button to show? ──────────────────────────────────────
+  const s1Mins=durMins(s1In,s1Out);
+  const s2Mins=durMins(s2In,s2Out);
+  const b1Mins=durMins(b1Start,b1End);
+  const b2Mins=durMins(b2Start,s2BreakEnd);
+  const totalMins=(s1Mins+s2Mins);
+  const totalBreakMins=b1Mins+b2Mins;
+  const netMins=Math.max(0,totalMins-totalBreakMins);
+  const totalHrsLabel=netMins>0?fmtMins(netMins):'—';
+
+  // ── Action buttons ────────────────────────────────────────────
+  const breakBtn=(shiftN,onBrk)=>onBrk
+    ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--gr),#059669);color:#fff">▶️ Resume Work</button>`
+    :`<button onclick="doBreakStart(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--b2);font-family:var(--font);background:transparent;color:var(--mu)">☕ Take Break</button>`;
+
   let actionBtn='';
   if(!s1In){
-    // Never checked in
     actionBtn='<button class="checkin-btn checkin" onclick="doCheckIn(1)">✅ Check In — Shift 1</button>';
   } else if(!s1Out){
-    // Shift 1 active
-    actionBtn='<button class="checkin-btn checkout" onclick="doCheckOut(1)">🔴 Check Out — Shift 1</button>';
+    actionBtn=`<div style="display:flex;gap:8px;margin-top:4px">
+      ${breakBtn(1,onBreak1)}
+      <button class="checkin-btn checkout" style="flex:1;margin-top:0" onclick="doCheckOut(1)">🔴 Check Out</button>
+    </div>`;
   } else if(!s2In){
-    // Shift 1 done, shift 2 not started
     actionBtn=`<div style="text-align:center;padding:14px 0 4px">
       <div style="color:var(--gr);font-weight:600;margin-bottom:12px">✅ Shift 1 Complete for Today</div>
       <button onclick="doCheckIn(2)" style="background:transparent;border:1px dashed var(--b2);color:var(--mu);padding:8px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--font);transition:var(--tr)" onmouseover="this.style.borderColor='var(--gr)';this.style.color='var(--gr)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mu)'">➕ Start 2nd Shift <span style="font-size:11px;opacity:.6">(optional)</span></button>
     </div>`;
   } else if(!s2Out){
-    // Shift 2 active
-    actionBtn='<button class="checkin-btn checkout" onclick="doCheckOut(2)">🔴 Check Out — Shift 2</button>';
+    actionBtn=`<div style="display:flex;gap:8px;margin-top:4px">
+      ${breakBtn(2,onBreak2)}
+      <button class="checkin-btn checkout" style="flex:1;margin-top:0" onclick="doCheckOut(2)">🔴 Check Out</button>
+    </div>`;
   } else {
-    // Both shifts done
     actionBtn='<div style="text-align:center;padding:16px;color:var(--gr);font-weight:600">✅ Both Shifts Complete for Today</div>';
   }
 
-  // ── Build shift rows ──────────────────────────────────────────
-  function shiftRow(num,inn,out,lateInfo,mins){
+  // ── Build shift row ───────────────────────────────────────────
+  function shiftRow(num,inn,out,lateInfo,mins,brkStart,brkEnd,brkMins){
     if(!inn)return '';
     const isActive=inn&&!out;
+    const onBrk=brkStart&&!brkEnd;
     return `
-    <div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:14px;margin-bottom:10px">
-      <div style="font-size:12px;font-weight:700;color:var(--mu);margin-bottom:10px;letter-spacing:.5px">SHIFT ${num} ${isActive?'<span style="color:var(--gr)">● ACTIVE</span>':''}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--gr);font-size:16px">${fmtTime(inn)}</div><div class="stat-label">Check In</div></div>
-        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--rd);font-size:16px">${out?fmtTime(out):'—'}</div><div class="stat-label">Check Out</div></div>
-        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--ac);font-size:16px">${mins>0?(Math.floor(mins/60)+'h '+(mins%60)+'m'):(isActive?'Active':'—')}</div><div class="stat-label">Duration</div></div>
+    <div style="background:var(--s2);border:1px solid ${onBrk?'rgba(251,191,36,.4)':isActive?'rgba(16,185,129,.25)':'var(--b)'};border-radius:var(--r);padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--mu);letter-spacing:.5px">SHIFT ${num}</div>
+        ${onBrk?'<span style="font-size:11px;font-weight:700;color:var(--yl);background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);padding:2px 8px;border-radius:20px">☕ On Break</span>':isActive?'<span style="font-size:11px;font-weight:700;color:var(--gr)">● ACTIVE</span>':''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--gr);font-size:14px">${fmtTime(inn)}</div><div class="stat-label">Check In</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--rd);font-size:14px">${out?fmtTime(out):'—'}</div><div class="stat-label">Check Out</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--yl);font-size:14px">${brkMins>0?fmtMins(brkMins):(onBrk?'Active':'—')}</div><div class="stat-label">Break</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--ac);font-size:14px">${mins>0?fmtMins(Math.max(0,mins-brkMins)):(isActive&&!onBrk?'Active':'—')}</div><div class="stat-label">Work Time</div></div>
       </div>
       ${lateInfo?lateStatusBanner(lateInfo):''}
     </div>`;
@@ -918,10 +934,16 @@ async function renderMyShift(){
       <div class="card-title" style="margin:0">📅 Today's Shifts</div>
       ${totalMins>0?`<div style="font-size:13px;font-weight:700;color:var(--ac)">⏱️ Total: ${totalHrsLabel}</div>`:''}
     </div>
-    ${s1In?shiftRow(1,s1In,s1Out,lateInfo1,s1Mins):''}
-    ${s2In?shiftRow(2,s2In,s2Out,lateInfo2,s2Mins):''}
+    ${s1In?shiftRow(1,s1In,s1Out,lateInfo1,s1Mins,b1Start,b1End,b1Mins):''}
+    ${s2In?shiftRow(2,s2In,s2Out,null,s2Mins,b2Start,s2BreakEnd,b2Mins):''}
     ${actionBtn}
   </div>
+
+  ${onBreak?`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:var(--r);padding:14px;margin-bottom:16px;text-align:center">
+    <div style="font-size:20px;margin-bottom:4px">☕</div>
+    <div style="font-weight:700;color:var(--yl)">Break started at ${fmtTime(onBreak1?b1Start:b2Start)}</div>
+    <div style="font-size:12px;color:var(--mu);margin-top:4px">Click "Resume Work" when you're back</div>
+  </div>`:''}
 
   <div class="card"><div class="card-title">📋 Recent Activity</div><div id="myActivityLog">Loading...</div></div>`;
 
@@ -956,11 +978,35 @@ async function doCheckOut(shiftNum){
   showToast('Shift '+shiftNum+' complete! Great work 👏','ok');renderMyShift();
 }
 
+async function doBreakStart(shiftNum){
+  shiftNum=shiftNum||1;
+  const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
+  const col=shiftNum===1?'break_start':'break_start_2';
+  const{error}=await _db.from('shift_status').update({[col]:now,online:false}).eq('agent_id',currentAgent.id).eq('date',today);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now});
+  stopTracking();
+  showToast('☕ Break started! Rest karo.','info');renderMyShift();
+}
+
+async function doBreakEnd(shiftNum){
+  shiftNum=shiftNum||1;
+  const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
+  const col=shiftNum===1?'break_end':'break_end_2';
+  const{error}=await _db.from('shift_status').update({[col]:now,online:true}).eq('agent_id',currentAgent.id).eq('date',today);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  await _db.from('activity_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,action:'break_end',detail:'Break End Shift '+shiftNum,date:today,time:now});
+  startTracking();
+  showToast('▶️ Welcome back! Shift resumed.','ok');renderMyShift();
+}
+
 async function loadMyActivity(){
   const{data:logs}=await _db.from('activity_logs').select('*').eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).limit(20);
   const el=document.getElementById('myActivityLog');if(!el)return;
   if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">📭</div>No activity yet</div>';return;}
-  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(l.action==='check_in'?'✅ Checked In':'🔴 Checked Out')+'</div><div class="activity-desc">'+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join('');
+  const actionLabel={check_in:'✅ Checked In',check_out:'🔴 Checked Out',break_start:'☕ Break Started',break_end:'▶️ Break Ended'};
+  const actionDot={check_in:'dot-in',check_out:'dot-out',break_start:'dot-out',break_end:'dot-in'};
+  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+fmtDate(l.created_at||l.time)+'</div></div><div class="activity-time">'+fmtTime(l.created_at||l.time)+'</div></div>').join('');
 }
 
 async function renderActivity(){
