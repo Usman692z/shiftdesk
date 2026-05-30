@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ShiftDesk - Agent Workforce</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#07080f;--s:#0d0f1a;--s2:#131629;--s3:#1a1e33;--b:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.10);--tx:#e8ecff;--mu:#6b728e;--mu2:#3d4260;--ac:#6c63ff;--ac2:#8b5cf6;--gr:#10b981;--rd:#f43f5e;--yl:#fbbf24;--or:#fb923c;--r:8px;--rl:14px;--rxl:20px;--font:'Inter',-apple-system,sans-serif;--tr:all .18s cubic-bezier(.4,0,.2,1)}
+:root{--bg:#07080f;--s:#0d0f1a;--s2:#131629;--s3:#1a1e33;--b:rgba(255,255,255,0.06);--b2:rgba(255,255,255,0.10);--tx:#e8ecff;--mu:#6b728e;--mu2:#3d4260;--ac:#6c63ff;--ac2:#8b5cf6;--gr:#10b981;--rd:#f43f5e;--yl:#fbbf24;--or:#fb923c;--r:8px;--rl:14px;--rxl:20px;--font:'Inter',-apple-system,sans-serif;--tr:background-color .15s ease,color .15s ease,border-color .15s ease,opacity .15s ease,transform .15s ease}
 /* ── Light Mode ───────────────────────────────────────────── */
 [data-theme="light"]{--bg:#f0f2f8;--s:#ffffff;--s2:#f5f6fa;--s3:#eceef5;--b:rgba(0,0,0,.07);--b2:rgba(0,0,0,.12);--tx:#1a1c2e;--mu:#6b728e;--mu2:#9ba3bf}
 [data-theme="light"] body{background:var(--bg)}
@@ -675,7 +675,7 @@ function startRealtime(page){
       if(table==='activity_logs'){_cDel('logs_agent_'+(currentAgent?.id||''),'logs_all');}
       // Debounce re-render (800ms)
       clearTimeout(_realtimeDebounce[page]);
-      _realtimeDebounce[page]=setTimeout(()=>{
+      _realtimeDebounce[page]=setTimeout(()=>{ // 1200ms debounce
         if(currentPage!==page)return;
         if(page==='dashboard')renderDashboard();
         else if(page==='tasks')renderTasks();
@@ -690,7 +690,7 @@ function startRealtime(page){
         else if(page==='announce')renderAnnouncements();
         else if(page==='myannounce')renderMyAnnouncements();
         else if(page==='chat')renderChat();
-      },800);
+      },1200);
     });
   });
   realtimeChannel.subscribe();
@@ -698,12 +698,14 @@ function startRealtime(page){
 
 function startClock(){
   if(clockInterval)clearInterval(clockInterval);
+  // Cache formatter objects — new Intl each tick is expensive
+  let _tz='',_timeFmt=null,_dateFmt=null;
   function tick(){
     const tz=currentAgent?.timezone||'Asia/Karachi';
+    if(tz!==_tz){_tz=tz;_timeFmt=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});_dateFmt=new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric'});}
     const now=new Date();
-    const t=now.toLocaleTimeString('en-US',{timeZone:tz,hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    const d=now.toLocaleDateString('en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric'});
-    const el=document.getElementById('liveClock');if(el)el.textContent=d+' '+t;
+    const t=_timeFmt.format(now);
+    const el=document.getElementById('liveClock');if(el)el.textContent=_dateFmt.format(now)+' '+t;
     const sc=document.getElementById('shiftClock');if(sc)sc.textContent=t;
   }
   tick();clockInterval=setInterval(tick,1000);
@@ -2105,8 +2107,10 @@ async function doBulkImport(){
   else showToast(`✅ ${success} agents imported successfully!`,'ok');
 }
 
-function fmtTime(ts){if(!ts)return '—';try{const tz=currentAgent?.timezone||'Asia/Karachi';return new Date(ts).toLocaleTimeString('en-US',{timeZone:tz,hour12:true,hour:'2-digit',minute:'2-digit'});}catch{return ts.slice(11,16);}}
-function fmtDate(ts){if(!ts)return '—';try{return new Date(ts).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}catch{return ts.slice(0,10);}}
+const _fmtCache={};
+function _getFmts(tz){if(!_fmtCache[tz])_fmtCache[tz]={t:new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12:true,hour:'2-digit',minute:'2-digit'}),d:new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'})};return _fmtCache[tz];}
+function fmtTime(ts){if(!ts)return '—';try{const tz=currentAgent?.timezone||'Asia/Karachi';return _getFmts(tz).t.format(new Date(ts));}catch{return ts.slice(11,16);}}
+function fmtDate(ts){if(!ts)return '—';try{return _getFmts(currentAgent?.timezone||'Asia/Karachi').d.format(new Date(ts));}catch{return ts.slice(0,10);}}
 function calcHours(i,o){if(!i||!o)return '—';const d=(new Date(o)-new Date(i))/3600000;return d.toFixed(1)+'h';}
 function showToast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast toast-'+(type==='ok'?'ok':type==='err'?'err':'info');t.innerHTML=(type==='ok'?'✅':type==='err'?'❌':'ℹ️')+' '+msg;c.appendChild(t);setTimeout(()=>t.remove(),4000);}
 
@@ -2364,8 +2368,14 @@ async function loadReportData(){
   </div>`;
 }
 
-function exportReportPDF(){
+async function exportReportPDF(){
   try{
+    if(!window.jspdf){
+      await Promise.all([
+        new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);}),
+      ]);
+      await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+    }
     const{jsPDF}=window.jspdf;
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     // Title
