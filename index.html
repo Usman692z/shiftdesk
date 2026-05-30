@@ -724,16 +724,23 @@ function _incChatUnread(){
   if(nav){nav.style.background='rgba(244,63,94,.15)';setTimeout(()=>{if(nav&&currentPage!=='chat')nav.style.background='';},1500);}
 }
 
-function startChatNotifChannel(){
+async function startChatNotifChannel(){
   if(_chatNotifChannel){_db.removeChannel(_chatNotifChannel);_chatNotifChannel=null;}
   if(!currentAgent&&!isAdmin)return;
-  const myId=isAdmin?'admin':currentAgent.id;
+  // For agents: use their UUID. For admin: fetch their actual UUID from agents table
+  let myId=isAdmin?'admin':currentAgent.id;
+  if(isAdmin){
+    const{data:adminRow}=await _db.from('agents').select('id').eq('type','admin').maybeSingle();
+    if(adminRow?.id)myId=adminRow.id;
+  }
   _chatNotifChannel=_db.channel('chat_notif_global');
   _chatNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},(payload)=>{
     const m=payload.new;
     if(!m)return;
-    if(m.from_id===myId)return;
-    const forMe=(m.to_id===myId)||(m.is_broadcast&&!m.to_id);
+    // skip my own messages
+    if(m.from_id===myId||m.from_id==='admin'&&isAdmin)return;
+    // message is for me if to_id matches my UUID, OR to_id='admin' string (legacy), OR broadcast
+    const forMe=(m.to_id===myId)||(m.to_id==='admin'&&isAdmin)||(m.is_broadcast&&!m.to_id);
     if(!forMe)return;
     if(currentPage!=='chat')_incChatUnread();
     if(Notification.permission==='granted'){
