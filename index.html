@@ -336,9 +336,18 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
   <div class="modal" style="max-width:420px">
     <h2>Apply for Leave</h2>
     <div id="leaveErr" class="auth-err"></div>
+    <!-- Leave Type -->
+    <div class="form-group">
+      <label>Leave Type</label>
+      <div style="display:flex;gap:8px" id="leaveTypeBtns">
+        <button type="button" onclick="setLeaveType('full')" id="lt_full" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--ac);background:var(--ac);color:#fff;font-family:var(--font);transition:var(--tr)">Full Day</button>
+        <button type="button" onclick="setLeaveType('half_am')" id="lt_half_am" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--b2);background:transparent;color:var(--mu);font-family:var(--font);transition:var(--tr)">Half Day (Morning)</button>
+        <button type="button" onclick="setLeaveType('half_pm')" id="lt_half_pm" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--b2);background:transparent;color:var(--mu);font-family:var(--font);transition:var(--tr)">Half Day (Evening)</button>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group" style="margin:0"><label>From Date</label><input type="date" id="leaveFrom"></div>
-      <div class="form-group" style="margin:0"><label>To Date</label><input type="date" id="leaveTo"></div>
+      <div class="form-group" style="margin:0"><label>From Date</label><input type="date" id="leaveFrom" oninput="onLeaveDateChange()"></div>
+      <div class="form-group" style="margin:0" id="leaveToWrap"><label>To Date</label><input type="date" id="leaveTo"></div>
     </div>
     <div class="form-group"><label>Reason</label><textarea id="leaveReason" rows="3" placeholder="Reason for leave..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
     <div class="modal-footer">
@@ -1559,24 +1568,44 @@ async function deleteAnnouncement(id){
 }
 
 // ── LEAVE REQUESTS ───────────────────────────────────────────────
+let _leaveType='full';
+function setLeaveType(t){
+  _leaveType=t;
+  ['full','half_am','half_pm'].forEach(k=>{
+    const b=document.getElementById('lt_'+k);if(!b)return;
+    if(k===t){b.style.background='var(--ac)';b.style.color='#fff';b.style.borderColor='var(--ac)';}
+    else{b.style.background='transparent';b.style.color='var(--mu)';b.style.borderColor='var(--b2)';}
+  });
+  const toWrap=document.getElementById('leaveToWrap');
+  if(toWrap)toWrap.style.display=(t==='full'?'':'none');
+  if(t!=='full'){const from=document.getElementById('leaveFrom').value;if(from)document.getElementById('leaveTo').value=from;}
+}
+function onLeaveDateChange(){
+  if(_leaveType!=='full'){const from=document.getElementById('leaveFrom').value;document.getElementById('leaveTo').value=from;}
+}
 function openLeaveModal(){
+  _leaveType='full';
   document.getElementById('leaveFrom').value='';
   document.getElementById('leaveTo').value='';
   document.getElementById('leaveReason').value='';
   document.getElementById('leaveErr').classList.remove('show');
+  setLeaveType('full');
   document.getElementById('leaveModal').classList.add('open');
 }
 function closeLeaveModal(){document.getElementById('leaveModal').classList.remove('open');}
 
 async function submitLeave(){
   const from=document.getElementById('leaveFrom').value;
-  const to=document.getElementById('leaveTo').value;
+  let to=_leaveType!=='full'?from:document.getElementById('leaveTo').value;
   const reason=document.getElementById('leaveReason').value.trim();
   const errEl=document.getElementById('leaveErr');
-  if(!from||!to){errEl.textContent='Please select dates';errEl.classList.add('show');return;}
+  if(!from){errEl.textContent='Please select a date';errEl.classList.add('show');return;}
+  if(_leaveType==='full'&&!to){errEl.textContent='Please select To date';errEl.classList.add('show');return;}
   if(to<from){errEl.textContent='To date must be after From date';errEl.classList.add('show');return;}
+  const typeLabel=_leaveType==='half_am'?'[Half Day - Morning]':_leaveType==='half_pm'?'[Half Day - Evening]':'';
+  const fullReason=(typeLabel?(typeLabel+(reason?' '+reason:'')):(reason||'')).trim();
   const btn=document.getElementById('saveLeaveBtn');btn.disabled=true;btn.textContent='Submitting...';
-  const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:from,date_to:to,reason,status:'pending'});
+  const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:from,date_to:to,reason:fullReason,status:'pending'});
   btn.disabled=false;btn.textContent='Submit Request';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('leaves_agent_'+currentAgent.id,'leaves_all','leaves_agent_approved_'+currentAgent.id);
@@ -1601,21 +1630,32 @@ async function renderMyLeave(){
   ${!leaves?.length?'<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>No leave requests yet.</p></div>':leaves.map(l=>`
   <div class="card" style="margin-bottom:12px;border-left:3px solid ${statusColor[l.status]||'var(--mu)'}">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-weight:700">${l.date_from} → ${l.date_to}</span>
-        <span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to)} day${_leaveDays(l.date_from,l.date_to)>1?'s':''}</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-weight:700">${l.date_from}${l.date_from!==l.date_to?' → '+l.date_to:''}</span>
+        <span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.reason)} day${_leaveDays(l.date_from,l.date_to,l.reason)>0.5?'s':''}</span>
+        ${_leaveTypeTag(l.reason)}
       </div>
       <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44;display:inline-flex;align-items:center;gap:4px">${statusIcon[l.status]||_i('clock',12)} ${l.status||'pending'}</span>
     </div>
-    ${l.reason?`<div style="font-size:13px;color:var(--mu)">${l.reason}</div>`:''}
+    ${_leaveReasonClean(l.reason)?`<div style="font-size:13px;color:var(--mu)">${_leaveReasonClean(l.reason)}</div>`:''}
     ${l.status!=='pending'?`<div style="font-size:11px;color:var(--mu);margin-top:6px">Reviewed by: ${l.reviewed_by||'Admin'}</div>`:''}
   </div>`).join('')}`;
 }
 
-function _leaveDays(from,to){
+function _leaveDays(from,to,reason){
+  if(reason&&(reason.startsWith('[Half Day')))return 0.5;
   if(!from||!to)return 1;
   const d=Math.round((new Date(to)-new Date(from))/(1000*60*60*24))+1;
   return d>0?d:1;
+}
+function _leaveTypeTag(reason){
+  if(!reason)return '';
+  if(reason.startsWith('[Half Day - Morning]'))return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:4px">½ Morning</span>';
+  if(reason.startsWith('[Half Day - Evening]'))return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:4px">½ Evening</span>';
+  return '';
+}
+function _leaveReasonClean(reason){
+  return (reason||'').replace(/^\[Half Day - (Morning|Evening)\]\s*/,'');
 }
 
 async function renderAdminLeaves(){
@@ -1633,8 +1673,8 @@ async function renderAdminLeaves(){
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
       <div>
         <div style="font-weight:700;margin-bottom:4px">${l.agent_name} <span style="font-size:12px;color:var(--mu);font-weight:400">(${l.dept||'—'})</span></div>
-        <div style="font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px">${_i('calendar',12)} ${l.date_from} → ${l.date_to}<span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to)} day${_leaveDays(l.date_from,l.date_to)>1?'s':''}</span></div>
-        ${l.reason?`<div style="font-size:12px;color:var(--mu)">${l.reason}</div>`:''}
+        <div style="font-size:13px;margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">${_i('calendar',12)} ${l.date_from}${l.date_from!==l.date_to?' → '+l.date_to:''}<span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.reason)} day${_leaveDays(l.date_from,l.date_to,l.reason)>0.5?'s':''}</span>${_leaveTypeTag(l.reason)}</div>
+        ${_leaveReasonClean(l.reason)?`<div style="font-size:12px;color:var(--mu)">${_leaveReasonClean(l.reason)}</div>`:''}
       </div>
       ${l.status==='pending'?`
       <div style="display:flex;gap:8px;flex-shrink:0">
