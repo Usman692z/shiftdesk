@@ -539,7 +539,9 @@ async function logout(){
   stopTracking();
   if(realtimeChannel){_db.removeChannel(realtimeChannel);realtimeChannel=null;}
   if(_chatNotifChannel){_db.removeChannel(_chatNotifChannel);_chatNotifChannel=null;}
+  if(_announceNotifChannel){_db.removeChannel(_announceNotifChannel);_announceNotifChannel=null;}
   clearChatUnread();
+  clearAnnounceUnread();
   clearAgentSession();
   currentUser=null;currentAgent=null;isAdmin=false;
   await _db.auth.signOut();
@@ -566,6 +568,7 @@ function showApp(){
   buildNav();
   fetchNotifBadge();
   startChatNotifChannel();
+  startAnnounceNotifChannel();
   navTo(isAdmin?'dashboard':'myshift');
 }
 
@@ -618,7 +621,7 @@ function buildNav(){
   const items=isAdmin
     ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'leaves',icon:'🏖️',label:'Leaves'},{id:'announce',icon:'📢',label:'Announce'},{id:'chat',icon:'💬',label:'Chat'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'},{id:'help',icon:'❓',label:'Help'}]
     :[...allAgentPages,{id:'help',icon:'❓',label:'Help'}];
-  document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span>${i.id==='chat'?'<span class="chat-unread" id="chatUnreadBadge"></span>':''}</div>`).join('');
+  document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${i.icon}</span><span class="nav-label">${i.label}</span>${i.id==='chat'?'<span class="chat-unread" id="chatUnreadBadge"></span>':(i.id==='announce'||i.id==='myannounce')?'<span class="chat-unread" id="announceUnreadBadge"></span>':''}</div>`).join('');
 }
 
 function navTo(page){
@@ -639,8 +642,8 @@ function navTo(page){
   else if(page==='reports')renderReports();
   else if(page==='myleave')renderMyLeave();
   else if(page==='leaves')renderAdminLeaves();
-  else if(page==='announce')renderAnnouncements();
-  else if(page==='myannounce')renderMyAnnouncements();
+  else if(page==='announce'){clearAnnounceUnread();renderAnnouncements();}
+  else if(page==='myannounce'){clearAnnounceUnread();renderMyAnnouncements();}
   else if(page==='chat'){clearChatUnread();renderChat();}
   else if(page==='help')renderHelp();
 }
@@ -717,7 +720,6 @@ function _incChatUnread(){
   _chatUnreadCount++;
   const b=document.getElementById('chatUnreadBadge');
   if(b){b.textContent=_chatUnreadCount>99?'99+':_chatUnreadCount;b.classList.add('show');}
-  // Flash the nav item to draw attention
   const nav=document.getElementById('nav_chat');
   if(nav){nav.style.background='rgba(244,63,94,.15)';setTimeout(()=>{if(nav&&currentPage!=='chat')nav.style.background='';},1500);}
 }
@@ -730,21 +732,51 @@ function startChatNotifChannel(){
   _chatNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},(payload)=>{
     const m=payload.new;
     if(!m)return;
-    // Skip messages sent by me
     if(m.from_id===myId)return;
-    // Only notify if message is for me: to_id===myId OR broadcast (is_broadcast===true, to_id null)
     const forMe=(m.to_id===myId)||(m.is_broadcast&&!m.to_id);
     if(!forMe)return;
-    // Only show badge if not currently on chat page
     if(currentPage!=='chat')_incChatUnread();
-    // Browser notification (if permission granted)
     if(Notification.permission==='granted'){
-      new Notification('💬 New message from '+( m.from_name||'Someone'),{body:m.message?.slice(0,80)||'',icon:'/favicon.ico',tag:'shiftdesk-chat'});
+      new Notification('💬 New message from '+(m.from_name||'Someone'),{body:m.message?.slice(0,80)||'',icon:'/favicon.ico',tag:'shiftdesk-chat'});
     }
   });
   _chatNotifChannel.subscribe();
-  // Request browser notification permission silently
   if(Notification.permission==='default')Notification.requestPermission();
+}
+
+// ── Global Announcement Notification (runs on all pages) ───────
+let _announceNotifChannel=null;
+let _announceUnreadCount=0;
+
+function clearAnnounceUnread(){
+  _announceUnreadCount=0;
+  const b=document.getElementById('announceUnreadBadge');
+  if(b){b.textContent='';b.classList.remove('show');}
+}
+
+function _incAnnounceUnread(title){
+  _announceUnreadCount++;
+  const b=document.getElementById('announceUnreadBadge');
+  if(b){b.textContent=_announceUnreadCount>99?'99+':_announceUnreadCount;b.classList.add('show');}
+  const navPage=isAdmin?'announce':'myannounce';
+  const nav=document.getElementById('nav_'+navPage);
+  if(nav){nav.style.background='rgba(251,191,36,.15)';setTimeout(()=>{if(nav&&currentPage!==navPage)nav.style.background='';},1500);}
+  if(Notification.permission==='granted'){
+    new Notification('📢 New Announcement',{body:title?.slice(0,80)||'You have a new announcement',icon:'/favicon.ico',tag:'shiftdesk-announce'});
+  }
+}
+
+function startAnnounceNotifChannel(){
+  if(_announceNotifChannel){_db.removeChannel(_announceNotifChannel);_announceNotifChannel=null;}
+  if(!currentAgent)return;
+  _announceNotifChannel=_db.channel('announce_notif_global');
+  _announceNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'announcements'},(payload)=>{
+    const a=payload.new;
+    if(!a)return;
+    const navPage=isAdmin?'announce':'myannounce';
+    if(currentPage!==navPage)_incAnnounceUnread(a.title);
+  });
+  _announceNotifChannel.subscribe();
 }
 
 function startClock(){
