@@ -1569,61 +1569,112 @@ async function renderChat(){
   const myId=isAdmin?'admin':(currentAgent?.id||'');
   const myName=isAdmin?'Admin':(currentAgent?.name||'');
 
-  // Load agents for recipient list (cached)
+  // Load agents + recent messages for each conversation preview
   const agents=await _getAgents('id,name,dept');
   const recipients=[
-    {id:'admin',name:'Admin (Broadcast)'},
-    ...(agents||[]).filter(a=>a.id!==myId)
+    {id:'admin',name:'Admin (Broadcast)',icon:'📢'},
+    ...(agents||[]).filter(a=>a.id!==myId).map(a=>({...a,icon:null}))
   ];
   if(!chatRecipient)chatRecipient=recipients[0]?.id||null;
+
+  // Load last message per conversation for preview
+  const{data:recentMsgs}=await _db.from('messages').select(C.messages)
+    .or(`from_id.eq.${myId},to_id.eq.${myId},is_broadcast.eq.true`)
+    .order('created_at',{ascending:false}).limit(100);
+
+  // Build last-message map per conversation partner
+  const lastMsg={};
+  const unreadCount={};
+  (recentMsgs||[]).forEach(m=>{
+    const partnerId=m.from_id===myId||(isAdmin&&m.from_id==='admin') ? m.to_id : m.from_id;
+    const key=m.is_broadcast&&!m.to_id?'admin':(partnerId||'admin');
+    if(!lastMsg[key])lastMsg[key]=m;
+    // Count unread (not sent by me)
+    if(m.from_id!==myId&&!(isAdmin&&m.from_id==='admin')){
+      unreadCount[key]=(unreadCount[key]||0)+1;
+    }
+  });
+
+  // Sort recipients: those with messages first (by latest msg time), rest alphabetically
+  recipients.sort((a,b)=>{
+    const ta=lastMsg[a.id]?.created_at||'';
+    const tb=lastMsg[b.id]?.created_at||'';
+    if(ta&&tb)return tb.localeCompare(ta);
+    if(ta)return -1; if(tb)return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  const recipientTabs=recipients.map(r=>{
+    const last=lastMsg[r.id];
+    const isActive=chatRecipient===r.id;
+    const uc=unreadCount[r.id]||0;
+    const preview=last?(last.from_id===myId||(isAdmin&&last.from_id==='admin')?'You: '+last.message:last.message):'Say hi! 👋';
+    const timeStr=last?_fmtInboxTime(last.created_at):'';
+    return `<div onclick="setChatRecipient('${r.id}')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--b);background:${isActive?'var(--s3)':'transparent'};transition:background .15s ease;border-left:${isActive?'3px solid var(--ac)':'3px solid transparent'}">
+      <div style="position:relative;flex-shrink:0">
+        <div style="width:42px;height:42px;border-radius:50%;background:${r.id==='admin'?'linear-gradient(135deg,#f43f5e,#fb923c)':'linear-gradient(135deg,var(--ac),var(--ac2))'};display:flex;align-items:center;justify-content:center;font-size:${r.id==='admin'?'18px':'15px'};font-weight:700;color:#fff">${r.id==='admin'?'📢':r.name.charAt(0).toUpperCase()}</div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:13px;font-weight:${uc>0?'700':'600'};color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px">${r.name}</span>
+          <span style="font-size:10px;color:${uc>0?'var(--ac)':'var(--mu)'};flex-shrink:0;margin-left:4px">${timeStr}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${preview.slice(0,40)}</span>
+          ${uc>0?`<span style="background:var(--ac);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px;flex-shrink:0">${uc>99?'99+':uc}</span>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 
   // Load messages for selected conversation
   let msgsQ=_db.from('messages').select(C.messages).order('created_at',{ascending:true}).limit(60);
   if(chatRecipient==='admin'){
-    if(isAdmin) msgsQ=msgsQ.eq('is_broadcast',true);
+    if(isAdmin)msgsQ=msgsQ.eq('is_broadcast',true);
     else msgsQ=msgsQ.or(`from_id.eq.${myId},to_id.eq.${myId}`).or('is_broadcast.eq.true');
   } else {
     msgsQ=msgsQ.or(`and(from_id.eq.${myId},to_id.eq.${chatRecipient}),and(from_id.eq.${chatRecipient},to_id.eq.${myId})`);
   }
   const{data:msgs}=await msgsQ;
 
-  const recipientTabs=recipients.map(r=>`
-    <div onclick="setChatRecipient('${r.id}')" style="padding:8px 12px;cursor:pointer;border-radius:var(--r);background:${chatRecipient===r.id?'var(--s3)':'transparent'};margin-bottom:2px;display:flex;align-items:center;gap:10px">
-      <div style="width:32px;height:32px;border-radius:50%;background:${r.id==='admin'?'linear-gradient(135deg,var(--ac),var(--ac2))':'linear-gradient(135deg,#6366f1,#8b5cf6)'};display:flex;align-items:center;justify-content:center;font-size:${r.id==='admin'?'14px':'12px'};font-weight:700;color:#fff;flex-shrink:0">${r.id==='admin'?'📢':r.name.charAt(0).toUpperCase()}</div>
-      <div style="font-size:13px;font-weight:${chatRecipient===r.id?'700':'500'};color:${chatRecipient===r.id?'var(--tx)':'var(--mu)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.name}</div>
-    </div>`).join('');
-
   const msgBubbles=(msgs||[]).map(m=>{
     const isMe=m.from_id===myId||(isAdmin&&m.from_id==='admin');
-    return `<div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px">
-      <div style="max-width:70%;background:${isMe?'var(--ac)':'var(--s2)'};color:${isMe?'#fff':'var(--tx)'};padding:10px 14px;border-radius:${isMe?'16px 16px 4px 16px':'16px 16px 16px 4px'};font-size:13px">
-        ${!isMe?`<div style="font-size:10px;font-weight:700;margin-bottom:4px;opacity:.7">${m.from_name}</div>`:''}
-        ${m.message}
-        <div style="font-size:10px;opacity:.6;margin-top:4px;text-align:right">${new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+    return `<div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px;align-items:flex-end;gap:6px">
+      ${!isMe?`<div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${(m.from_name||'?').charAt(0).toUpperCase()}</div>`:''}
+      <div style="max-width:65%;background:${isMe?'linear-gradient(135deg,var(--ac),var(--ac2))':'var(--s2)'};color:${isMe?'#fff':'var(--tx)'};padding:9px 13px;border-radius:${isMe?'16px 16px 4px 16px':'16px 16px 16px 4px'};font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.15)">
+        ${!isMe?`<div style="font-size:10px;font-weight:700;margin-bottom:3px;opacity:.8;color:${isMe?'rgba(255,255,255,.8)':'var(--ac)'}">${m.from_name}</div>`:''}
+        <div style="line-height:1.4">${m.message}</div>
+        <div style="font-size:10px;opacity:.6;margin-top:3px;text-align:right">${new Date(m.created_at).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} ${isMe?'✓':''}</div>
       </div>
     </div>`;
   }).join('');
 
+  const activeRecip=recipients.find(r=>r.id===chatRecipient);
   c.innerHTML=`
-  <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;height:calc(100vh - 140px)">
-    <div class="card" style="padding:12px;overflow-y:auto">
-      <div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:10px;letter-spacing:.5px">CONVERSATIONS</div>
-      ${recipientTabs}
+  <div style="display:grid;grid-template-columns:280px 1fr;gap:0;height:calc(100vh - 140px);border:1px solid var(--b);border-radius:var(--rl);overflow:hidden;background:var(--s)">
+    <!-- Sidebar -->
+    <div style="border-right:1px solid var(--b);display:flex;flex-direction:column;background:var(--s)">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--b);font-size:14px;font-weight:700">💬 Messages</div>
+      <div style="flex:1;overflow-y:auto">${recipientTabs}</div>
     </div>
-    <div class="card" style="padding:0;display:flex;flex-direction:column">
-      <div style="padding:14px 16px;border-bottom:1px solid var(--b);font-weight:700">
-        💬 ${recipients.find(r=>r.id===chatRecipient)?.name||'Chat'}
+    <!-- Chat area -->
+    <div style="display:flex;flex-direction:column;background:var(--bg)">
+      <!-- Header -->
+      <div style="padding:12px 16px;border-bottom:1px solid var(--b);background:var(--s);display:flex;align-items:center;gap:12px">
+        <div style="width:38px;height:38px;border-radius:50%;background:${activeRecip?.id==='admin'?'linear-gradient(135deg,#f43f5e,#fb923c)':'linear-gradient(135deg,var(--ac),var(--ac2))'};display:flex;align-items:center;justify-content:center;font-size:${activeRecip?.id==='admin'?'16px':'14px'};font-weight:700;color:#fff">${activeRecip?.id==='admin'?'📢':(activeRecip?.name||'?').charAt(0).toUpperCase()}</div>
+        <div><div style="font-size:14px;font-weight:700">${activeRecip?.name||'Chat'}</div><div style="font-size:11px;color:var(--gr)">● Online</div></div>
       </div>
-      <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px">
-        ${msgBubbles||'<div style="text-align:center;color:var(--mu);padding:40px">No messages yet. Say hi! 👋</div>'}
+      <!-- Messages -->
+      <div id="chatMessages" style="flex:1;overflow-y:auto;padding:16px 20px">
+        ${msgBubbles||'<div style="text-align:center;color:var(--mu);padding:60px 20px"><div style="font-size:32px;margin-bottom:8px">👋</div>No messages yet. Say hi!</div>'}
       </div>
-      <div style="padding:12px;border-top:1px solid var(--b);display:flex;gap:8px">
-        <input id="chatInput" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMessage()" style="flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none">
-        <button class="btn btn-primary btn-sm" onclick="sendMessage()">Send ➤</button>
+      <!-- Input -->
+      <div style="padding:12px 16px;border-top:1px solid var(--b);background:var(--s);display:flex;gap:8px;align-items:center">
+        <input id="chatInput" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMessage()" style="flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:9px 16px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none">
+        <button class="btn btn-primary btn-sm" onclick="sendMessage()" style="border-radius:20px;padding:9px 18px">Send ➤</button>
       </div>
     </div>
   </div>`;
-  // Scroll to bottom
   setTimeout(()=>{const el=document.getElementById('chatMessages');if(el)el.scrollTop=el.scrollHeight;},50);
 }
 
