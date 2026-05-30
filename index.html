@@ -492,7 +492,7 @@ async function agentLogin(){
   try{
     // Fetch agent via REST directly (faster on mobile than realtime client)
     const res=await fetch(
-      `https://lasnonlixtvmarubbegf.supabase.co/rest/v1/agents?email=eq.${encodeURIComponent(email)}&select=*&limit=1`,
+      `https://lasnonlixtvmarubbegf.supabase.co/rest/v1/agents?email=eq.${encodeURIComponent(email)}&select=${encodeURIComponent(C.agents_full)}&limit=1`,
       {headers:{'apikey':'sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx','Authorization':'Bearer sb_publishable_V8X0Gv_HYXn03x4pXNLicA_8UDxZZqx'}}
     );
     const rows=await res.json();
@@ -1687,9 +1687,11 @@ async function renderAdminLeaves(){
 }
 
 async function reviewLeave(id,status){
+  const{data:lv,error:le}=await _db.from('leave_requests').select('agent_id').eq('id',id).maybeSingle();
   const{error}=await _db.from('leave_requests').update({status,reviewed_by:'Admin',reviewed_at:new Date().toISOString()}).eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
-  _cDel('leaves_all','leaves_agent_approved_'+id);
+  _cDel('leaves_all');
+  if(lv?.agent_id)_cDel('leaves_agent_approved_'+lv.agent_id,'leaves_agent_'+lv.agent_id);
   showToast(status==='approved'?_i('check')+' Leave approved':_i('x')+' Leave rejected','ok');
   renderAdminLeaves();
 }
@@ -2102,7 +2104,7 @@ async function renderActivity(){
   const agentMap={};
   if(agents)agents.forEach(a=>{agentMap[a.id]=a;});
   const actionLabel={check_in:_i('check-circle',12)+' Checked In',check_out:_i('x-circle',12)+' Checked Out',break_start:_i('coffee',12)+' Break Started',break_end:_i('check',12)+' Break Ended'};
-  c.innerHTML=announceBanner+'<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">'+_i('file-text')+' Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">${_i("mail")}</div>No check-in/out activity recorded yet</div>':logs.map(l=>{const ag=agentMap[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin&&ag?'<b>'+ag.name+'</b> — ':'')+( actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+(isAdmin&&ag?ag.dept+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
+  c.innerHTML=announceBanner+'<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">'+_i('file-text')+' Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">'+_i('mail')+'</div>No check-in/out activity recorded yet</div>':logs.map(l=>{const ag=agentMap[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin&&ag?'<b>'+ag.name+'</b> — ':'')+( actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+(isAdmin&&ag?ag.dept+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
 }
 
 // ── ACTIVITY TRACKING ────────────────────────────────────────
@@ -2701,7 +2703,7 @@ async function loadHeatmapData(){
   if(!agents?.length){body.innerHTML=`<div class="empty-state"><div class="icon">${_i('mail')}</div><p>No agents found</p></div>`;return;}
 
   // Load all shift rows for month (cached)
-  const rows=await _q('heatmap_shifts_'+month+(deptFilter||''),60000,()=>_db.from('shift_status').select('agent_id,date,check_in,check_out,total_active_minutes').gte('date',month+'-01').lte('date',month+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data));
+  const rows=await _q('heatmap_shifts_'+month+(deptFilter||''),60000,()=>_db.from('shift_status').select(C.shift).gte('date',month+'-01').lte('date',month+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data));
   const byAgentDate={};
   (rows||[]).forEach(r=>{byAgentDate[r.agent_id+'|'+r.date]=r;});
 
