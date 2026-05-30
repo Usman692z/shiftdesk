@@ -918,7 +918,7 @@ async function startChatNotifChannel(){
     addToInbox(m);
     if(currentPage!=='chat')_incChatUnread();
     if(Notification.permission==='granted'){
-      new Notification('${_i('chat',12)} New message from '+(m.from_name||'Someone'),{body:m.message?.slice(0,80)||'',icon:'/favicon.ico',tag:'shiftdesk-chat'});
+      new Notification('New message from '+(m.from_name||'Someone'),{body:m.message?.slice(0,80)||'',icon:'/favicon.ico',tag:'shiftdesk-chat'});
     }
   });
   _chatNotifChannel.subscribe();
@@ -943,7 +943,7 @@ function _incAnnounceUnread(title){
   const nav=document.getElementById('nav_'+navPage);
   if(nav){nav.style.background='rgba(251,191,36,.15)';setTimeout(()=>{if(nav&&currentPage!==navPage)nav.style.background='';},1500);}
   if(Notification.permission==='granted'){
-    new Notification('${_i('bell')} New Announcement',{body:title?.slice(0,80)||'You have a new announcement',icon:'/favicon.ico',tag:'shiftdesk-announce'});
+    new Notification('New Announcement',{body:title?.slice(0,80)||'You have a new announcement',icon:'/favicon.ico',tag:'shiftdesk-announce'});
   }
 }
 
@@ -1108,7 +1108,7 @@ async function renderDashboard(){
 
   // ── Group agents by department ────────────────────────────────
   const DEPT_COLOR={'Corporate':'var(--ac)','Retail':'var(--or)','Reseller':'var(--gr)'};
-  const DEPT_ICON={'Corporate':'${_i('building',12)}','Retail':_i('upload',12),'Reseller':'${_i('award')}'};
+  const DEPT_ICON={'Corporate':_i('building',12),'Retail':_i('upload',12),'Reseller':_i('award',12)};
   const depts={};
   (agents||[]).forEach(a=>{
     const d=a.dept||'Other';
@@ -1158,7 +1158,7 @@ async function renderDashboard(){
     <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--s3);display:inline-block"></span> No data</span>
   </div>
   <!-- Departments -->
-  ${deptSections||'<div class="empty-state"><div class="icon">${_i('users')}</div>No agents found</div>'}`;
+  ${deptSections||`<div class="empty-state"><div class="icon">${_i('users')}</div>No agents found</div>`}`;
 }
 
 async function renderAgents(){
@@ -1166,7 +1166,7 @@ async function renderAgents(){
   const agents=await _getAgents(C.agents_full);
   const permLabel=p=>{
     if(!p)return'<span style="font-size:10px;color:var(--mu)">all</span>';
-    const icons={myshift:_i('clock'),mytasks:_i('check-square'),activity:'${_i('file-text')}',assign_task:_i('upload')};
+    const icons={myshift:_i('clock'),mytasks:_i('check-square'),activity:_i('file-text'),assign_task:_i('upload')};
     return p.split(',').map(x=>`<span style="font-size:11px;background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:1px 5px">${icons[x]||x}</span>`).join(' ');
   };
   c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
@@ -1498,23 +1498,23 @@ function renderHelp(){
     <div class="card-title">${_i('file-text')} How to Use ShiftDesk</div>
     <div style="display:grid;gap:12px">
       ${(isAdmin?[
-        {icon:'${_i('bars')}',title:'Dashboard',desc:'Live status of all agents — online/offline, active/idle, check-in time, and daily hours. Updates in real time.'},
-        {icon:'${_i('users')}',title:'Manage Agents',desc:'Add new agents, edit details, and reset passwords. Set permissions to control what each agent can see. Bulk CSV import is also available.'},
+        {icon:_i('bars'),title:'Dashboard',desc:'Live status of all agents — online/offline, active/idle, check-in time, and daily hours. Updates in real time.'},
+        {icon:_i('users'),title:'Manage Agents',desc:'Add new agents, edit details, and reset passwords. Set permissions to control what each agent can see. Bulk CSV import is also available.'},
         {icon:_i('check-square'),title:'Task Management',desc:'Assign tasks to any agent with priority and due date. Task status updates automatically when completed or rejected.'},
         {icon:_i('calendar'),title:'Leave Requests',desc:'All agent leave requests appear here. Approve or reject with one click. Approved leave is shown on the agent\'s calendar.'},
-        {icon:'${_i('bell')}',title:'Announcements',desc:'Send notices to the entire team — with a title, message, and expiry date. All agents see it on their dashboard.'},
-        {icon:'${_i('chat',12)}',title:'Chat',desc:'Chat directly with any agent or use "Admin Broadcast" to send a message to the entire team at once.'},
-        {icon:'${_i('monitor')}',title:'Activity Tracking',desc:'Tracked automatically via the desktop app — active time and idle time. Each agent\'s daily productivity is shown in a bar chart.'},
-        {icon:'${_i('file-text')}',title:'Activity Log',desc:'All agent check-in, check-out, and break events in chronological order.'},
-        {icon:'${_i('trending-up')}',title:'Reports',desc:'Filter by month, department, or agent. View detailed reports or a heatmap. PDF export available for payroll.'},
+        {icon:_i('bell'),title:'Announcements',desc:'Send notices to the entire team — with a title, message, and expiry date. All agents see it on their dashboard.'},
+        {icon:_i('chat',12),title:'Chat',desc:'Chat directly with any agent or use "Admin Broadcast" to send a message to the entire team at once.'},
+        {icon:_i('monitor'),title:'Activity Tracking',desc:'Tracked automatically via the desktop app — active time and idle time. Each agent\'s daily productivity is shown in a bar chart.'},
+        {icon:_i('file-text'),title:'Activity Log',desc:'All agent check-in, check-out, and break events in chronological order.'},
+        {icon:_i('trending-up'),title:'Reports',desc:'Filter by month, department, or agent. View detailed reports or a heatmap. PDF export available for payroll.'},
       ]:[
         {icon:_i('clock'),title:'My Shift',desc:'Check in at the start of your shift every day. Click "Take Break" when you need a break — then resume when you return. Check out when your shift ends. A 2nd shift is optional.'},
         {icon:_i('check-square'),title:'My Tasks',desc:'Tasks assigned to you by admin or other agents appear here. Mark them complete or reject with a remark. You can also track your own work using "New Task".'},
-        {icon:'${_i('bars')}',title:'My Dashboard',desc:'Monthly calendar — ${_dot('var(--gr)')} On time, ${_dot('var(--yl)')} Late, ${_dot('var(--rd)')} Absent, ${_dot('var(--ac2)')} Leave, Off=Friday. Shows your performance score (attendance + punctuality + tasks) and overtime.'},
+        {icon:_i('bars'),title:'My Dashboard',desc:'Monthly calendar — color coded: green=On time, yellow=Late, red=Absent, purple=Leave, Off=Friday. Shows your performance score (attendance + punctuality + tasks) and overtime.'},
         {icon:_i('calendar'),title:'Leave',desc:'Click "Apply Leave", fill in the from/to dates and reason, and submit. Admin will approve it. Approved leave appears on your calendar in purple with a "Leave" label.'},
-        {icon:'${_i('bell')}',title:'Announcements',desc:'Any notices from admin appear here — office meetings, holidays, or important updates.'},
-        {icon:'${_i('chat',12)}',title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
-        {icon:'${_i('file-text')}',title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
+        {icon:_i('bell'),title:'Announcements',desc:'Any notices from admin appear here — office meetings, holidays, or important updates.'},
+        {icon:_i('chat',12),title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
+        {icon:_i('file-text'),title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
       ]).map(s=>`
       <div style="display:flex;gap:14px;padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
         <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
@@ -1558,7 +1558,7 @@ async function saveAnnouncement(){
   btn.disabled=false;btn.textContent='Post Announcement';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('announcements');
-  showToast('${_i('bell')} Announcement posted!','ok');closeAnnounceModal();renderAnnouncements();
+  showToast(_i('bell')+' Announcement posted!','ok');closeAnnounceModal();renderAnnouncements();
 }
 async function deleteAnnouncement(id){
   if(!confirm('Delete this announcement?'))return;
@@ -2035,7 +2035,7 @@ async function confirmCheckIn(location){
   await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'check_in',detail:'Check In Shift '+shiftNum+' ('+location+')',date:today,time:now});
   startTracking();
   const _li=getCheckinStatus(now,currentAgent.shift_start,currentAgent.timezone);
-  const locEmoji=location==='WFH'?'${_i('home',12)}':'${_i('building',12)}';
+  const locEmoji=location==='WFH'?_i('home',12):_i('building',12);
   const _ciMsg=_li?.status==='late'?_i('alert',12)+' Late by '+_li.diff+' min — '+locEmoji+' '+location:locEmoji+' '+location+' — Shift '+shiftNum+' started!';
   showToast(_ciMsg,_li?.status==='late'?'info':'ok');renderMyShift();
 }
@@ -2081,7 +2081,7 @@ async function doBreakEnd(shiftNum){
 async function loadMyActivity(){
   const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent.id).order('time',{ascending:false}).limit(20).then(r=>r.data));
   const el=document.getElementById('myActivityLog');if(!el)return;
-  if(!logs?.length){el.innerHTML='<div class="empty-state"><div class="icon">${_i('mail')}</div>No activity yet</div>';return;}
+  if(!logs?.length){el.innerHTML=`<div class="empty-state"><div class="icon">${_i('mail')}</div>No activity yet</div>`;return;}
   const actionLabel={check_in:_i('check-circle',12)+' Checked In',check_out:_i('x-circle',12)+' Checked Out',break_start:_i('coffee',12)+' Break Started',break_end:_i('check',12)+' Break Ended'};
   const actionDot={check_in:'dot-in',check_out:'dot-out',break_start:'dot-out',break_end:'dot-in'};
   el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>').join('');
@@ -2239,7 +2239,7 @@ async function renderTasks(){
       <td><b>${ag.name||'—'}</b></td>
       <td>${ag.dept||'—'}</td>
       <td style="max-width:200px;white-space:pre-wrap">${t.task||'—'}</td>
-      <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||'${_dot('var(--yl)')}'} ${t.priority||'Normal'}</span></td>
+      <td><span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22">${PRIORITY_ICON[t.priority]||_i('info',12)} ${t.priority||'Normal'}</span></td>
       <td style="font-size:12px;color:var(--mu)">${t.date||'—'}</td>
       <td><span class="badge" style="${STATUS_COLOR[st]}">${STATUS_LABEL[st]}</span></td>
       <td style="font-size:12px;color:var(--mu);max-width:160px">${t.remark||'—'}</td>
@@ -2636,7 +2636,7 @@ function getCheckinStatus(checkIn, shiftStart, timezone){
 function lateStatusBanner(li){
   if(!li)return '';
   if(li.status==='early')
-    return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--gr)">${_dot('var(--gr)')} Early — '+li.diff+' min before shift</div>';
+    return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--gr)">'+_i('check-circle',14)+' Early — '+li.diff+' min before shift</div>';
   if(li.status==='ontime')
     return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--gr)">'+_i('check-circle',14)+' On Time <span style="font-weight:400;font-size:12px">(within 15 min grace period)</span></div>';
   return '<div style="margin:12px 0 4px;text-align:center;padding:10px 14px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);border-radius:var(--r);font-size:13px;font-weight:700;color:var(--yl)">'+_i('alert',14)+' Late Check-In — '+li.diff+' min late <span style="font-weight:400;font-size:11px">(grace: 15 min)</span></div>';
@@ -2698,7 +2698,7 @@ async function loadHeatmapData(){
   let agents=(allAgents||[]).filter(a=>a.type==='regular');
   if(deptFilter)agents=agents.filter(a=>a.dept===deptFilter);
   agents.sort((a,b)=>(a.dept||'').localeCompare(b.dept||'')||(a.name||'').localeCompare(b.name||''));
-  if(!agents?.length){body.innerHTML='<div class="empty-state"><div class="icon">${_i('mail')}</div><p>No agents found</p></div>';return;}
+  if(!agents?.length){body.innerHTML=`<div class="empty-state"><div class="icon">${_i('mail')}</div><p>No agents found</p></div>`;return;}
 
   // Load all shift rows for month (cached)
   const rows=await _q('heatmap_shifts_'+month+(deptFilter||''),60000,()=>_db.from('shift_status').select('agent_id,date,check_in,check_out,total_active_minutes').gte('date',month+'-01').lte('date',month+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data));
