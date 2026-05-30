@@ -544,11 +544,11 @@ async function sendResetEmail(){
   const btn=document.getElementById('forgotBtn');
   btn.disabled=true;btn.textContent='Sending...';
   const{error}=await _db.auth.resetPasswordForEmail(email,{redirectTo:'https://shiftdesk.online'});
-  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='${_i('mail',12)} Send Reset Link';return;}
+  if(error){showAuthErr(error.message);btn.disabled=false;btn.textContent='Send Reset Link';return;}
   const errEl=document.getElementById('authErr');
   errEl.style.background='rgba(16,185,129,.1)';errEl.style.borderColor='rgba(16,185,129,.3)';errEl.style.color='var(--gr)';
   errEl.textContent='Reset link sent! Check your email.';errEl.classList.add('show');
-  btn.disabled=false;btn.textContent='${_i('mail',12)} Send Reset Link';
+  btn.disabled=false;btn.textContent='Send Reset Link';
 }
 
 async function setNewPassword(){
