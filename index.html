@@ -124,6 +124,26 @@ tr:hover td{background:var(--b)}
 .chat-unread{position:absolute;top:4px;right:6px;background:var(--rd);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px}
 .chat-unread.show{display:flex}
 .nav-item{position:relative}
+/* Inbox dropdown */
+.inbox-wrap{position:relative}
+.inbox-btn{cursor:pointer;padding:5px 10px;background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);font-size:18px;line-height:1;transition:var(--tr);display:flex;align-items:center;gap:4px;border:none}
+.inbox-btn:hover{background:var(--s3)}
+.inbox-badge{background:var(--rd);color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:none;align-items:center;justify-content:center;padding:0 4px}
+.inbox-badge.show{display:flex}
+.inbox-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--s);border:1px solid var(--b2);border-radius:var(--rl);box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:999;overflow:hidden;display:none}
+.inbox-dropdown.open{display:block}
+.inbox-header{padding:12px 16px;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between}
+.inbox-header span{font-size:13px;font-weight:700}
+.inbox-header a{font-size:11px;color:var(--ac);cursor:pointer;text-decoration:none}
+.inbox-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--b);transition:var(--tr)}
+.inbox-item:hover{background:var(--s2)}
+.inbox-item.unread{background:rgba(108,99,255,.06)}
+.inbox-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.inbox-body{flex:1;min-width:0}
+.inbox-name{font-size:12px;font-weight:700;margin-bottom:2px}
+.inbox-preview{font-size:11px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inbox-time{font-size:10px;color:var(--mu);flex-shrink:0;margin-top:2px}
+.inbox-empty{padding:24px;text-align:center;color:var(--mu);font-size:13px}
 /* Print styles for PDF export */
 @media print{.sidebar,.topbar,.no-print{display:none!important}.main{overflow:visible!important}.content{overflow:visible!important}body{background:#fff!important;color:#000!important}}
 </style>
@@ -175,7 +195,7 @@ tr:hover td{background:var(--b)}
     </div>
   </div>
   <div class="main">
-    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span>🔔</span><span class="notif-badge" id="notifBadge">0</span></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
+    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span>🔔</span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)">💬 <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span>💬 Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">🌙</button></div></div>
     <div class="content" id="pageContent"></div>
   </div>
 </div>
@@ -709,6 +729,67 @@ function startRealtime(page){
   realtimeChannel.subscribe();
 }
 
+// ── Inbox ─────────────────────────────────────────────────────
+let _inboxMsgs=[];
+function toggleInbox(){
+  const d=document.getElementById('inboxDropdown');
+  if(!d)return;
+  const isOpen=d.classList.contains('open');
+  if(isOpen){d.classList.remove('open');}
+  else{d.classList.add('open');renderInboxList();}
+}
+function closeInbox(){
+  const d=document.getElementById('inboxDropdown');
+  if(d)d.classList.remove('open');
+}
+// Close inbox when clicking outside
+document.addEventListener('click',(e)=>{
+  const wrap=document.getElementById('inboxWrap');
+  if(wrap&&!wrap.contains(e.target))closeInbox();
+});
+function addToInbox(msg){
+  _inboxMsgs.unshift({...msg,_unread:true,_ts:Date.now()});
+  if(_inboxMsgs.length>20)_inboxMsgs=_inboxMsgs.slice(0,20);
+  const b=document.getElementById('inboxBadge');
+  const count=_inboxMsgs.filter(m=>m._unread).length;
+  if(b){b.textContent=count>99?'99+':count;b.classList.toggle('show',count>0);}
+  // Refresh dropdown if open
+  if(document.getElementById('inboxDropdown')?.classList.contains('open'))renderInboxList();
+}
+function renderInboxList(){
+  const el=document.getElementById('inboxList');
+  if(!el)return;
+  if(!_inboxMsgs.length){el.innerHTML='<div class="inbox-empty">No new messages</div>';return;}
+  el.innerHTML=_inboxMsgs.map(m=>`
+    <div class="inbox-item${m._unread?' unread':''}" onclick="openInboxMsg('${m.from_id}','${(m.from_name||'').replace(/'/g,'')}')">
+      <div class="inbox-avatar">${(m.from_name||'?').charAt(0).toUpperCase()}</div>
+      <div class="inbox-body">
+        <div class="inbox-name">${m.from_name||'Unknown'}${m.is_broadcast?'<span style="margin-left:5px;font-size:10px;color:var(--ac);background:rgba(108,99,255,.15);padding:1px 5px;border-radius:8px">Broadcast</span>':''}</div>
+        <div class="inbox-preview">${(m.message||'').slice(0,60)}</div>
+      </div>
+      <div class="inbox-time">${_fmtInboxTime(m.created_at||new Date().toISOString())}</div>
+    </div>`).join('');
+}
+function _fmtInboxTime(ts){
+  try{
+    const d=new Date(ts),now=new Date();
+    const diff=Math.floor((now-d)/60000);
+    if(diff<1)return'now';if(diff<60)return diff+'m';
+    if(diff<1440)return Math.floor(diff/60)+'h';
+    return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  }catch{return'';}
+}
+function openInboxMsg(fromId,fromName){
+  // Mark all as read
+  _inboxMsgs.forEach(m=>m._unread=false);
+  const b=document.getElementById('inboxBadge');
+  if(b){b.textContent='';b.classList.remove('show');}
+  closeInbox();
+  // Open chat with this sender
+  chatRecipient=fromId;
+  navTo('chat');
+}
+
 // ── Global Chat Notification (runs on all pages) ──────────────
 let _chatNotifChannel=null;
 let _chatUnreadCount=0;
@@ -741,10 +822,12 @@ async function startChatNotifChannel(){
     const m=payload.new;
     if(!m)return;
     // skip my own messages
-    if(m.from_id===myId||m.from_id==='admin'&&isAdmin)return;
+    if(m.from_id===myId||(m.from_id==='admin'&&isAdmin))return;
     // message is for me if to_id matches my UUID, OR to_id='admin' string (legacy), OR broadcast
     const forMe=(m.to_id===myId)||(m.to_id==='admin'&&isAdmin)||(m.is_broadcast&&!m.to_id);
     if(!forMe)return;
+    // Always add to inbox
+    addToInbox(m);
     if(currentPage!=='chat')_incChatUnread();
     if(Notification.permission==='granted'){
       new Notification('💬 New message from '+(m.from_name||'Someone'),{body:m.message?.slice(0,80)||'',icon:'/favicon.ico',tag:'shiftdesk-chat'});
@@ -817,8 +900,8 @@ async function _bgPollUnread(){
     const mine=newMsgs.filter(m=>m.from_name!=='Admin'||!isAdmin).filter(m=>
       (isAdmin&&m.to_id===myId)||(m.is_broadcast&&!m.to_id)||(!isAdmin&&m.to_id===myId)
     );
-    if(mine.length&&currentPage!=='chat'){
-      mine.forEach(m=>_incChatUnread());
+    if(mine.length){
+      mine.forEach(m=>{addToInbox(m);if(currentPage!=='chat')_incChatUnread();});
     }
   }
   // Check new announcements
