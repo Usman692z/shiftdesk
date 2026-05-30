@@ -555,12 +555,13 @@ function buildNav(){
   // Agent nav: filter based on permissions field
   const agentPerms=(currentAgent?.permissions||'myshift,mytasks,activity,mydashboard').split(',');
   const allAgentPages=[
-    {id:'mydashboard',icon:'📊',label:'Dashboard'},
-    {id:'myshift', icon:'⏱️', label:'My Shift'},
-    {id:'mytasks', icon:'✅', label:'My Tasks'},
-    {id:'myleave', icon:'🏖️', label:'Leave'},
-    {id:'chat',    icon:'💬', label:'Chat'},
-    {id:'activity',icon:'📋',label:'Activity Log'},
+    {id:'mydashboard', icon:'📊', label:'Dashboard'},
+    {id:'myshift',     icon:'⏱️', label:'My Shift'},
+    {id:'mytasks',     icon:'✅', label:'My Tasks'},
+    {id:'myleave',     icon:'🏖️', label:'Leave'},
+    {id:'myannounce',  icon:'📢', label:'Announcements'},
+    {id:'chat',        icon:'💬', label:'Chat'},
+    {id:'activity',    icon:'📋', label:'Activity Log'},
   ];
   const items=isAdmin
     ?[{id:'dashboard',icon:'📊',label:'Dashboard'},{id:'agents',icon:'👥',label:'Agents'},{id:'tasks',icon:'✅',label:'Tasks'},{id:'leaves',icon:'🏖️',label:'Leaves'},{id:'announce',icon:'📢',label:'Announce'},{id:'chat',icon:'💬',label:'Chat'},{id:'tracking',icon:'🖥️',label:'Tracking'},{id:'activity',icon:'📋',label:'Activity'},{id:'reports',icon:'📈',label:'Reports'}]
@@ -571,7 +572,7 @@ function buildNav(){
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',chat:'Chat'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',myannounce:'Announcements',chat:'Chat'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   startRealtime(page);
@@ -587,6 +588,7 @@ function navTo(page){
   else if(page==='myleave')renderMyLeave();
   else if(page==='leaves')renderAdminLeaves();
   else if(page==='announce')renderAnnouncements();
+  else if(page==='myannounce')renderMyAnnouncements();
   else if(page==='chat')renderChat();
 }
 
@@ -598,6 +600,7 @@ function startRealtime(page){
   const watchMap={
     dashboard:['shift_status','activity_tracking'],
     mydashboard:['shift_status','announcements','leave_requests'],
+    myannounce:['announcements'],
     tracking:['activity_tracking'],
     tasks:['tasks'],
     mytasks:['tasks'],
@@ -629,6 +632,7 @@ function startRealtime(page){
         else if(page==='myleave')renderMyLeave();
         else if(page==='leaves')renderAdminLeaves();
         else if(page==='announce')renderAnnouncements();
+        else if(page==='myannounce')renderMyAnnouncements();
         else if(page==='chat')renderChat();
       }
     });
@@ -1077,6 +1081,26 @@ async function renderAnnouncements(){
     </div>`;
   }).join('')}`;
 }
+async function renderMyAnnouncements(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="empty-state"><div class="icon">⏳</div>Loading...</div>';
+  const today=new Date().toISOString().slice(0,10);
+  const{data:list}=await _db.from('announcements').select('*').order('created_at',{ascending:false});
+  const active=(list||[]).filter(a=>!a.expires_at||a.expires_at>=today);
+  if(!active.length){c.innerHTML='<div class="empty-state"><div class="icon">📢</div><p>No announcements right now.</p></div>';return;}
+  c.innerHTML=active.map(a=>`
+  <div class="card" style="margin-bottom:12px;border-left:3px solid var(--ac)">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <span style="font-size:22px">📢</span>
+      <div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:6px">${a.title}</div>
+        <div style="font-size:13px;color:var(--mu);margin-bottom:8px;line-height:1.5">${a.message}</div>
+        <div style="font-size:11px;color:var(--mu)">📅 ${new Date(a.created_at).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}${a.expires_at?' · Expires: '+a.expires_at:''}</div>
+      </div>
+    </div>
+  </div>`).join('');
+}
+
 function openAnnounceModal(){document.getElementById('aTitle').value='';document.getElementById('aMsg').value='';document.getElementById('aExpiry').value='';document.getElementById('announceErr').classList.remove('show');document.getElementById('announceModal').classList.add('open');}
 function closeAnnounceModal(){document.getElementById('announceModal').classList.remove('open');}
 async function saveAnnouncement(){
