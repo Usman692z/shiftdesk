@@ -1109,15 +1109,25 @@ function renderHelp(){
   <div class="card">
     <div class="card-title">📖 How to Use ShiftDesk</div>
     <div style="display:grid;gap:12px">
-      ${[
-        {icon:'⏱️',title:'My Shift',desc:'Har roz Check In karo shift start pe. Break le sakte ho. Shift khatam hone pe Check Out karo. 2nd shift optional hai.'},
-        {icon:'✅',title:'My Tasks',desc:'Admin ya koi agent tumhe task assign kare to yahan dikhega. Complete ya Reject karo remark ke saath. Khud bhi task bana sakte ho.'},
-        {icon:'📊',title:'My Dashboard',desc:'Monthly calendar — green=on time, yellow=late, red=absent, purple=leave, red=Friday off. Performance score aur overtime bhi dikh'ta hai.'},
-        {icon:'🏖️',title:'Leave',desc:'Leave apply karo from/to date select karke. Admin approve ya reject karega. Approved leave calendar mein purple rang mein dikhti hai.'},
-        {icon:'📢',title:'Announcements',desc:'Admin ki taraf se notices yahan aate hain — office timing, meeting, ya koi zaroori message.'},
-        {icon:'💬',title:'Chat',desc:'Admin ya kisi bhi agent ko message bhejo. Left mein naam select karo, message likho, Enter ya Send press karo.'},
-        {icon:'📋',title:'Activity Log',desc:'Tumhare saare check-in, check-out, break events ka record yahan dikhta hai.'},
-      ].map(s=>`
+      ${(isAdmin?[
+        {icon:'📊',title:'Dashboard',desc:'Sab agents ka live status dekho — online/offline, active/idle, check-in time, aur daily hours. Real-time update hota hai.'},
+        {icon:'👥',title:'Manage Agents',desc:'Naye agents add karo, edit karo, password reset karo. Permissions set karo — kaunsa agent kya dekh sakta hai. Bulk CSV import bhi available hai.'},
+        {icon:'✅',title:'Task Management',desc:'Kisi bhi agent ko task assign karo with priority aur due date. Tasks complete/reject hone pe status update hota hai.'},
+        {icon:'🏖️',title:'Leave Requests',desc:'Agents ki leave requests yahan aati hain. Approve ya Reject karo ek click mein. Approved leave agent ke calendar mein dikh'ti hai.'},
+        {icon:'📢',title:'Announcements',desc:'Poori team ko notice bhejo — title, message, aur expiry date ke saath. Sab agents ko dashboard pe dikh'ta hai.'},
+        {icon:'💬',title:'Chat',desc:'Kisi bhi agent se directly baat karo ya "Admin Broadcast" se poori team ko ek saath message karo.'},
+        {icon:'🖥️',title:'Activity Tracking',desc:'Desktop app se automatically track hota hai — active time, idle time. Har agent ki daily productivity bar chart mein dikh'ti hai.'},
+        {icon:'📋',title:'Activity Log',desc:'Sab agents ke check-in, check-out, break events chronological order mein.'},
+        {icon:'📈',title:'Reports',desc:'Month/dept/agent filter karo. Detail report ya Heatmap view. PDF export available hai payroll ke liye.'},
+      ]:[
+        {icon:'⏱️',title:'My Shift',desc:'Har roz Check In karo shift start pe. Break lena ho to "Take Break" click karo — resume karo wapas aane pe. Shift khatam pe Check Out. 2nd shift optional hai.'},
+        {icon:'✅',title:'My Tasks',desc:'Admin ya koi agent tumhe task assign kare to yahan aata hai. Complete ya Reject karo remark ke saath. Khud bhi "New Task" se apna kaam track kar sakte ho.'},
+        {icon:'📊',title:'My Dashboard',desc:'Monthly calendar — 🟢 On time, 🟡 Late, 🔴 Absent, 🟣 Leave, Off=Friday. Performance score (attendance+punctuality+tasks) aur overtime bhi dikh'ta hai.'},
+        {icon:'🏖️',title:'Leave',desc:'"Apply Leave" click karo, from/to date aur reason bharo. Admin approve karega. Approved leave calendar mein purple rang mein aur "Leave" label ke saath dikh'ti hai.'},
+        {icon:'📢',title:'Announcements',desc:'Admin ki taraf se koi notice aaye to yahan dikh'ta hai — office meeting, holiday, ya koi zaroori update.'},
+        {icon:'💬',title:'Chat',desc:'Left mein kisi ka naam select karo, message likho, Enter ya Send press karo. Admin se ya kisi colleague se baat kar sakte ho.'},
+        {icon:'📋',title:'Activity Log',desc:'Tumhare saare check-in, check-out, break ka complete record yahan hai.'},
+      ]).map(s=>`
       <div style="display:flex;gap:14px;padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
         <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
         <div><div style="font-weight:700;margin-bottom:4px">${s.title}</div><div style="font-size:13px;color:var(--mu);line-height:1.5">${s.desc}</div></div>
