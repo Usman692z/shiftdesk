@@ -1181,6 +1181,9 @@ async function renderDashboard(){
   }
 
   // ── Group agents by department ────────────────────────────────
+  const _DEPT_PALETTE=['var(--ac)','var(--or)','var(--gr)','var(--yl)','#e879f9','#38bdf8','#fb7185','#a78bfa','#34d399','#f97316'];
+  const _deptColorCache={};
+  function _deptColor(name){if(!_deptColorCache[name]){let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))&0xffff;_deptColorCache[name]=_DEPT_PALETTE[h%_DEPT_PALETTE.length];}return _deptColorCache[name];}
   const DEPT_COLOR={'Corporate':'var(--ac)','Retail':'var(--or)','Reseller':'var(--gr)'};
   const DEPT_ICON={'Corporate':_i('building',12),'Retail':_i('upload',12),'Reseller':_i('award',12)};
   const depts={};
@@ -1191,8 +1194,8 @@ async function renderDashboard(){
   });
 
   const deptSections=Object.entries(depts).map(([dept,dagents])=>{
-    const dColor=DEPT_COLOR[dept]||'var(--mu)';
-    const dIcon=DEPT_ICON[dept]||'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>';
+    const dColor=DEPT_COLOR[dept]||_deptColor(dept);
+    const dIcon=DEPT_ICON[dept]||_i('users',12);
     const dOnline=(dagents||[]).filter(a=>ts?.find(x=>x.agent_id===a.id)?.online).length;
     const dActive=(dagents||[]).filter(a=>tracking?.find(x=>x.agent_id===a.id)?.activity_status==='active').length;
     const cards=(dagents||[]).map(a=>buildCard(a)).join('');
