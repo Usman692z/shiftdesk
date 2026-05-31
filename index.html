@@ -2778,7 +2778,7 @@ async function renderReports(){
   c.innerHTML=`
   <div class="no-print" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:20px">
     <div class="form-group" style="margin:0;flex:1;min-width:140px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Month</label><input type="month" id="rMonth" value="${defaultMonth}" style="background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"></div>
-    <div class="form-group" style="margin:0;flex:1;min-width:140px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Department</label><select id="rDept" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"><option value="">All Departments</option><option value="Corporate">Corporate</option><option value="Retail">Retail</option><option value="Reseller">Reseller</option></select></div>
+    <div class="form-group" style="margin:0;flex:1;min-width:140px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Department</label><select id="rDept" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"><option value="">All Departments</option></select></div>
     <div class="form-group" style="margin:0;flex:2;min-width:160px"><label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Agent</label><select id="rAgent" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none"><option value="">All Agents</option></select></div>
     <button class="btn btn-primary btn-sm no-print" onclick="applyReportFilters()" style="padding:9px 18px;white-space:nowrap">${_i('search')} Apply Filter</button>
     <button class="btn btn-sm no-print" onclick="exportReportPDF()" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);padding:9px 18px;white-space:nowrap">${_i('download')} Export PDF</button>
@@ -2788,8 +2788,10 @@ async function renderReports(){
     <button id="tabHeatmap" onclick="switchReportTab('heatmap')" class="btn btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--mu)">${_i('bars')} Monthly Heatmap</button>
   </div>
   <div id="reportBody"><div class="empty-state"><div class="icon"><div class="spinner" style="width:48px;height:48px;border-width:4px;margin:0 auto"></div></div>Loading...</div></div>`;
-  // Populate agent dropdown
-  const agents=await _getAgents('id,name,dept');
+  // Populate dept + agent dropdowns dynamically
+  const [agents,depts]=await Promise.all([_getAgents('id,name,dept'),_getDepts()]);
+  const rDept=document.getElementById('rDept');
+  if(rDept&&depts)(depts||[]).forEach(d=>{const o=document.createElement('option');o.value=d.name;o.textContent=d.name;rDept.appendChild(o);});
   const sel=document.getElementById('rAgent');
   if(sel&&agents)agents.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.name+(a.dept?' ('+a.dept+')':'');sel.appendChild(o);});
   await loadReportData();
