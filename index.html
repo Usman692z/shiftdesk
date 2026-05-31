@@ -215,7 +215,7 @@ tr:hover td{background:var(--b)}
       <div class="form-group" style="margin:0"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
       <div class="form-group" style="margin:0"><label>Shift End</label><input type="time" id="mShiftEnd" value="18:00"></div>
     </div>
-    <div class="form-group"><label>Agent Type</label><select id="mType"><option value="regular">Regular</option><option value="senior">Senior</option><option value="qa">QA</option><option value="manager">Manager</option><option value="admin">Admin</option></select></div>
+    <div class="form-group"><label>Access Level</label><select id="mType"><option value="regular">User (Agent)</option><option value="admin">Admin</option></select></div>
     <div class="form-group" id="mPassGroup"><label>Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span></label><input type="password" id="mPass" placeholder="Set agent password"></div>
     <!-- Permissions -->
     <div class="form-group">
@@ -1264,6 +1264,7 @@ function getPermCheckboxes(){
 async function openAddAgent(){
   editingAgentId=null;
   ['mName','mEmail','mRole','mPass'].forEach(id=>document.getElementById(id).value='');
+  _cDel('departments');
   await _loadDeptSelect('mDept','');
   document.getElementById('mCountry').value='Pakistan';
   document.getElementById('mShiftStart').value='09:00';
@@ -1282,6 +1283,7 @@ async function openEditAgent(id){
   editingAgentId=id;
   document.getElementById('mName').value=a.name||'';
   document.getElementById('mEmail').value=a.email||'';
+  _cDel('departments');
   await _loadDeptSelect('mDept',a.dept||'');
   document.getElementById('mRole').value=a.role||'';
   document.getElementById('mCountry').value=a.country||'Pakistan';
