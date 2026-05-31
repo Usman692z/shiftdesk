@@ -208,7 +208,7 @@ tr:hover td{background:var(--b)}
     <div id="agentModalErr" class="auth-err"></div>
     <div class="form-group"><label>Full Name</label><input type="text" id="mName" placeholder="Agent Name"></div>
     <div class="form-group"><label>Official Email</label><input type="email" id="mEmail" placeholder="agent@company.com"></div>
-    <div class="form-group"><label>Department</label><select id="mDept"><option value="">Select Department</option><option value="Corporate">Corporate</option><option value="Retail">Retail</option><option value="Reseller">Reseller</option></select></div>
+    <div class="form-group"><label>Department</label><select id="mDept"><option value="">Select Department</option></select></div>
     <div class="form-group"><label>Role / Designation</label><input type="text" id="mRole" placeholder="e.g. Senior Agent"></div>
     <div class="form-group"><label>Country</label><select id="mCountry"><option value="Pakistan">🇵🇰 Pakistan</option><option value="Saudi Arabia">🇸🇦 Saudi Arabia</option></select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -385,6 +385,21 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
     </div>
   </div>
 </div>
+<!-- Department Management Modal -->
+<div class="modal-bg" id="deptModal">
+  <div class="modal" style="max-width:420px">
+    <h2 style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10"/><path d="M8 7h.01M12 7h.01M16 7h.01M8 11h.01M12 11h.01M16 11h.01"/></svg> Manage Departments</h2>
+    <div id="deptErr" class="auth-err"></div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input type="text" id="newDeptInput" placeholder="Department name..." style="flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none">
+      <button class="btn btn-primary btn-sm" onclick="addDept()" id="addDeptBtn">Add</button>
+    </div>
+    <div id="deptList" style="max-height:300px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" onclick="closeDeptModal()">Done</button>
+    </div>
+  </div>
+</div>
 <!-- Task Detail Modal -->
 <div class="modal-bg" id="taskDetailModal">
   <div class="modal" style="max-width:460px">
@@ -421,7 +436,57 @@ const C={
   leave:'id,agent_id,agent_name,date_from,date_to,reason,status,leave_type,created_at',
   messages:'id,from_id,from_name,to_id,message,created_at,is_broadcast',
   logs:'id,agent_id,action,detail,date,time',
+  depts:'id,name,created_at',
 };
+
+// ── Department helpers ────────────────────────────────────────────────────
+async function _getDepts(){
+  return _q('departments',300000,()=>_db.from('departments').select(C.depts).order('name').then(r=>r.data||[]));
+}
+async function _loadDeptSelect(selId,currentVal){
+  const sel=document.getElementById(selId);if(!sel)return;
+  const depts=await _getDepts();
+  sel.innerHTML='<option value="">Select Department</option>'+(depts||[]).map(d=>`<option value="${d.name}"${currentVal===d.name?' selected':''}>${d.name}</option>`).join('');
+}
+async function openDeptModal(){
+  document.getElementById('deptModal').classList.add('open');
+  document.getElementById('newDeptInput').value='';
+  document.getElementById('deptErr').classList.remove('show');
+  await renderDeptList();
+}
+function closeDeptModal(){document.getElementById('deptModal').classList.remove('open');}
+async function renderDeptList(){
+  const list=document.getElementById('deptList');
+  list.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu);font-size:13px">Loading...</div>';
+  const depts=await _getDepts();
+  if(!depts?.length){list.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu);font-size:13px">No departments yet.</div>';return;}
+  list.innerHTML=depts.map(d=>`
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--s2);border-radius:var(--r);margin-bottom:8px;border:1px solid var(--b)">
+    <span style="font-size:14px;font-weight:600">${d.name}</span>
+    <button class="btn btn-danger btn-sm" onclick="deleteDept('${d.id}','${d.name.replace(/'/g,'')}')" style="padding:4px 10px;font-size:11px">${_i('trash',13)}</button>
+  </div>`).join('');
+}
+async function addDept(){
+  const inp=document.getElementById('newDeptInput');
+  const name=inp.value.trim();
+  const errEl=document.getElementById('deptErr');
+  if(!name){errEl.textContent='Department name required';errEl.classList.add('show');return;}
+  const btn=document.getElementById('addDeptBtn');btn.disabled=true;btn.textContent='Adding...';
+  const{error}=await _db.from('departments').insert({name});
+  btn.disabled=false;btn.textContent='Add';
+  if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
+  errEl.classList.remove('show');inp.value='';
+  _cDel('departments');
+  showToast(_i('building')+' Department added: '+name,'ok');
+  await renderDeptList();
+}
+async function deleteDept(id,name){
+  if(!confirm('Delete department "'+name+'"? Agents in this dept will show "—"'))return;
+  await _db.from('departments').delete().eq('id',id);
+  _cDel('departments');
+  showToast('Department removed','ok');
+  await renderDeptList();
+}
 
 // Shared helpers: fetch agents (cached 5 min) ─────────────────────────────
 async function _getAgents(cols){
@@ -1178,7 +1243,7 @@ async function renderAgents(){
     const icons={myshift:_i('clock'),mytasks:_i('check-square'),activity:_i('file-text'),assign_task:_i('upload')};
     return p.split(',').map(x=>`<span style="font-size:11px;background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:1px 5px">${icons[x]||x}</span>`).join(' ');
   };
-  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
+  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openDeptModal()">${_i('building')} Departments</button><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
 }
 
 function setPermCheckboxes(perms){
@@ -1196,15 +1261,15 @@ function getPermCheckboxes(){
   return p.join(',');
 }
 
-function openAddAgent(){
+async function openAddAgent(){
   editingAgentId=null;
   ['mName','mEmail','mRole','mPass'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('mDept').value='';
+  await _loadDeptSelect('mDept','');
   document.getElementById('mCountry').value='Pakistan';
   document.getElementById('mShiftStart').value='09:00';
   document.getElementById('mShiftEnd').value='18:00';
   document.getElementById('mType').value='regular';
-  setPermCheckboxes('myshift,mytasks,activity,assign_task'); // all on by default
+  setPermCheckboxes('myshift,mytasks,activity,assign_task');
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
   document.getElementById('modalTitle').innerHTML=_i('plus')+' Add New Agent';
   document.getElementById('agentModalErr').classList.remove('show');
@@ -1217,7 +1282,7 @@ async function openEditAgent(id){
   editingAgentId=id;
   document.getElementById('mName').value=a.name||'';
   document.getElementById('mEmail').value=a.email||'';
-  document.getElementById('mDept').value=a.dept||'';
+  await _loadDeptSelect('mDept',a.dept||'');
   document.getElementById('mRole').value=a.role||'';
   document.getElementById('mCountry').value=a.country||'Pakistan';
   document.getElementById('mShiftStart').value=a.shift_start||'09:00';
