@@ -2245,10 +2245,12 @@ async function renderTasks(){
   const STATUS_STYLE={pending:'badge-online',completed:'',rejected:''};
   const STATUS_LABEL={pending:_i('clock',12)+' Pending',completed:_i('check',12)+' Completed',rejected:_i('x',12)+' Rejected'};
   const STATUS_COLOR={pending:'',completed:'background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)',rejected:'background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)'};
+  window._taskFullStore={};
+  (tasks||[]).forEach(t=>{window._taskFullStore[t.id]=t;});
   const rows=[...pending,...done].map(t=>{
     const ag=(agents||[]).find(a=>a.id===t.agent_id)||{};
     const st=t.status||'pending';
-    return `<tr style="${st!=='pending'?'opacity:.6':''}">
+    return `<tr onclick="openTaskDetail('${t.id}')" style="cursor:pointer;${st!=='pending'?'opacity:.6':''}">
       <td><b>${ag.name||'—'}</b></td>
       <td>${ag.dept||'—'}</td>
       <td style="max-width:200px;white-space:pre-wrap">${t.task||'—'}</td>
@@ -2408,16 +2410,16 @@ async function renderMyTasks(){
   ${pending.length?`<div class="card" style="margin-bottom:12px">
     <div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('clock')} Pending Tasks</div>
     ${pending.map(t=>`
-    <div style="padding:14px 0;border-bottom:1px solid var(--b)">
+    <div onclick="openTaskDetail('${t.id}')" style="padding:14px 0;border-bottom:1px solid var(--b);cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">
       ${t.date&&t.date<new Date().toISOString().slice(0,10)?`<div style="font-size:10px;font-weight:700;color:var(--rd);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:4px;padding:2px 8px;display:inline-flex;align-items:center;gap:3px;margin-bottom:6px">${_i('alert',10)} OVERDUE</div>`:''}
-      <div onclick="openTaskDetail('${t.id}')" style="font-size:14px;font-weight:600;margin-bottom:8px;cursor:pointer;color:var(--ac)">${t.task.replace(/</g,'&lt;')}</div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task.replace(/</g,'&lt;')}</div>
       ${t.assigned_by_name?`<div style="font-size:11px;color:var(--mu);margin-bottom:6px;display:flex;align-items:center;gap:3px">${_i('user',11)} Assigned by: ${t.assigned_by_name}</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <span class="badge" style="background:rgba(0,0,0,.2);color:${PRIORITY_COLOR[t.priority]||'var(--mu)'};border:1px solid ${PRIORITY_COLOR[t.priority]||'var(--mu)'}22;display:inline-flex;align-items:center;gap:3px">${PRIORITY_ICON[t.priority]||_i('info',12)} ${t.priority||'Normal'}</span>
           ${t.date?`<span style="font-size:11px;color:var(--mu);align-self:center;display:inline-flex;align-items:center;gap:3px">${_i('calendar',11)} ${t.date}</span>`:''}
         </div>
-        <div style="display:flex;gap:8px;flex-shrink:0">
+        <div style="display:flex;gap:8px;flex-shrink:0" onclick="event.stopPropagation()">
           <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openRemarkModal('${t.id}','completed')">${_i('check')} Complete</button>
           <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="openRemarkModal('${t.id}','rejected')">${_i('x')} Reject</button>
           <button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openReassignModal('${t.id}')">${_i('refresh',14)} Re-assign</button>
