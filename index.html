@@ -385,6 +385,15 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
     </div>
   </div>
 </div>
+<!-- Task Detail Modal -->
+<div class="modal-bg" id="taskDetailModal">
+  <div class="modal" style="max-width:460px">
+    <div id="taskDetailInner"></div>
+    <div class="modal-footer" id="taskDetailFooter">
+      <button class="btn btn-sm" onclick="closeTaskDetail()">Close</button>
+    </div>
+  </div>
+</div>
 <script>
 
 const SUPABASE_URL  = 'https://lasnonlixtvmarubbegf.supabase.co';
@@ -1615,6 +1624,7 @@ async function renderMyLeave(){
   if(!currentAgent)return;
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
+  _cDel('announcements');
   const[leaves,announceBanner]=await Promise.all([
     _q('leaves_agent_'+currentAgent.id,30000,()=>_db.from('leave_requests').select(C.leave).eq('agent_id',currentAgent.id).order('created_at',{ascending:false}).then(r=>r.data)),
     _getAnnounceBanner(),
@@ -1657,6 +1667,7 @@ function _leaveReasonClean(reason){return reason||'';}
 async function renderAdminLeaves(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
+  _cDel('announcements');
   const[leaves,announceBanner]=await Promise.all([
     _q('leaves_all',30000,()=>_db.from('leave_requests').select(C.leave).order('created_at',{ascending:false}).then(r=>r.data)),
     _getAnnounceBanner(),
@@ -2369,8 +2380,9 @@ async function renderMyTasks(){
   const error=null;
   if(error){c.innerHTML='<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><p>Error loading tasks: '+error.message+'</p></div>';return;}
   // ── Task store: safe reference for onclick (avoids JSON.stringify breaking on quotes) ──
-  window._taskStore={};
-  (tasks||[]).forEach(t=>{window._taskStore[t.id]=t.task;});
+  window._taskStore={};window._taskFullStore={};
+  (tasks||[]).forEach(t=>{window._taskStore[t.id]=t.task;window._taskFullStore[t.id]=t;});
+  if(assignedByMe)(assignedByMe||[]).forEach(t=>{window._taskFullStore[t.id]=t;});
   const pending=tasks?.filter(t=>!t.status||t.status==='pending')||[];
   const completed=tasks?.filter(t=>t.status==='completed')||[];
   const rejected=tasks?.filter(t=>t.status==='rejected')||[];
@@ -2398,7 +2410,7 @@ async function renderMyTasks(){
     ${pending.map(t=>`
     <div style="padding:14px 0;border-bottom:1px solid var(--b)">
       ${t.date&&t.date<new Date().toISOString().slice(0,10)?`<div style="font-size:10px;font-weight:700;color:var(--rd);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);border-radius:4px;padding:2px 8px;display:inline-flex;align-items:center;gap:3px;margin-bottom:6px">${_i('alert',10)} OVERDUE</div>`:''}
-      <div style="font-size:14px;font-weight:600;margin-bottom:8px">${t.task.replace(/</g,'&lt;')}</div>
+      <div onclick="openTaskDetail('${t.id}')" style="font-size:14px;font-weight:600;margin-bottom:8px;cursor:pointer;color:var(--ac)">${t.task.replace(/</g,'&lt;')}</div>
       ${t.assigned_by_name?`<div style="font-size:11px;color:var(--mu);margin-bottom:6px;display:flex;align-items:center;gap:3px">${_i('user',11)} Assigned by: ${t.assigned_by_name}</div>`:''}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -2417,7 +2429,7 @@ async function renderMyTasks(){
   ${completed.length?`<div class="card" style="margin-bottom:12px">
     <div class="card-title" style="color:var(--gr);display:flex;align-items:center;gap:6px">${_i('check-circle')} Completed (${completed.length})</div>
     ${completed.map(t=>`
-    <div style="padding:12px 0;border-bottom:1px solid var(--b)">
+    <div onclick="openTaskDetail('${t.id}')" style="padding:12px 0;border-bottom:1px solid var(--b);cursor:pointer">
       <div style="font-size:13px;font-weight:600;color:var(--mu);text-decoration:line-through">${t.task.replace(/</g,'&lt;')}</div>
       ${t.remark?`<div style="font-size:12px;color:var(--gr);margin-top:4px;display:flex;align-items:center;gap:3px">${_i('chat',11)} ${t.remark}</div>`:''}
     </div>`).join('')}
@@ -2426,7 +2438,7 @@ async function renderMyTasks(){
   ${rejected.length?`<div class="card" style="margin-bottom:12px">
     <div class="card-title" style="color:var(--rd);display:flex;align-items:center;gap:6px">${_i('x-circle')} Rejected (${rejected.length})</div>
     ${rejected.map(t=>`
-    <div style="padding:12px 0;border-bottom:1px solid var(--b)">
+    <div onclick="openTaskDetail('${t.id}')" style="padding:12px 0;border-bottom:1px solid var(--b);cursor:pointer">
       <div style="font-size:13px;font-weight:600;color:var(--mu)">${t.task.replace(/</g,'&lt;')}</div>
       ${t.remark?`<div style="font-size:12px;color:var(--rd);margin-top:4px;display:flex;align-items:center;gap:3px">${_i('chat',11)} ${t.remark}</div>`:''}
     </div>`).join('')}
@@ -2448,6 +2460,40 @@ async function renderMyTasks(){
 }
 
 // ── Task remark modal ─────────────────────────────────────────
+// ── Task Detail Modal ─────────────────────────────────────────
+function openTaskDetail(id){
+  const t=window._taskFullStore?.[id];
+  if(!t)return;
+  const st=t.status||'pending';
+  const sc={pending:'var(--yl)',completed:'var(--gr)',rejected:'var(--rd)'};
+  const si={pending:_i('clock',12),completed:_i('check-circle',12),rejected:_i('x-circle',12)};
+  const pc=PRIORITY_COLOR[t.priority]||'var(--mu)';
+  document.getElementById('taskDetailInner').innerHTML=`
+    <h2 style="margin-bottom:16px;display:flex;align-items:center;gap:8px">${_i('check-square')} Task Detail</h2>
+    <div style="font-size:15px;font-weight:600;margin-bottom:14px;line-height:1.5;padding:12px;background:var(--s2);border-radius:var(--r);border-left:3px solid var(--ac)">${(t.task||'').replace(/</g,'&lt;')}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      <span class="badge" style="background:${pc}22;color:${pc};border:1px solid ${pc}44;display:inline-flex;align-items:center;gap:3px">${PRIORITY_ICON[t.priority]||_i('info',12)} ${t.priority||'Normal'}</span>
+      <span class="badge" style="background:${sc[st]}22;color:${sc[st]};border:1px solid ${sc[st]}44;display:inline-flex;align-items:center;gap:3px">${si[st]} ${st}</span>
+      ${t.date?`<span class="badge" style="background:var(--s3);display:inline-flex;align-items:center;gap:3px">${_i('calendar',11)} ${t.date}</span>`:''}
+    </div>
+    ${t.assigned_by_name?`<div style="font-size:12px;color:var(--mu);margin-bottom:8px;display:flex;align-items:center;gap:4px">${_i('user',12)} Assigned by: <b>${t.assigned_by_name}</b></div>`:''}
+    ${t.remark?`<div style="font-size:13px;margin-top:8px;padding:10px;background:${sc[st]}11;border:1px solid ${sc[st]}33;border-radius:var(--r);display:flex;align-items:flex-start;gap:6px">${_i('chat',13)}<span>${t.remark}</span></div>`:''}
+  `;
+  const footer=document.getElementById('taskDetailFooter');
+  if(st==='pending'&&!isAdmin){
+    footer.innerHTML=`
+      <button class="btn btn-danger btn-sm" onclick="closeTaskDetail()">Close</button>
+      <button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="closeTaskDetail();openRemarkModal('${id}','completed')">${_i('check')} Complete</button>
+      <button class="btn btn-sm" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="closeTaskDetail();openRemarkModal('${id}','rejected')">${_i('x')} Reject</button>
+      <button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="closeTaskDetail();openReassignModal('${id}')">${_i('refresh',13)} Re-assign</button>
+    `;
+  } else {
+    footer.innerHTML=`<button class="btn btn-sm" onclick="closeTaskDetail()">Close</button>`;
+  }
+  document.getElementById('taskDetailModal').classList.add('open');
+}
+function closeTaskDetail(){document.getElementById('taskDetailModal').classList.remove('open');}
+
 let _remarkTaskId=null,_remarkAction=null;
 
 function openRemarkModal(taskId,action,taskDesc){
