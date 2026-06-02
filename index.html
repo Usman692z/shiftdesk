@@ -2908,9 +2908,10 @@ async function renderReports(){
     <button class="btn btn-primary btn-sm no-print" onclick="applyReportFilters()" style="padding:9px 18px;white-space:nowrap">${_i('search')} Apply Filter</button>
     <button class="btn btn-sm no-print" onclick="exportReportPDF()" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);padding:9px 18px;white-space:nowrap">${_i('download')} Export PDF</button>
   </div>
-  <div class="no-print" style="display:flex;gap:8px;margin-bottom:16px">
+  <div class="no-print" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
     <button id="tabDetail" onclick="switchReportTab('detail')" class="btn btn-primary btn-sm">${_i('file-text')} Detail Report</button>
     <button id="tabHeatmap" onclick="switchReportTab('heatmap')" class="btn btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--mu)">${_i('bars')} Monthly Heatmap</button>
+    <button id="tabPingLogs" onclick="switchReportTab('pinglogs')" class="btn btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--mu)">${_i('activity')} Ping Logs</button>
   </div>
   <div id="reportBody"><div class="empty-state"><div class="icon"><div class="spinner" style="width:48px;height:48px;border-width:4px;margin:0 auto"></div></div>Loading...</div></div>`;
   // Populate dept + agent dropdowns dynamically
@@ -2925,12 +2926,67 @@ async function renderReports(){
 let _reportTab='detail';
 function switchReportTab(tab){
   _reportTab=tab;
-  const dBtn=document.getElementById('tabDetail'),hBtn=document.getElementById('tabHeatmap');
-  if(dBtn)dBtn.style.cssText=tab==='detail'?'':'background:var(--s2);border:1px solid var(--b2);color:var(--mu)';
-  if(hBtn)hBtn.style.cssText=tab==='heatmap'?'':'background:var(--s2);border:1px solid var(--b2);color:var(--mu)';
-  if(tab==='heatmap')loadHeatmapData();else loadReportData();
+  const dBtn=document.getElementById('tabDetail'),hBtn=document.getElementById('tabHeatmap'),pBtn=document.getElementById('tabPingLogs');
+  const off='background:var(--s2);border:1px solid var(--b2);color:var(--mu)';
+  if(dBtn)dBtn.style.cssText=tab==='detail'?'':off;
+  if(hBtn)hBtn.style.cssText=tab==='heatmap'?'':off;
+  if(pBtn)pBtn.style.cssText=tab==='pinglogs'?'':off;
+  if(tab==='heatmap')loadHeatmapData();
+  else if(tab==='pinglogs')loadPingLogs();
+  else loadReportData();
 }
-async function applyReportFilters(){_reportTab==='heatmap'?loadHeatmapData():loadReportData();}
+async function applyReportFilters(){
+  if(_reportTab==='heatmap')loadHeatmapData();
+  else if(_reportTab==='pinglogs')loadPingLogs();
+  else loadReportData();
+}
+
+async function loadPingLogs(){
+  const body=document.getElementById('reportBody');
+  body.innerHTML='<div class="empty-state"><div class="spinner" style="width:36px;height:36px;margin:0 auto 12px"></div>Loading ping logs...</div>';
+  const agentFilter=document.getElementById('rAgent')?.value||'';
+  let q=_db.from('ping_logs').select('ts,agent_name,idle_sec,status,version').order('ts',{ascending:false}).limit(200);
+  if(agentFilter)q=q.eq('agent_id',agentFilter);
+  const{data:logs,error}=await q;
+  if(error){body.innerHTML=`<div class="empty-state"><div class="icon">${_i('alert-circle')}</div><p>Error: ${error.message}</p></div>`;return;}
+  if(!logs?.length){body.innerHTML=`<div class="empty-state"><div class="icon">${_i('activity')}</div><p>No ping logs found. Make sure desktop app v1.0.11+ is installed.</p></div>`;return;}
+  const rows=logs.map(p=>{
+    const t=new Date(p.ts);
+    const timeStr=t.toLocaleString('en-PK',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const isActive=p.status==='active';
+    const statusBadge=isActive
+      ?`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:var(--gr);display:inline-block"></span>Active</span>`
+      :`<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:var(--yl);display:inline-block"></span>Idle</span>`;
+    const idleBar=`<div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;color:${isActive?'var(--gr)':'var(--yl)'};min-width:36px">${p.idle_sec}s</span><div style="flex:1;height:6px;background:var(--b2);border-radius:3px;max-width:120px"><div style="width:${Math.min(100,Math.round((p.idle_sec/120)*100))}%;height:100%;background:${isActive?'var(--gr)':'var(--yl)'};border-radius:3px;transition:width .3s"></div></div></div>`;
+    return `<tr style="border-bottom:1px solid var(--b2)">
+      <td style="padding:10px 12px;font-size:12px;color:var(--mu)">${timeStr}</td>
+      <td style="padding:10px 12px;font-size:13px;font-weight:600">${p.agent_name||'—'}</td>
+      <td style="padding:10px 12px">${idleBar}</td>
+      <td style="padding:10px 12px">${statusBadge}</td>
+      <td style="padding:10px 12px;font-size:11px;color:var(--mu)">${p.version||'—'}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML=`
+  <div style="margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:13px;color:var(--mu)">Last <b>${logs.length}</b> pings</span>
+    <span style="font-size:11px;color:var(--mu);background:var(--s2);border:1px solid var(--b2);border-radius:8px;padding:3px 10px">Ping every 30s · Idle threshold: 45s</span>
+    <button onclick="loadPingLogs()" class="btn btn-sm" style="background:var(--s2);border:1px solid var(--b2);color:var(--mu);padding:4px 12px;font-size:12px">${_i('refresh-cw')} Refresh</button>
+  </div>
+  <div style="overflow-x:auto">
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead>
+      <tr style="background:var(--s2);border-bottom:1px solid var(--b2)">
+        <th style="padding:10px 12px;text-align:left;font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Time</th>
+        <th style="padding:10px 12px;text-align:left;font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Agent</th>
+        <th style="padding:10px 12px;text-align:left;font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Idle Time</th>
+        <th style="padding:10px 12px;text-align:left;font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Status</th>
+        <th style="padding:10px 12px;text-align:left;font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Version</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  </div>`;
+}
 
 async function loadHeatmapData(){
   const body=document.getElementById('reportBody');
