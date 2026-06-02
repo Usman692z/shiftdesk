@@ -1217,10 +1217,11 @@ async function renderDashboard(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  const[agents,ts,tracking]=await Promise.all([
+  const[agents,ts,tracking,leaveRecs]=await Promise.all([
     _getAgents(),
     _q('shift_today',15000,()=>_db.from('shift_status').select(C.shift).eq('date',today).then(r=>r.data)),
     _q('tracking_today',10000,()=>_db.from('activity_tracking').select(C.tracking).eq('date',today).then(r=>r.data)),
+    _db.from('leave_records').select('agent_id,leave_type,note').eq('date',today).then(r=>r.data||[]),
   ]);
   const total=agents?.length||0;
   const online=ts?.filter(s=>s.online).length||0;
@@ -1230,6 +1231,7 @@ async function renderDashboard(){
   function buildCard(a){
     const s=ts?.find(x=>x.agent_id===a.id)||{};
     const tr=tracking?.find(x=>x.agent_id===a.id)||{};
+    const lr=leaveRecs?.find(x=>x.agent_id===a.id)||null;
     const isOnline=s.online||false;
     const activeMins=tr.total_active_minutes||0;
     const actStatus=tr.activity_status||'offline';
@@ -1250,6 +1252,34 @@ async function renderDashboard(){
     const statusLabel=isOnline?(actStatus==='active'?'Active':'Idle'):'Offline';
     const statusColor=isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'var(--mu)';
     const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'}[a.country]||'';
+
+    // Leave/Absent overlay card
+    if(lr){
+      const isLeave=lr.leave_type==='leave';
+      const isHoliday=lr.leave_type==='holiday';
+      const lColor=isLeave?'#38bdf8':isHoliday?'var(--ac)':'var(--rd)';
+      const lBg=isLeave?'rgba(56,189,248,.08)':isHoliday?'rgba(108,99,255,.08)':'rgba(244,63,94,.08)';
+      const lBorder=isLeave?'rgba(56,189,248,.3)':isHoliday?'rgba(108,99,255,.3)':'rgba(244,63,94,.3)';
+      const lIcon=isLeave?'☀️':isHoliday?'🎉':'⚠️';
+      const lLabel=isLeave?'On Leave':isHoliday?'Holiday':'Absent';
+      return `
+      <div style="background:${lBg};border:1px solid ${lBorder};border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px;position:relative">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:50%;background:${lBg};border:2px solid ${lBorder};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${lIcon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div>
+            <div style="font-size:11px;color:var(--mu)">${a.role||'Agent'}</div>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:${lColor};background:${lBg};border:1px solid ${lBorder};padding:4px 10px;border-radius:20px;white-space:nowrap">${lIcon} ${lLabel}</div>
+        </div>
+        ${lr.note?`<div style="font-size:11px;color:var(--mu);font-style:italic">${_i('message-circle',11)} ${lr.note}</div>`:''}
+        <div style="display:flex;gap:6px">
+          <button onclick="openMarkLeaveModal('${a.id}','${a.name.replace(/'/g,'')}','${today}')" style="flex:1;padding:6px 0;border-radius:8px;background:var(--s2);border:1px solid var(--b2);color:var(--mu);font-size:12px;cursor:pointer;font-family:var(--font)">${_i('edit',11)} Change</button>
+          <button onclick="removeAgentLeave('${a.id}','${a.name.replace(/'/g,'')}','${today}')" style="flex:1;padding:6px 0;border-radius:8px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:var(--rd);font-size:12px;cursor:pointer;font-family:var(--font)">${_i('x',11)} Remove</button>
+        </div>
+      </div>`;
+    }
+
     return `
     <div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;align-items:center;gap:10px">
@@ -1279,6 +1309,11 @@ async function renderDashboard(){
           <span><span style="color:var(--gr);font-weight:600">${activeMins}m</span> active (${activeP}%)</span>
           <span><span style="color:var(--yl);font-weight:600">${idleMins}m</span> idle</span>
         </div>
+      </div>
+      <!-- Admin leave/absent buttons -->
+      <div style="display:flex;gap:6px;margin-top:2px">
+        <button onclick="openMarkLeaveModal('${a.id}','${a.name.replace(/'/g,'')}','${today}')" style="flex:1;padding:5px 0;border-radius:8px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:#38bdf8;font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600">${_i('sun',11)} Leave</button>
+        <button onclick="markAgentLeave('${a.id}','${a.name.replace(/'/g,'')}','absent','${today}','')" style="flex:1;padding:5px 0;border-radius:8px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.25);color:var(--rd);font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600">${_i('x-circle',11)} Absent</button>
       </div>
     </div>`;
   }
@@ -1339,6 +1374,84 @@ async function renderDashboard(){
   </div>
   <!-- Departments -->
   ${deptSections||`<div class="empty-state"><div class="icon">${_i('users')}</div>No agents found</div>`}`;
+}
+
+// ── Leave / Absent management ─────────────────────────────────
+function openMarkLeaveModal(agentId, agentName, date){
+  const existing=document.getElementById('markLeaveModal');
+  if(existing)existing.remove();
+  const today=new Date().toISOString().slice(0,10);
+  const modal=document.createElement('div');
+  modal.id='markLeaveModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.innerHTML=`
+  <div style="background:var(--s);border:1px solid var(--b2);border-radius:var(--rl);padding:24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="margin:0;font-size:16px">Mark Attendance — <span style="color:var(--ac)">${agentName}</span></h3>
+      <button onclick="document.getElementById('markLeaveModal').remove()" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:20px;line-height:1">×</button>
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Date</label>
+      <input type="date" id="mlDate" value="${date||today}" max="${today}" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:9px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box">
+    </div>
+    <div class="form-group" style="margin-bottom:14px">
+      <label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Type</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <label style="cursor:pointer"><input type="radio" name="mlType" value="leave" checked style="display:none" id="mlLeave"><div id="mlLeaveBox" onclick="mlSelect('leave')" style="padding:10px 6px;border-radius:10px;border:2px solid var(--ac);background:rgba(108,99,255,.1);text-align:center;font-size:12px;font-weight:700;color:var(--ac)">☀️<br>Leave</div></label>
+        <label style="cursor:pointer"><input type="radio" name="mlType" value="absent" style="display:none" id="mlAbsent"><div id="mlAbsentBox" onclick="mlSelect('absent')" style="padding:10px 6px;border-radius:10px;border:2px solid var(--b2);background:var(--s2);text-align:center;font-size:12px;font-weight:700;color:var(--mu)">⚠️<br>Absent</div></label>
+        <label style="cursor:pointer"><input type="radio" name="mlType" value="holiday" style="display:none" id="mlHoliday"><div id="mlHolidayBox" onclick="mlSelect('holiday')" style="padding:10px 6px;border-radius:10px;border:2px solid var(--b2);background:var(--s2);text-align:center;font-size:12px;font-weight:700;color:var(--mu)">🎉<br>Holiday</div></label>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Note (optional)</label>
+      <input type="text" id="mlNote" placeholder="e.g. Sick leave, Personal reason..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:9px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none;box-sizing:border-box">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('markLeaveModal').remove()" class="btn btn-sm" style="flex:1;background:var(--s2);border:1px solid var(--b2);color:var(--mu)">Cancel</button>
+      <button onclick="submitMarkLeave('${agentId}','${agentName}')" class="btn btn-primary" style="flex:2">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+function mlSelect(type){
+  ['leave','absent','holiday'].forEach(t=>{
+    const box=document.getElementById('ml'+t.charAt(0).toUpperCase()+t.slice(1)+'Box');
+    if(!box)return;
+    const colors={leave:['var(--ac)','rgba(108,99,255,.1)'],absent:['var(--rd)','rgba(244,63,94,.1)'],holiday:['#e879f9','rgba(232,121,249,.1)']};
+    if(t===type){box.style.borderColor=colors[t][0];box.style.background=colors[t][1];box.style.color=colors[t][0];}
+    else{box.style.borderColor='var(--b2)';box.style.background='var(--s2)';box.style.color='var(--mu)';}
+    const radio=document.getElementById('ml'+t.charAt(0).toUpperCase()+t.slice(1));
+    if(radio)radio.checked=t===type;
+  });
+}
+
+async function submitMarkLeave(agentId, agentName){
+  const date=document.getElementById('mlDate')?.value;
+  const type=document.querySelector('input[name="mlType"]:checked')?.value||'leave';
+  const note=document.getElementById('mlNote')?.value?.trim()||'';
+  if(!date){showToast('Select a date','err');return;}
+  await markAgentLeave(agentId, agentName, type, date, note);
+  document.getElementById('markLeaveModal')?.remove();
+}
+
+async function markAgentLeave(agentId, agentName, leaveType, date, note=''){
+  const markedBy=currentUser?.name||currentAgent?.name||'Admin';
+  const{error}=await _db.from('leave_records').upsert(
+    {agent_id:agentId,agent_name:agentName,date:date,leave_type:leaveType,note:note,marked_by:markedBy},
+    {onConflict:'agent_id,date'}
+  );
+  if(error){showToast('Error: '+error.message,'err');return;}
+  const label=leaveType==='leave'?'Leave':leaveType==='absent'?'Absent':'Holiday';
+  showToast(`${agentName} marked as ${label} for ${date}`,'ok');
+  renderDashboard();
+}
+
+async function removeAgentLeave(agentId, agentName, date){
+  const{error}=await _db.from('leave_records').delete().eq('agent_id',agentId).eq('date',date);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  showToast(`${agentName} attendance record removed`,'ok');
+  renderDashboard();
 }
 
 async function renderAgents(){
@@ -3007,6 +3120,10 @@ async function loadHeatmapData(){
   const rows=await _q('heatmap_shifts_'+month+(deptFilter||''),60000,()=>_db.from('shift_status').select(C.shift).gte('date',month+'-01').lte('date',month+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data));
   const byAgentDate={};
   (rows||[]).forEach(r=>{byAgentDate[r.agent_id+'|'+r.date]=r;});
+  // Load leave records for month
+  const{data:leaveRows}=await _db.from('leave_records').select('agent_id,date,leave_type').gte('date',month+'-01').lte('date',month+'-'+String(daysInMonth).padStart(2,'0'));
+  const leaveByAgentDate={};
+  (leaveRows||[]).forEach(r=>{leaveByAgentDate[r.agent_id+'|'+r.date]=r.leave_type;});
 
   // Day headers (skip Friday)
   const days=[];
@@ -3027,9 +3144,17 @@ async function loadHeatmapData(){
         return `<td style="padding:3px;text-align:center"><div style="width:26px;height:26px;border-radius:4px;background:rgba(244,63,94,.12);margin:auto;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--rd);font-weight:700">Off</div></td>`;
       }
       const r=byAgentDate[a.id+'|'+ds];
+      const lType=leaveByAgentDate[a.id+'|'+ds];
       const isFuture=ds>today;
       if(isFuture){
         return `<td style="padding:3px;text-align:center"><div style="width:26px;height:26px;border-radius:4px;background:var(--s2);margin:auto"></div></td>`;
+      }
+      // Leave/Absent override
+      if(lType){
+        const lColor=lType==='leave'?'rgba(56,189,248,.5)':lType==='holiday'?'rgba(168,139,250,.5)':'rgba(244,63,94,.35)';
+        const lText=lType==='leave'?'☀️':lType==='holiday'?'🎉':'A';
+        const lTitle=lType==='leave'?'On Leave':lType==='holiday'?'Holiday':'Absent';
+        return `<td style="padding:3px;text-align:center" title="${ds}: ${lTitle}"><div style="width:26px;height:26px;border-radius:4px;background:${lColor};margin:auto;display:flex;align-items:center;justify-content:center;font-size:10px">${lText}</div></td>`;
       }
       if(!r?.check_in){
         return `<td style="padding:3px;text-align:center" title="${ds}: Absent"><div style="width:26px;height:26px;border-radius:4px;background:rgba(244,63,94,.15);margin:auto;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--rd)">✗</div></td>`;
@@ -3070,6 +3195,8 @@ async function loadHeatmapData(){
         <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(251,191,36,.5)"></span>1-4h</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(244,63,94,.4)"></span>&lt;1h</span>
         <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(244,63,94,.12)"></span>Off</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(56,189,248,.5)"></span>Leave</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:rgba(244,63,94,.35)"></span>Absent</span>
       </div>
     </div>
     <div style="overflow-x:auto">
