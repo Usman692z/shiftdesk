@@ -2007,7 +2007,7 @@ async function renderMyShift(){
 
   // ── Action buttons ────────────────────────────────────────────
   const breakBtn=(shiftN,onBrk)=>onBrk
-    ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--gr),#059669);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('check')} Resume Work</button>`
+    ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--yl),#d97706);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} End Break</button>`
     :`<button onclick="doBreakStart(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--b2);font-family:var(--font);background:transparent;color:var(--mu);display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} Take Break</button>`;
 
   let actionBtn='';
