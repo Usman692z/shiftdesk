@@ -1093,7 +1093,8 @@ async function _bgPollUnread(){
   const myId=isAdmin?_adminAgentId:(currentAgent?.id||'');
   if(!myId)return;
   const since=_lastMsgTime||new Date(Date.now()-60000).toISOString();
-  // Check messages sent to me since last check
+
+  // ── 1. New messages ──────────────────────────────────────────
   const{data:newMsgs}=await _db.from('messages')
     .select('id,from_name,message,created_at,to_id,is_broadcast')
     .gt('created_at',since)
@@ -1108,13 +1109,42 @@ async function _bgPollUnread(){
       mine.forEach(m=>{addToInbox(m);if(currentPage!=='chat')_incChatUnread();});
     }
   }
-  // Check new announcements
+
+  // ── 2. New announcements ─────────────────────────────────────
   const navPage=isAdmin?'announce':'myannounce';
   const{data:newAnn}=await _db.from('announcements')
     .select('id,title,created_at').gt('created_at',since).limit(5);
   if(newAnn?.length&&currentPage!==navPage){
     newAnn.forEach(a=>_incAnnounceUnread(a.title));
     _lastMsgTime=newAnn[0].created_at;
+  }
+
+  // ── 3. New tasks assigned to me ──────────────────────────────
+  if(!isAdmin&&currentAgent){
+    const{data:newTasks}=await _db.from('tasks')
+      .select('id,task,priority,assigned_by_name,date')
+      .eq('agent_id',currentAgent.id)
+      .gt('date',since)
+      .order('date',{ascending:false}).limit(5);
+    if(newTasks?.length){
+      newTasks.forEach(t=>{
+        // Toast notification
+        showToast(_i('check-square')+' New task assigned: '+t.task?.slice(0,40),'info');
+        // Browser notification
+        if(Notification.permission==='granted'){
+          new Notification('New Task Assigned',{
+            body:(t.task?.slice(0,80)||'You have a new task')+(t.priority?' ['+t.priority.toUpperCase()+']':''),
+            icon:'logo.svg',
+            tag:'shiftdesk-task-'+t.id
+          });
+        }
+      });
+      // Update bell badge
+      fetchNotifBadge();
+      // Refresh tasks page if open
+      if(currentPage==='mytasks')renderMyTasks();
+    }
+    if(Notification.permission==='default')Notification.requestPermission();
   }
 }
 
