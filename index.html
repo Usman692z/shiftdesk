@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="logo.svg">
+<link rel="apple-touch-icon" href="logo.svg">
 <title>ShiftDesk - Agent Workforce</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -156,7 +158,13 @@ tr:hover td{background:var(--b)}
 <div class="toast-container" id="toasts"></div>
 <div class="auth-wrap" id="authScreen">
   <div class="auth-card">
-    <div class="auth-logo"><h1>ShiftDesk</h1><p>Agent Workforce Management</p></div>
+    <div class="auth-logo">
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px">
+        <img src="logo.svg" width="48" height="48" style="border-radius:12px;box-shadow:0 4px 16px rgba(108,99,255,.4)" alt="ShiftDesk Logo"/>
+        <h1 style="margin:0">ShiftDesk</h1>
+      </div>
+      <p>Agent Workforce Management</p>
+    </div>
     <div class="auth-tabs">
       <div class="auth-tab active" id="tabAgent" onclick="switchAuthTab('agent')">Agent Login</div>
       <div class="auth-tab" id="tabAdmin" onclick="switchAuthTab('admin')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>Admin</div>
@@ -190,7 +198,7 @@ tr:hover td{background:var(--b)}
 </div>
 <div class="app hidden" id="mainApp">
   <div class="sidebar" id="sidebar">
-    <div class="logo"><h2>ShiftDesk</h2><small>Workforce System</small></div>
+    <div class="logo" style="display:flex;align-items:center;gap:10px"><img src="logo.svg" width="34" height="34" style="border-radius:8px;flex-shrink:0" alt=""/><div><h2 style="margin:0">ShiftDesk</h2><small>Workforce System</small></div></div>
     <nav class="nav" id="sideNav"></nav>
     <div class="sidebar-user">
       <div class="sidebar-user-name" id="sideUserName">—</div>
