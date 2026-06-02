@@ -1778,9 +1778,9 @@ function renderHelp(){
     <div id="updateStatusBox"></div>
     <p style="font-size:13px;color:var(--mu);margin-bottom:16px">Desktop app installs on your PC/Mac and tracks activity system-wide — even when browser is closed.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
-      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.13/ShiftDesk.Setup.1.0.13.exe" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.2)'" onmouseout="this.style.background='rgba(108,99,255,.1)'">
+      <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.14/ShiftDesk.Setup.1.0.14.exe" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.2)'" onmouseout="this.style.background='rgba(108,99,255,.1)'">
         <span style="font-size:28px">${_i('laptop',12)}</span>
-        <div><div style="font-weight:700;color:var(--ac);font-size:14px">Windows</div><div style="font-size:11px;color:var(--mu)">ShiftDesk.Setup.1.0.13.exe</div></div>
+        <div><div style="font-weight:700;color:var(--ac);font-size:14px">Windows</div><div style="font-size:11px;color:var(--mu)">ShiftDesk.Setup.1.0.14.exe</div></div>
       </a>
       <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.9/ShiftDesk-1.0.9-mac-apple-silicon.dmg" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(16,185,129,.18)'" onmouseout="this.style.background='rgba(16,185,129,.08)'">
         <span style="font-size:28px">🍎</span>
@@ -3062,7 +3062,7 @@ async function loadPingLogs(){
   if(agentFilter)q=q.eq('agent_id',agentFilter);
   const{data:logs,error}=await q;
   if(error){body.innerHTML=`<div class="empty-state"><div class="icon">${_i('alert-circle')}</div><p>Error: ${error.message}</p></div>`;return;}
-  if(!logs?.length){body.innerHTML=`<div class="empty-state"><div class="icon">${_i('activity')}</div><p>No ping logs found. Make sure desktop app v1.0.13+ is installed.</p></div>`;return;}
+  if(!logs?.length){body.innerHTML=`<div class="empty-state"><div class="icon">${_i('activity')}</div><p>No ping logs found. Make sure desktop app v1.0.14+ is installed.</p></div>`;return;}
   const rows=logs.map(p=>{
     const t=new Date(p.ts);
     const timeStr=t.toLocaleString('en-PK',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
