@@ -2168,27 +2168,41 @@ async function doCheckOut(shiftNum){
 }
 
 async function doBreakStart(shiftNum){
-  shiftNum=shiftNum||1;
-  const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
-  const col=shiftNum===1?'break_start':'break_start_2';
-  const{error}=await _db.from('shift_status').update({[col]:now,online:false}).eq('agent_id',currentAgent.id).eq('date',today);
-  if(error){showToast('Error: '+error.message,'err');return;}
-  _cDel('myshift_today_'+currentAgent.id,'shift_today');
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now});
-  stopTracking();
-  showToast(_i('coffee')+' Break started! Take a rest.','info');renderMyShift();
+  try{
+    shiftNum=shiftNum||1;
+    const today=new Date().toISOString().slice(0,10);
+    const now=new Date().toISOString();
+    const col=shiftNum===1?'break_start':'break_start_2';
+    const endCol=shiftNum===1?'break_end':'break_end_2';
+    // Clear break_end too so multiple breaks work
+    const{error}=await _db.from('shift_status')
+      .update({[col]:now,[endCol]:null,online:false})
+      .eq('agent_id',currentAgent.id).eq('date',today);
+    if(error){showToast('Break error: '+error.message,'err');return;}
+    _cDel('myshift_today_'+currentAgent.id,'shift_today');
+    _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_start',detail:'Break Start Shift '+shiftNum,date:today,time:now}).then(()=>{},()=>{});
+    stopTracking();
+    showToast(_i('coffee')+' Break started! Take a rest.','info');
+    renderMyShift();
+  }catch(e){showToast('Error: '+e.message,'err');}
 }
 
 async function doBreakEnd(shiftNum){
-  shiftNum=shiftNum||1;
-  const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
-  const col=shiftNum===1?'break_end':'break_end_2';
-  const{error}=await _db.from('shift_status').update({[col]:now,online:true}).eq('agent_id',currentAgent.id).eq('date',today);
-  if(error){showToast('Error: '+error.message,'err');return;}
-  _cDel('myshift_today_'+currentAgent.id,'shift_today');
-  await _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_end',detail:'Break End Shift '+shiftNum,date:today,time:now});
-  startTracking();
-  showToast(_i('check')+' Welcome back! Shift resumed.','ok');renderMyShift();
+  try{
+    shiftNum=shiftNum||1;
+    const today=new Date().toISOString().slice(0,10);
+    const now=new Date().toISOString();
+    const col=shiftNum===1?'break_end':'break_end_2';
+    const{error}=await _db.from('shift_status')
+      .update({[col]:now,online:true})
+      .eq('agent_id',currentAgent.id).eq('date',today);
+    if(error){showToast('Break error: '+error.message,'err');return;}
+    _cDel('myshift_today_'+currentAgent.id,'shift_today');
+    _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'break_end',detail:'Break End Shift '+shiftNum,date:today,time:now}).then(()=>{},()=>{});
+    startTracking();
+    showToast(_i('check')+' Welcome back! Shift resumed.','ok');
+    renderMyShift();
+  }catch(e){showToast('Error: '+e.message,'err');}
 }
 
 async function loadMyActivity(){
