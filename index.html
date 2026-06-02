@@ -522,7 +522,11 @@ async function init(){
   }
   // Then check Supabase Auth (for admin)
   _db.auth.onAuthStateChange(async(event,session)=>{
-    if(event==='SIGNED_OUT'){currentUser=null;isAdmin=false;showAuth();return;}
+    if(event==='SIGNED_OUT'){
+      // Sirf admin logout karo — regular agents ka localStorage session rehne do
+      if(currentUser){currentUser=null;isAdmin=false;showAuth();}
+      return;
+    }
     if(event==='PASSWORD_RECOVERY'){
       showAuth();
       ['agentLoginForm','forgotForm','adminLoginForm'].forEach(id=>document.getElementById(id).classList.add('hidden'));
