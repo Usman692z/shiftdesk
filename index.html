@@ -703,23 +703,54 @@ async function checkDesktopUpdate(){
     const latest=data.value||'';
     const current=window.__SHIFTDESK_VERSION__||'';
     if(!latest||!current)return;
-    // Compare versions
     const parse=v=>v.split('.').map(Number);
-    const [la,lb,lc]=parse(latest);
-    const [ca,cb,cc]=parse(current);
+    const[la,lb,lc]=parse(latest);
+    const[ca,cb,cc]=parse(current);
     const isOld=(la>ca)||((la===ca)&&(lb>cb))||((la===ca)&&(lb===cb)&&(lc>cc));
     if(!isOld)return;
-    // Show update banner
     showUpdateBanner(latest);
   }catch{}
+}
+
+async function manualCheckUpdate(){
+  const btn=document.getElementById('checkUpdateBtn');
+  const box=document.getElementById('updateStatusBox');
+  if(btn){btn.disabled=true;btn.innerHTML=_i('clock',13)+' Checking...';}
+  try{
+    const{data}=await _db.from('app_config').select('value').eq('key','desktop_version').maybeSingle();
+    const latest=data?.value||'';
+    const current=window.__SHIFTDESK_VERSION__||'';
+    const parse=v=>v.split('.').map(Number);
+    const[la,lb,lc]=parse(latest);
+    const[ca,cb,cc]=parse(current);
+    const isOld=latest&&current&&((la>ca)||((la===ca)&&(lb>cb))||((la===ca)&&(lb===cb)&&(lc>cc)));
+    if(box){
+      if(isOld){
+        box.innerHTML=`<div style="margin-bottom:12px;padding:12px 14px;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.3);border-radius:var(--r);display:flex;align-items:center;gap:12px">
+          <span style="font-size:22px">🚀</span>
+          <div style="flex:1"><div style="font-weight:700;color:var(--ac)">Update Available — v${latest}</div>
+          <div style="font-size:12px;color:var(--mu);margin-top:2px">Your version: v${current} → New: v${latest}</div></div>
+          <a href="https://github.com/Usman692z/shiftdesk/releases/download/v${latest}/ShiftDesk.Setup.${latest}.exe"
+            style="background:var(--ac);color:#fff;padding:7px 14px;border-radius:var(--r);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap">${_i('download',12)} Download</a>
+        </div>`;
+        showUpdateBanner(latest);
+      } else {
+        box.innerHTML=`<div style="margin-bottom:12px;padding:10px 14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:var(--r);font-size:13px;color:var(--gr);display:flex;align-items:center;gap:8px">${_i('check-circle',14)} You are on the latest version (v${current})</div>`;
+        setTimeout(()=>{if(box)box.innerHTML='';},4000);
+      }
+    }
+  }catch(e){
+    if(box)box.innerHTML=`<div style="margin-bottom:12px;padding:10px 14px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:var(--r);font-size:13px;color:var(--rd)">Could not check for updates. Please try again.</div>`;
+  }
+  if(btn){btn.disabled=false;btn.innerHTML=_i('download',13)+' Check for Updates';}
 }
 
 function showUpdateBanner(ver){
   if(document.getElementById('updateBanner'))return;
   const el=document.createElement('div');
   el.id='updateBanner';
-  el.style.cssText='position:fixed;bottom:20px;right:20px;z-index:9999;background:linear-gradient(135deg,var(--ac),#7c3aed);color:#fff;padding:14px 18px;border-radius:var(--r);box-shadow:0 4px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;max-width:320px;animation:slideUp .3s ease';
-  el.innerHTML=`<span style="font-size:20px">🚀</span><div><div style="font-weight:700;margin-bottom:2px">New Update Available!</div><div style="font-weight:400;opacity:.85">ShiftDesk v${ver} is ready. Please update your desktop app.</div></div><button onclick="document.getElementById('updateBanner').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;padding:4px 8px;border-radius:4px;font-size:12px;font-family:var(--font);flex-shrink:0">✕</button>`;
+  el.style.cssText='position:fixed;bottom:20px;right:20px;z-index:9999;background:linear-gradient(135deg,var(--ac),#7c3aed);color:#fff;padding:14px 18px;border-radius:var(--r);box-shadow:0 4px 24px rgba(0,0,0,.4);display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;max-width:340px;animation:slideUp .3s ease';
+  el.innerHTML=`<span style="font-size:22px">🚀</span><div style="flex:1"><div style="font-weight:700;margin-bottom:2px">New Update Available — v${ver}</div><div style="font-weight:400;opacity:.85;font-size:12px">Go to Help page to download the latest version.</div></div><button onclick="document.getElementById('updateBanner').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;padding:4px 8px;border-radius:4px;font-size:12px;font-family:var(--font);flex-shrink:0">✕</button>`;
   document.body.appendChild(el);
 }
 
@@ -1623,7 +1654,15 @@ function renderHelp(){
   c.innerHTML=`
   <!-- Downloads -->
   <div class="card" style="margin-bottom:16px">
-    <div class="card-title">${_i('laptop',12)} Download Desktop App</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+      <div class="card-title" style="margin:0">${_i('laptop',12)} Download Desktop App</div>
+      ${window.__SHIFTDESK_DESKTOP__?`
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--mu)">Current: <b style="color:var(--tx)">v${window.__SHIFTDESK_VERSION__||'—'}</b></span>
+        <button onclick="manualCheckUpdate()" class="btn btn-sm" style="background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3);display:inline-flex;align-items:center;gap:5px" id="checkUpdateBtn">${_i('download',13)} Check for Updates</button>
+      </div>`:''}
+    </div>
+    <div id="updateStatusBox"></div>
     <p style="font-size:13px;color:var(--mu);margin-bottom:16px">Desktop app installs on your PC/Mac and tracks activity system-wide — even when browser is closed.</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
       <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.9/ShiftDesk.Setup.1.0.9.exe" download style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:var(--r);text-decoration:none;transition:var(--tr)" onmouseover="this.style.background='rgba(108,99,255,.2)'" onmouseout="this.style.background='rgba(108,99,255,.1)'">
