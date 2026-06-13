@@ -1891,17 +1891,18 @@ async function renderAgentDailyReport(){
     ${submitBtn(existing?.id)}`;
 
   } else if(tpl==='customer_support'){
-    // Fields: Daily Req, Rectification, Tickets | Pending Tickets (TICK#) | Pending S/Os | Notes
+    const csNum=(fld,lbl,val)=>`<div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${lbl}</label><input type="number" id="cs_${fld}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`;
     bodyHtml=`<div class="card">
       ${cardHeader}
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px">
-        ${_drNumField('dreq','Daily Requests',v.daily_requests)}
-        ${_drNumField('rect','Rectification',v.rectification)}
-        ${_drNumField('tkt','Tickets Resolved',v.tickets)}
+      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px">CALLS & COMMUNICATION</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        ${csNum('calls','Total Calls',v.cs_calls)}
+        ${csNum('whatsapp','WhatsApp Chats',v.cs_whatsapp)}
       </div>
+      ${_drSection('SALES & RENEWALS',csNum('renewals','Renewals Done',v.cs_renewals)+csNum('so_created','S/Os Created',v.cs_so_created)+`<div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">Revenue (SAR)</label><input type="number" id="cs_revenue" min="0" value="${v.cs_revenue||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-weight:700;font-family:var(--font)"></div>`)}
+      ${_drSection('SUPPORT & COMPLAINTS',csNum('complaints_closed','Complaints Closed',v.cs_complaints_closed)+csNum('complaints_pending','Complaints Pending',v.cs_complaints_pending)+csNum('escalations','Escalations',v.cs_escalations))}
     </div>
     ${_drTickBlock(tickRows)}
-    ${_drSoBlock(soRows)}
     ${_drRemarksBlock(v.remarks)}
     ${submitBtn(existing?.id)}`;
 
@@ -1969,6 +1970,14 @@ async function submitDailyReport(existingId){
     renewal_retail:g('rret'),renewal_reseller:g('rres'),renewal_csu:g('rcsu'),
     ownership:g('own'),plate_change:g('plt'),tickets:g('tkt'),
     pending_sos,pending_tickets,
+    cs_calls:parseInt(document.getElementById('cs_calls')?.value)||0,
+    cs_whatsapp:parseInt(document.getElementById('cs_whatsapp')?.value)||0,
+    cs_renewals:parseInt(document.getElementById('cs_renewals')?.value)||0,
+    cs_so_created:parseInt(document.getElementById('cs_so_created')?.value)||0,
+    cs_revenue:parseFloat(document.getElementById('cs_revenue')?.value)||0,
+    cs_complaints_closed:parseInt(document.getElementById('cs_complaints_closed')?.value)||0,
+    cs_complaints_pending:parseInt(document.getElementById('cs_complaints_pending')?.value)||0,
+    cs_escalations:parseInt(document.getElementById('cs_escalations')?.value)||0,
     remarks:document.getElementById('dr_remarks')?.value.trim()||'',
     submitted_at:new Date().toISOString()
   };
