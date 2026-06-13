@@ -2178,6 +2178,7 @@ async function renderAdminDailyReports(){
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;color:var(--mu)">${r.report_date||''} &nbsp;${r.submitted_at?new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}</span>
           <button onclick="viewReportModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="padding:4px 10px;font-size:11px;background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3);border-radius:var(--r);cursor:pointer;font-family:var(--font)">${_i('eye',11)} View</button>
+          <button onclick="deleteReport('${r.id}')" style="padding:4px 10px;font-size:11px;background:rgba(244,63,94,.12);color:var(--rd);border:1px solid rgba(244,63,94,.3);border-radius:var(--r);cursor:pointer;font-family:var(--font)">${_i('trash',11)} Delete</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:5px;margin-bottom:${pen.length||r.remarks?'10px':'0'}">
@@ -2304,6 +2305,15 @@ async function renderAdminDailyReports(){
     window._drTab=_tab;window._drRender=()=>{_tab=window._drTab||_tab;mainRender();};
   };
   await mainRender();
+}
+
+async function deleteReport(id){
+  if(!confirm('Delete this report? This cannot be undone.'))return;
+  const{error}=await _db.from('daily_reports').delete().eq('id',id);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  showToast(_i('check')+' Report deleted.','ok');
+  closeModal();
+  renderAdminDailyReports();
 }
 
 function viewReportModal(r){
