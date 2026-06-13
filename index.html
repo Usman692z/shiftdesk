@@ -207,7 +207,7 @@ tr:hover td{background:var(--b)}
     </div>
   </div>
   <div class="main">
-    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo(isAdmin?'tasks':'mytasks')" title="Pending Tasks"><span style="display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap" style="display:none"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div></div>
+    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo((isAdmin||isManager)?'tasks':'mytasks')" title="Pending Tasks"><span style="display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap" style="display:none"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div></div>
     <div class="content" id="pageContent"></div>
   </div>
 </div>
@@ -224,7 +224,7 @@ tr:hover td{background:var(--b)}
       <div class="form-group" style="margin:0"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
       <div class="form-group" style="margin:0"><label>Shift End</label><input type="time" id="mShiftEnd" value="18:00"></div>
     </div>
-    <div class="form-group"><label>Access Level</label><select id="mType"><option value="regular">User (Agent)</option><option value="admin">Admin</option></select></div>
+    <div class="form-group"><label>Access Level</label><select id="mType"><option value="regular">User (Agent)</option><option value="manager">Manager (Dept Admin)</option><option value="admin">Admin</option></select></div>
     <div class="form-group" id="mPassGroup"><label>Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span></label><input type="password" id="mPass" placeholder="Set agent password"></div>
     <!-- Permissions -->
     <div class="form-group">
@@ -504,7 +504,7 @@ async function _getAgents(cols){
 }
 
 // Separate client for creating new auth users — isolated storage key
-let currentUser=null,currentAgent=null,isAdmin=false,editingAgentId=null,clockInterval=null;
+let currentUser=null,currentAgent=null,isAdmin=false,isManager=false,managerDept='',editingAgentId=null,clockInterval=null;
 let lastActivityTime=Date.now(),trackingInterval=null,isTracking=false;
 let currentPage='',realtimeChannel=null,_chatPollInterval=null,_bgPollInterval=null,_lastMsgTime=null;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
@@ -525,7 +525,7 @@ async function init(){
   // Check saved agent session first
   const saved=getAgentSession();
   if(saved){
-    currentAgent=saved;isAdmin=(saved.type==='admin');
+    currentAgent=saved;isAdmin=(saved.type==='admin');isManager=(saved.type==='manager');managerDept=isManager?(saved.dept||''):'';
     showApp();return;
   }
   // Then check Supabase Auth (for admin)
@@ -597,7 +597,7 @@ async function agentLogin(){
     } else {
       showAuthErr('Invalid password.');resetBtn();return;
     }
-    currentAgent=ag;isAdmin=(ag.type==='admin');
+    currentAgent=ag;isAdmin=(ag.type==='admin');isManager=(ag.type==='manager');managerDept=isManager?(ag.dept||''):'';
     saveAgentSession(ag);
     showApp();
   }catch(e){
@@ -663,7 +663,7 @@ async function logout(){
   clearChatUnread();
   clearAnnounceUnread();
   clearAgentSession();
-  currentUser=null;currentAgent=null;isAdmin=false;
+  currentUser=null;currentAgent=null;isAdmin=false;isManager=false;managerDept='';
   await _db.auth.signOut();
   showAuth();
 }
@@ -691,7 +691,7 @@ function showApp(){
   startAnnounceNotifChannel();
   startChatPolling();
   startBgPolling();
-  navTo(isAdmin?'dashboard':'myshift');
+  navTo((isAdmin||isManager)?'dashboard':'myshift');
   // Check for desktop app update
   if(window.__SHIFTDESK_DESKTOP__)checkDesktopUpdate();
 }
@@ -860,8 +860,8 @@ const _SVG={
 };
 
 function buildNav(){
-  document.getElementById('sideUserName').textContent=isAdmin?'Admin':(currentAgent?.name||'Agent');
-  document.getElementById('sideUserRole').textContent=isAdmin?'Administrator':(currentAgent?.role||'Agent');
+  document.getElementById('sideUserName').textContent=isAdmin?'Admin':isManager?(currentAgent?.name||'Manager'):(currentAgent?.name||'Agent');
+  document.getElementById('sideUserRole').textContent=isAdmin?'Administrator':isManager?('Dept Manager'+(managerDept?' — '+managerDept:'')):(currentAgent?.role||'Agent');
   // Agent nav: filter based on permissions field
   const agentPerms=(currentAgent?.permissions||'myshift,mytasks,activity,mydashboard').split(',');
   const allAgentPages=[
@@ -875,6 +875,8 @@ function buildNav(){
   ];
   const items=isAdmin
     ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'tracking',label:'Tracking'},{id:'activity',label:'Activity'},{id:'reports',label:'Reports'},{id:'help',label:'Help'}]
+    :isManager
+    ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'help',label:'Help'}]
     :[...allAgentPages,{id:'help',label:'Help'}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${_SVG[i.id]||''}</span><span class="nav-label">${i.label}</span>${i.id==='chat'?'<span class="chat-unread" id="chatUnreadBadge"></span>':(i.id==='announce'||i.id==='myannounce')?'<span class="chat-unread" id="announceUnreadBadge"></span>':''}</div>`).join('');
 }
@@ -1045,7 +1047,7 @@ function _incChatUnread(){
 
 async function startChatNotifChannel(){
   if(_chatNotifChannel){_db.removeChannel(_chatNotifChannel);_chatNotifChannel=null;}
-  if(!currentAgent&&!isAdmin)return;
+  if(!currentAgent&&!isAdmin&&!isManager)return;
   // For agents: use their UUID. For admin: fetch their actual UUID from agents table
   let myId=isAdmin?'admin':currentAgent.id;
   if(isAdmin){
@@ -1096,7 +1098,7 @@ function _incAnnounceUnread(title){
 
 function startAnnounceNotifChannel(){
   if(_announceNotifChannel){_db.removeChannel(_announceNotifChannel);_announceNotifChannel=null;}
-  if(!currentAgent&&!isAdmin)return;
+  if(!currentAgent&&!isAdmin&&!isManager)return;
   _announceNotifChannel=_db.channel('announce_notif_'+Date.now());
   _announceNotifChannel.on('postgres_changes',{event:'INSERT',schema:'public',table:'announcements'},(payload)=>{
     const a=payload.new;
@@ -1120,7 +1122,7 @@ function startChatPolling(){
 }
 
 async function _bgPollUnread(){
-  if(!currentAgent&&!isAdmin)return;
+  if(!currentAgent&&!isAdmin&&!isManager)return;
   const myId=isAdmin?_adminAgentId:(currentAgent?.id||'');
   if(!myId)return;
   const since=_lastMsgTime||new Date(Date.now()-60000).toISOString();
@@ -1182,7 +1184,7 @@ async function _bgPollUnread(){
 let _adminAgentId=null;
 async function startBgPolling(){
   if(_bgPollInterval)clearInterval(_bgPollInterval);
-  if(!currentAgent&&!isAdmin)return;
+  if(!currentAgent&&!isAdmin&&!isManager)return;
   // Resolve admin's actual UUID once
   if(isAdmin&&!_adminAgentId){
     const{data:ar}=await _db.from('agents').select('id').eq('type','admin').maybeSingle();
@@ -1217,12 +1219,19 @@ async function renderDashboard(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  const[agents,ts,tracking,leaveRecs]=await Promise.all([
+  let[agents,ts,tracking,leaveRecs]=await Promise.all([
     _getAgents(),
     _q('shift_today',15000,()=>_db.from('shift_status').select(C.shift).eq('date',today).then(r=>r.data)),
     _q('tracking_today',10000,()=>_db.from('activity_tracking').select(C.tracking).eq('date',today).then(r=>r.data)),
     _db.from('leave_records').select('agent_id,leave_type,note').eq('date',today).then(r=>r.data||[]),
   ]);
+  if(isManager&&managerDept){
+    agents=(agents||[]).filter(a=>a.dept===managerDept);
+    const agentIds=new Set(agents.map(a=>a.id));
+    ts=(ts||[]).filter(s=>agentIds.has(s.agent_id));
+    tracking=(tracking||[]).filter(t=>agentIds.has(t.agent_id));
+    leaveRecs=(leaveRecs||[]).filter(l=>agentIds.has(l.agent_id));
+  }
   const total=agents?.length||0;
   const online=ts?.filter(s=>s.online).length||0;
   const activeNow=tracking?.filter(t=>t.activity_status==='active').length||0;
@@ -1456,13 +1465,14 @@ async function removeAgentLeave(agentId, agentName, date){
 
 async function renderAgents(){
   const c=document.getElementById('pageContent');c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
-  const agents=await _getAgents(C.agents_full);
+  let agents=await _getAgents(C.agents_full);
+  if(isManager&&managerDept)agents=(agents||[]).filter(a=>a.dept===managerDept);
   const permLabel=p=>{
     if(!p)return'<span style="font-size:10px;color:var(--mu)">all</span>';
     const icons={myshift:_i('clock'),mytasks:_i('check-square'),activity:_i('file-text'),assign_task:_i('upload')};
     return p.split(',').map(x=>`<span style="font-size:11px;background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:1px 5px">${icons[x]||x}</span>`).join(' ');
   };
-  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openDeptModal()">${_i('building')} Departments</button><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
+  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openDeptModal()">${_i('building')} Departments</button><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':a.type==='manager'?'<span class="badge" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);display:inline-flex;align-items:center;gap:4px">'+_i('shield',11)+' Manager</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
 }
 
 function setPermCheckboxes(perms){
@@ -1963,7 +1973,7 @@ async function renderAdminLeaves(){
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   _cDel('announcements');
   const[leaves,announceBanner]=await Promise.all([
-    _q('leaves_all',30000,()=>_db.from('leave_requests').select(C.leave).order('created_at',{ascending:false}).then(r=>r.data)),
+    _q('leaves_all'+(isManager?'_mgr_'+managerDept:''),30000,()=>{let q=_db.from('leave_requests').select(C.leave).order('created_at',{ascending:false});if(isManager&&managerDept)q=q.eq('dept',managerDept);return q.then(r=>r.data);}),
     _getAnnounceBanner(),
   ]);
   const pending=leaves?.filter(l=>l.status==='pending')||[];
@@ -2544,10 +2554,15 @@ const PRIORITY_ICON={Urgent:`${_i('zap',12)}`,High:`${_i('info',12)}`,Normal:`${
 async function renderTasks(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
-  const[tasks,agents]=await Promise.all([
-    _q('tasks_all',20000,()=>_db.from('tasks').select(C.tasks).order('date',{ascending:false}).then(r=>r.data)),
+  let[tasks,agents]=await Promise.all([
+    _q('tasks_all'+(isManager?'_mgr_'+managerDept:''),20000,()=>{let q=_db.from('tasks').select(C.tasks).order('date',{ascending:false});return q.then(r=>r.data);}),
     _getAgents('id,name,dept'),
   ]);
+  if(isManager&&managerDept){
+    const deptAgentIds=new Set((agents||[]).filter(a=>a.dept===managerDept).map(a=>a.id));
+    tasks=(tasks||[]).filter(t=>deptAgentIds.has(t.agent_id));
+    agents=(agents||[]).filter(a=>a.dept===managerDept);
+  }
   const pending=tasks?.filter(t=>!t.status||t.status==='pending')||[];
   const done=tasks?.filter(t=>t.status&&t.status!=='pending')||[];
   const STATUS_STYLE={pending:'badge-online',completed:'',rejected:''};
