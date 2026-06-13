@@ -2429,9 +2429,20 @@ function renderHelp(){
 
   <!-- User Manual -->
   <div class="card">
-    <div class="card-title">${_i('file-text')} How to Use ShiftDesk</div>
+    <div class="card-title">${_i('file-text')} ${_lang==='ar'?'كيفية استخدام ShiftDesk':'How to Use ShiftDesk'}</div>
     <div style="display:grid;gap:12px">
-      ${(isAdmin?[
+      ${(isAdmin?(_lang==='ar'?[
+        {icon:_i('bars'),title:'لوحة التحكم',desc:'حالة جميع الموظفين مباشرة — متصل/غير متصل، نشط/خامل، وقت تسجيل الدخول، وساعات العمل اليومية. يتحدث تلقائياً.'},
+        {icon:_i('users'),title:'إدارة الموظفين',desc:'أضف موظفين جدد، عدّل بياناتهم، وأعد تعيين كلمات المرور. حدد الصلاحيات للتحكم فيما يراه كل موظف. يدعم الاستيراد الجماعي عبر CSV.'},
+        {icon:_i('check-square'),title:'إدارة المهام',desc:'أسند مهام لأي موظف مع تحديد الأولوية وتاريخ الاستحقاق. تتحدث حالة المهمة تلقائياً عند إتمامها أو رفضها.'},
+        {icon:_i('calendar'),title:'طلبات الإجازة',desc:'تظهر هنا جميع طلبات إجازة الموظفين. وافق أو ارفض بنقرة واحدة. تظهر الإجازة المعتمدة في تقويم الموظف.'},
+        {icon:_i('bell'),title:'الإعلانات',desc:'أرسل إشعارات لكامل الفريق بعنوان ورسالة وتاريخ انتهاء. يراها جميع الموظفين على لوحة التحكم الخاصة بهم.'},
+        {icon:_i('chat',12),title:'المحادثة',desc:'تحدث مع أي موظف مباشرة أو استخدم "بث المشرف" لإرسال رسالة للفريق بأكمله.'},
+        {icon:_i('monitor'),title:'تتبع النشاط',desc:'يُتتبع تلقائياً عبر تطبيق سطح المكتب — وقت النشاط والخمول. يُعرض إنتاجية كل موظف اليومية في مخطط بياني.'},
+        {icon:_i('file-text'),title:'سجل النشاط',desc:'جميع أحداث تسجيل دخول وخروج واستراحة الموظفين مرتبة زمنياً.'},
+        {icon:_i('trending-up'),title:'التقارير',desc:'صفّ حسب الشهر أو القسم أو الموظف. اعرض تقارير تفصيلية أو خريطة حرارية. يتوفر تصدير PDF للرواتب.'},
+        {icon:_i('file-text'),title:'التقارير اليومية',desc:'يرسل الموظفون تقرير العمل اليومي من هنا. بصفتك مشرفاً يمكنك عرض جميع التقارير المرسلة، التصفية حسب التاريخ/القسم/الموظف، معرفة من لم يرسل تقريره، مراجعة الإجماليات الشهرية، عرض تفاصيل أي تقرير، وحذفه عند الحاجة.'},
+      ]:[
         {icon:_i('bars'),title:'Dashboard',desc:'Live status of all agents — online/offline, active/idle, check-in time, and daily hours. Updates in real time.'},
         {icon:_i('users'),title:'Manage Agents',desc:'Add new agents, edit details, and reset passwords. Set permissions to control what each agent can see. Bulk CSV import is also available.'},
         {icon:_i('check-square'),title:'Task Management',desc:'Assign tasks to any agent with priority and due date. Task status updates automatically when completed or rejected.'},
@@ -2442,6 +2453,15 @@ function renderHelp(){
         {icon:_i('file-text'),title:'Activity Log',desc:'All agent check-in, check-out, and break events in chronological order.'},
         {icon:_i('trending-up'),title:'Reports',desc:'Filter by month, department, or agent. View detailed reports or a heatmap. PDF export available for payroll.'},
         {icon:_i('file-text'),title:'Daily Reports',desc:'Agents submit their daily work report from here. As admin you can view all submitted reports, filter by date/department/agent, see who has not submitted, check monthly totals, view full report details, and delete any report if needed.'},
+      ]):(_lang==='ar'?[
+        {icon:_i('clock'),title:'وردیتي',desc:'سجّل دخولك في بداية وردیتك كل يوم. اضغط "استراحة" عند الحاجة ثم "استئناف" عند العودة. سجّل خروجك في نهاية الوردية. الوردية الثانية اختيارية.'},
+        {icon:_i('check-square'),title:'مهامي',desc:'تظهر هنا المهام المسندة إليك من المشرف. أتمّها أو ارفضها مع ملاحظة. يمكنك أيضاً إضافة مهامك الخاصة.'},
+        {icon:_i('bars'),title:'لوحتي',desc:'تقويم شهري — أخضر=في الوقت، أصفر=متأخر، أحمر=غائب، بنفسجي=إجازة، رمادي=جمعة. يعرض درجة الأداء والعمل الإضافي.'},
+        {icon:_i('calendar'),title:'إجازة',desc:'اضغط "تقديم إجازة"، حدد تاريخ البداية والنهاية واكتب السبب ثم أرسل. سيوافق المشرف عليها. تظهر الإجازة المعتمدة باللون البنفسجي في تقويمك.'},
+        {icon:_i('bell'),title:'الإعلانات',desc:'تظهر هنا أي إشعارات من المشرف — اجتماعات، إجازات رسمية، أو تحديثات مهمة.'},
+        {icon:_i('chat',12),title:'المحادثة',desc:'اختر اسماً من القائمة اليسرى، اكتب رسالتك، واضغط إرسال. يمكنك التحدث مع المشرف أو أي زميل.'},
+        {icon:_i('file-text'),title:'سجل النشاط',desc:'سجل كامل لتسجيلات دخولك وخروجك واستراحاتك متاح هنا.'},
+        {icon:_i('file-text'),title:'التقرير اليومي',desc:'أرسل تقرير عملك اليومي هنا كل يوم. املأ جميع الحقول واضغط إرسال. يمكنك تحديثه لاحقاً في نفس اليوم. انتقل إلى تبويب "تقاريري" للاطلاع على سجلك الكامل مع فلاتر التاريخ والإجماليات.'},
       ]:[
         {icon:_i('clock'),title:'My Shift',desc:'Check in at the start of your shift every day. Click "Take Break" when you need a break — then resume when you return. Check out when your shift ends. A 2nd shift is optional.'},
         {icon:_i('check-square'),title:'My Tasks',desc:'Tasks assigned to you by admin or other agents appear here. Mark them complete or reject with a remark. You can also track your own work using "New Task".'},
@@ -2451,7 +2471,7 @@ function renderHelp(){
         {icon:_i('chat',12),title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
         {icon:_i('file-text'),title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
         {icon:_i('file-text'),title:'Daily Report',desc:'Submit your daily work report here every day. Fill in all the fields and click Submit. You can update it later the same day. Switch to the "My Reports" tab to see your full history with date filters and totals.'},
-      ]).map(s=>`
+      ])).map(s=>`
       <div style="display:flex;gap:14px;padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
         <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
         <div><div style="font-weight:700;margin-bottom:4px">${s.title}</div><div style="font-size:13px;color:var(--mu);line-height:1.5">${s.desc}</div></div>
