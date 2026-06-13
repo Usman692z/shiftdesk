@@ -224,6 +224,7 @@ tr:hover td{background:var(--b)}
       <div class="form-group" style="margin:0"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
       <div class="form-group" style="margin:0"><label>Shift End</label><input type="time" id="mShiftEnd" value="18:00"></div>
     </div>
+    <div class="form-group"><label>Report Template</label><select id="mReportTemplate"><option value="data_team">Daily Report — Data Team</option><option value="customer_support">Daily Report — Customer Support Team</option><option value="retail_manager">Daily Report — Retail Manager</option></select></div>
     <div class="form-group"><label>Access Level</label><select id="mType" onchange="onTypeChange(this.value)"><option value="regular">User (Agent)</option><option value="manager">Manager (Single Dept)</option><option value="subadmin">Sub Admin (Multi Dept)</option><option value="admin">Admin (Full Access)</option></select></div>
     <!-- Sub Admin dept checkboxes -->
     <div class="form-group" id="mSubDeptGroup" style="display:none">
@@ -441,8 +442,8 @@ async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await 
 
 // ── Column selects (no select('*') — fetch only what we need) ────────────
 const C={
-  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions',
-  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw',
+  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template',
+  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template',
   shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2',
   tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
@@ -1539,6 +1540,7 @@ async function openAddAgent(){
   document.getElementById('mShiftStart').value='09:00';
   document.getElementById('mShiftEnd').value='18:00';
   document.getElementById('mType').value='regular';
+  document.getElementById('mReportTemplate').value='data_team';
   await onTypeChange('regular');
   setPermCheckboxes('myshift,mytasks,activity,assign_task');
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
@@ -1560,6 +1562,7 @@ async function openEditAgent(id){
   document.getElementById('mShiftStart').value=a.shift_start||'09:00';
   document.getElementById('mShiftEnd').value=a.shift_end||'18:00';
   document.getElementById('mType').value=a.type||'regular';
+  document.getElementById('mReportTemplate').value=a.report_template||'data_team';
   await onTypeChange(a.type||'regular');
   document.getElementById('mPass').value='';
   if(a.type==='subadmin')setSubAdminDepts(a.permissions||'');
@@ -1602,13 +1605,15 @@ async function saveAgent(){
   try{
     if(!editingAgentId){
       // Add new agent directly to agents table — no Supabase Auth needed
-      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw:await hashPw(pw)};
+      const report_template=document.getElementById('mReportTemplate').value||'data_team';
+      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,pw:await hashPw(pw)};
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
       showToast(_i('check')+' Agent added: '+name,'ok');
     }else{
-      const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions};
+      const report_template=document.getElementById('mReportTemplate').value||'data_team';
+      const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template};
       if(pw)updateData.pw=await hashPw(pw);
       const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
@@ -1825,58 +1830,113 @@ async function renderAnnouncements(){
   }).join('')}`;
 }
 // ── DAILY REPORT (AGENT SUBMIT) ──────────────────────────────
+function _drNumField(id,label,val){return`<div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${label}</label><input type="number" id="dr_${id}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`;}
+function _drSection(title,fields){return`<div style="border-top:1px solid var(--b2);padding-top:14px;margin-bottom:14px"><div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px">${title}</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px">${fields}</div></div>`;}
+function _drSoBlock(soRows){
+  return`<div class="card" style="margin-top:12px">
+    <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">${_i('alert-circle')} Pending S/Os <span style="font-size:12px;color:var(--mu);font-weight:400;margin-left:4px">— SO number + reason</span></div>
+    <div id="soContainer">${soRows.map((s,i)=>`<div style="display:grid;grid-template-columns:140px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center" id="soRow_${i}"><input type="text" class="so-num" placeholder="e.g. S70092" value="${s.so||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><input type="text" class="so-reason" placeholder="Reason / status" value="${s.reason||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><button onclick="removeSoRow(this)" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:var(--r);padding:6px 8px;cursor:pointer;font-size:12px">${_i('trash',13)}</button></div>`).join('')}</div>
+    <button onclick="addSoRow()" style="background:none;border:1px dashed var(--b2);border-radius:var(--r);padding:7px 14px;cursor:pointer;color:var(--mu);font-size:13px;font-family:var(--font);display:flex;align-items:center;gap:6px;margin-top:4px">${_i('plus',14)} Add S/O</button>
+  </div>`;
+}
+function _drTickBlock(tickRows){
+  return`<div class="card" style="margin-top:12px">
+    <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">${_i('alert-circle')} Pending Tickets <span style="font-size:12px;color:var(--mu);font-weight:400;margin-left:4px">— TICK number + reason</span></div>
+    <div id="tickContainer">${tickRows.map((s,i)=>`<div style="display:grid;grid-template-columns:140px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center" id="tickRow_${i}"><input type="text" class="tick-num" placeholder="e.g. TICK0782" value="${s.tick||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><input type="text" class="tick-reason" placeholder="Status / reason" value="${s.reason||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><button onclick="removeTickRow(this)" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:var(--r);padding:6px 8px;cursor:pointer;font-size:12px">${_i('trash',13)}</button></div>`).join('')}</div>
+    <button onclick="addTickRow()" style="background:none;border:1px dashed var(--b2);border-radius:var(--r);padding:7px 14px;cursor:pointer;color:var(--mu);font-size:13px;font-family:var(--font);display:flex;align-items:center;gap:6px;margin-top:4px">${_i('plus',14)} Add Ticket</button>
+  </div>`;
+}
+function _drRemarksBlock(val){
+  return`<div class="card" style="margin-top:12px">
+    <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">${_i('message-square')} Remarks / Notes <span style="font-size:12px;color:var(--mu);font-weight:400;margin-left:4px">— optional</span></div>
+    <textarea id="dr_remarks" placeholder="Any extra info, issues faced, handover notes..." style="width:100%;padding:10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font);resize:vertical;min-height:80px">${val||''}</textarea>
+  </div>`;
+}
+
 async function renderAgentDailyReport(){
   const c=document.getElementById('pageContent');
   const aid=currentAgent?.id;
+  const tpl=currentAgent?.report_template||'data_team';
   const today=new Date().toISOString().slice(0,10);
-  // Load existing report for today if any
   const{data:existing}=await _db.from('daily_reports').select('*').eq('agent_id',aid).eq('report_date',today).maybeSingle();
   const v=existing||{};
-  const soRows=v.pending_sos?.length?v.pending_sos:[{so:'',reason:''}];
-  const soHtml=soRows.map((s,i)=>`
-    <div style="display:grid;grid-template-columns:140px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center" id="soRow_${i}">
-      <input type="text" class="so-num" placeholder="e.g. S70092" value="${s.so||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
-      <input type="text" class="so-reason" placeholder="Reason / status" value="${s.reason||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
-      <button onclick="removeSoRow(this)" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:var(--r);padding:6px 8px;cursor:pointer;font-size:12px">${_i('trash',13)}</button>
-    </div>`).join('');
   const alreadySubmitted=!!existing;
-  c.innerHTML=`
-  ${alreadySubmitted?`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--gr);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px">${_i('check-circle',16)} Report submitted for today. You can update it below.</div>`:''}
-  <div class="card">
-    <div class="card-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">${_i('file-text')} Daily Report — ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
-      ${[['reg','Registration',v.registration],['dreq','Daily Requests',v.daily_requests],['rect','Rectification',v.rectification]].map(([id,lbl,val])=>`
-      <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${lbl}</label>
-      <input type="number" id="dr_${id}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`).join('')}
+  const soRows=v.pending_sos?.length?v.pending_sos:[{so:'',reason:''}];
+  const tickRows=v.pending_tickets?.length?v.pending_tickets:[{tick:'',reason:''}];
+  const dateStr=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const submittedBanner=alreadySubmitted?`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--gr);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px">${_i('check-circle',16)} Report submitted for today. You can update it below.</div>`:'';
+  const submitBtn=(existingId)=>`<button onclick="submitDailyReport(${existingId?`'${existingId}'`:'null'})" style="width:100%;margin-top:12px;padding:11px;background:var(--ac);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px" id="drSubmitBtn">${_i('send',16)} ${alreadySubmitted?'Update Report':'Submit Report'}</button>`;
+
+  const tplNames={data_team:'Daily Report — Data Team',customer_support:'Daily Report — Customer Support Team',retail_manager:'Daily Report — Retail Manager'};
+  const tplColors={data_team:'var(--ac)',customer_support:'#38bdf8',retail_manager:'#a78bfa'};
+
+  const cardHeader=`<div class="card-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${_i('file-text')} <span style="color:${tplColors[tpl]}">${tplNames[tpl]}</span> <span style="font-size:12px;color:var(--mu);font-weight:400">— ${dateStr}</span></div>`;
+
+  let bodyHtml='';
+
+  if(tpl==='data_team'){
+    // Fields: Registration, Daily Req, Rectification | Retail Renewal, Reseller Renewal, CSU Renewal | Ownership, Plate Change, Tickets
+    bodyHtml=`<div class="card">
+      ${cardHeader}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px">
+        ${_drNumField('reg','Registration',v.registration)}
+        ${_drNumField('dreq','Daily Requests',v.daily_requests)}
+        ${_drNumField('rect','Rectification',v.rectification)}
+      </div>
+      ${_drSection('RENEWALS',_drNumField('rret','Retail Renewal',v.renewal_retail)+_drNumField('rres','Reseller Renewal',v.renewal_reseller)+_drNumField('rcsu','CSU Renewal',v.renewal_csu))}
+      ${_drSection('OTHER TASKS',_drNumField('own','Ownership',v.ownership)+_drNumField('plt','Plate Change',v.plate_change)+_drNumField('tkt','Tickets',v.tickets))}
     </div>
-    <div style="border-top:1px solid var(--b2);padding-top:14px;margin-bottom:14px">
-      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px">RENEWALS</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-        ${[['rret','Retail Renewal',v.renewal_retail],['rres','Reseller Renewal',v.renewal_reseller],['rcsu','CSU Renewal',v.renewal_csu]].map(([id,lbl,val])=>`
-        <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${lbl}</label>
-        <input type="number" id="dr_${id}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`).join('')}
+    ${_drSoBlock(soRows)}
+    ${_drRemarksBlock(v.remarks)}
+    ${submitBtn(existing?.id)}`;
+
+  } else if(tpl==='customer_support'){
+    // Fields: Daily Req, Rectification, Tickets | Pending Tickets (TICK#) | Pending S/Os | Notes
+    bodyHtml=`<div class="card">
+      ${cardHeader}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px">
+        ${_drNumField('dreq','Daily Requests',v.daily_requests)}
+        ${_drNumField('rect','Rectification',v.rectification)}
+        ${_drNumField('tkt','Tickets Resolved',v.tickets)}
       </div>
     </div>
-    <div style="border-top:1px solid var(--b2);padding-top:14px;margin-bottom:14px">
-      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px">OTHER TASKS</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-        ${[['own','Ownership',v.ownership],['plt','Plate Change',v.plate_change],['tkt','Tickets',v.tickets]].map(([id,lbl,val])=>`
-        <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${lbl}</label>
-        <input type="number" id="dr_${id}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`).join('')}
+    ${_drTickBlock(tickRows)}
+    ${_drSoBlock(soRows)}
+    ${_drRemarksBlock(v.remarks)}
+    ${submitBtn(existing?.id)}`;
+
+  } else if(tpl==='retail_manager'){
+    // Fields: Registration, Daily Req, Rectification | Retail Renewal, Reseller Renewal | Ownership, Plate Change
+    bodyHtml=`<div class="card">
+      ${cardHeader}
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px">
+        ${_drNumField('reg','Registration',v.registration)}
+        ${_drNumField('dreq','Daily Requests',v.daily_requests)}
+        ${_drNumField('rect','Rectification',v.rectification)}
       </div>
+      ${_drSection('RENEWALS',_drNumField('rret','Retail Renewal',v.renewal_retail)+_drNumField('rres','Reseller Renewal',v.renewal_reseller))}
+      ${_drSection('OTHER TASKS',_drNumField('own','Ownership',v.ownership)+_drNumField('plt','Plate Change',v.plate_change))}
     </div>
-  </div>
-  <div class="card" style="margin-top:12px">
-    <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">${_i('alert-circle')} Pending S/Os <span style="font-size:12px;color:var(--mu);font-weight:400;margin-left:4px">— SO number + reason</span></div>
-    <div id="soContainer">${soHtml}</div>
-    <button onclick="addSoRow()" style="background:none;border:1px dashed var(--b2);border-radius:var(--r);padding:7px 14px;cursor:pointer;color:var(--mu);font-size:13px;font-family:var(--font);display:flex;align-items:center;gap:6px;margin-top:4px">${_i('plus',14)} Add S/O</button>
-  </div>
-  <div class="card" style="margin-top:12px">
-    <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">${_i('message-square')} Remarks / Notes <span style="font-size:12px;color:var(--mu);font-weight:400;margin-left:4px">— optional</span></div>
-    <textarea id="dr_remarks" placeholder="Any extra info, issues faced, handover notes..." style="width:100%;padding:10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font);resize:vertical;min-height:80px">${v.remarks||''}</textarea>
-  </div>
-  <button onclick="submitDailyReport(${alreadySubmitted?`'${existing.id}'`:'null'})" style="width:100%;margin-top:12px;padding:11px;background:var(--ac);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px" id="drSubmitBtn">${_i('send',16)} ${alreadySubmitted?'Update Report':'Submit Report'}</button>
-  `;
+    ${_drSoBlock(soRows)}
+    ${_drRemarksBlock(v.remarks)}
+    ${submitBtn(existing?.id)}`;
+  }
+
+  c.innerHTML=submittedBanner+bodyHtml;
+}
+function addTickRow(){
+  const cont=document.getElementById('tickContainer');
+  const i=cont.children.length;
+  const div=document.createElement('div');
+  div.id='tickRow_'+i;
+  div.style.cssText='display:grid;grid-template-columns:140px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center';
+  div.innerHTML=`<input type="text" class="tick-num" placeholder="e.g. TICK0782" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><input type="text" class="tick-reason" placeholder="Status / reason" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><button onclick="removeTickRow(this)" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:var(--r);padding:6px 8px;cursor:pointer;font-size:12px">${_i('trash',13)}</button>`;
+  cont.appendChild(div);
+}
+function removeTickRow(btn){
+  const row=btn.closest('[id^=tickRow_]');
+  if(document.getElementById('tickContainer').children.length>1)row.remove();
+  else row.querySelectorAll('input').forEach(i=>i.value='');
 }
 function addSoRow(){
   const cont=document.getElementById('soContainer');
@@ -1899,13 +1959,17 @@ async function submitDailyReport(existingId){
   const soNums=document.querySelectorAll('.so-num');
   const soReasons=document.querySelectorAll('.so-reason');
   const pending_sos=Array.from(soNums).map((el,i)=>({so:el.value.trim(),reason:soReasons[i]?.value.trim()||''})).filter(s=>s.so);
+  const tickNums=document.querySelectorAll('.tick-num');
+  const tickReasons=document.querySelectorAll('.tick-reason');
+  const pending_tickets=Array.from(tickNums).map((el,i)=>({tick:el.value.trim(),reason:tickReasons[i]?.value.trim()||''})).filter(t=>t.tick);
   const payload={
     agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,
     report_date:new Date().toISOString().slice(0,10),
     registration:g('reg'),daily_requests:g('dreq'),rectification:g('rect'),
     renewal_retail:g('rret'),renewal_reseller:g('rres'),renewal_csu:g('rcsu'),
     ownership:g('own'),plate_change:g('plt'),tickets:g('tkt'),
-    pending_sos,remarks:document.getElementById('dr_remarks')?.value.trim()||'',
+    pending_sos,pending_tickets,
+    remarks:document.getElementById('dr_remarks')?.value.trim()||'',
     submitted_at:new Date().toISOString()
   };
   let error;
