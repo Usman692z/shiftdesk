@@ -860,6 +860,7 @@ const _SVG={
   mytasks:`<svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>`,
   myleave:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
   myannounce:`<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+  dailyreport:`<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
   mydashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
   chat:`<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
 };
@@ -877,11 +878,12 @@ function buildNav(){
     {id:'myannounce',  label:'Announcements'},
     // {id:'chat',     label:'Chat'},  // temporarily hidden
     {id:'activity',    label:'Activity Log'},
+    {id:'dailyreport', label:'Daily Report'},
   ];
   const items=isAdmin
-    ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'tracking',label:'Tracking'},{id:'activity',label:'Activity'},{id:'reports',label:'Reports'},{id:'help',label:'Help'}]
+    ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'tracking',label:'Tracking'},{id:'activity',label:'Activity'},{id:'reports',label:'Reports'},{id:'dailyreport',label:'Daily Reports'},{id:'help',label:'Help'}]
     :(isManager||isSubAdmin)
-    ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'help',label:'Help'}]
+    ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'dailyreport',label:'Daily Reports'},{id:'help',label:'Help'}]
     :[...allAgentPages,{id:'help',label:'Help'}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${_SVG[i.id]||''}</span><span class="nav-label">${i.label}</span>${i.id==='chat'?'<span class="chat-unread" id="chatUnreadBadge"></span>':(i.id==='announce'||i.id==='myannounce')?'<span class="chat-unread" id="announceUnreadBadge"></span>':''}</div>`).join('');
 }
@@ -889,7 +891,7 @@ function buildNav(){
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',myannounce:'Announcements',chat:'Chat',help:'Help & Downloads'};
+  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',myannounce:'Announcements',chat:'Chat',help:'Help & Downloads',dailyreport:'Daily Reports'};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   // Reset content area styles (chat overrides them for full-height layout)
@@ -911,6 +913,7 @@ function navTo(page){
   else if(page==='myannounce'){clearAnnounceUnread();renderMyAnnouncements();}
   else if(page==='chat'){clearChatUnread();renderChat();}
   else if(page==='help')renderHelp();
+  else if(page==='dailyreport'){if(isAdmin||isManager||isSubAdmin)renderAdminDailyReports();else renderAgentDailyReport();}
 }
 
 let _realtimeDebounce={};
@@ -1821,6 +1824,158 @@ async function renderAnnouncements(){
     </div>`;
   }).join('')}`;
 }
+// ── DAILY REPORT (AGENT SUBMIT) ──────────────────────────────
+async function renderAgentDailyReport(){
+  const c=document.getElementById('pageContent');
+  const aid=currentAgent?.id;
+  const today=new Date().toISOString().slice(0,10);
+  // Load existing report for today if any
+  const{data:existing}=await _db.from('daily_reports').select('*').eq('agent_id',aid).eq('report_date',today).maybeSingle();
+  const v=existing||{};
+  const soRows=v.pending_sos?.length?v.pending_sos:[{so:'',reason:''}];
+  const soHtml=soRows.map((s,i)=>`
+    <div style="display:grid;grid-template-columns:140px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center" id="soRow_${i}">
+      <input type="text" class="so-num" placeholder="e.g. S70092" value="${s.so||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+      <input type="text" class="so-reason" placeholder="Reason / status" value="${s.reason||''}" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+      <button onclick="removeSoRow(this)" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:var(--r);padding:6px 8px;cursor:pointer;font-size:12px">${_i('trash',13)}</button>
+    </div>`).join('');
+  const alreadySubmitted=!!existing;
+  c.innerHTML=`
+  ${alreadySubmitted?`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:var(--gr);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:8px">${_i('check-circle',16)} Report submitted for today. You can update it below.</div>`:''}
+  <div class="card">
+    <div class="card-title" style="margin-bottom:16px;display:flex;align-items:center;gap:8px">${_i('file-text')} Daily Report — ${new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      ${[['reg','Registration',v.registration],['dreq','Daily Requests',v.daily_requests],['rect','Rectification',v.rectification]].map(([id,lbl,val])=>`
+      <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${lbl}</label>
+      <input type="number" id="dr_${id}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`).join('')}
+    </div>
+    <div style="border-top:1px solid var(--b2);padding-top:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px">RENEWALS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        ${[['rret','Retail Renewal',v.renewal_retail],['rres','Reseller Renewal',v.renewal_reseller],['rcsu','CSU Renewal',v.renewal_csu]].map(([id,lbl,val])=>`
+        <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${lbl}</label>
+        <input type="number" id="dr_${id}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`).join('')}
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--b2);padding-top:14px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px">OTHER TASKS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        ${[['own','Ownership',v.ownership],['plt','Plate Change',v.plate_change],['tkt','Tickets',v.tickets]].map(([id,lbl,val])=>`
+        <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:4px">${lbl}</label>
+        <input type="number" id="dr_${id}" min="0" value="${val||0}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:15px;font-family:var(--font)"></div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">${_i('alert-circle')} Pending S/Os <span style="font-size:12px;color:var(--mu);font-weight:400;margin-left:4px">— SO number + reason</span></div>
+    <div id="soContainer">${soHtml}</div>
+    <button onclick="addSoRow()" style="background:none;border:1px dashed var(--b2);border-radius:var(--r);padding:7px 14px;cursor:pointer;color:var(--mu);font-size:13px;font-family:var(--font);display:flex;align-items:center;gap:6px;margin-top:4px">${_i('plus',14)} Add S/O</button>
+  </div>
+  <div class="card" style="margin-top:12px">
+    <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:8px">${_i('message-square')} Remarks / Notes <span style="font-size:12px;color:var(--mu);font-weight:400;margin-left:4px">— optional</span></div>
+    <textarea id="dr_remarks" placeholder="Any extra info, issues faced, handover notes..." style="width:100%;padding:10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font);resize:vertical;min-height:80px">${v.remarks||''}</textarea>
+  </div>
+  <button onclick="submitDailyReport(${alreadySubmitted?`'${existing.id}'`:'null'})" style="width:100%;margin-top:12px;padding:11px;background:var(--ac);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:8px" id="drSubmitBtn">${_i('send',16)} ${alreadySubmitted?'Update Report':'Submit Report'}</button>
+  `;
+}
+function addSoRow(){
+  const cont=document.getElementById('soContainer');
+  const i=cont.children.length;
+  const div=document.createElement('div');
+  div.id='soRow_'+i;
+  div.style.cssText='display:grid;grid-template-columns:140px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center';
+  div.innerHTML=`<input type="text" class="so-num" placeholder="e.g. S70092" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><input type="text" class="so-reason" placeholder="Reason / status" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)"><button onclick="removeSoRow(this)" style="background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:var(--r);padding:6px 8px;cursor:pointer;font-size:12px">${_i('trash',13)}</button>`;
+  cont.appendChild(div);
+}
+function removeSoRow(btn){
+  const row=btn.closest('[id^=soRow_]');
+  if(document.getElementById('soContainer').children.length>1)row.remove();
+  else{row.querySelectorAll('input').forEach(i=>i.value='');}
+}
+async function submitDailyReport(existingId){
+  const btn=document.getElementById('drSubmitBtn');
+  btn.disabled=true;btn.textContent='Saving...';
+  const g=id=>parseInt(document.getElementById('dr_'+id)?.value)||0;
+  const soNums=document.querySelectorAll('.so-num');
+  const soReasons=document.querySelectorAll('.so-reason');
+  const pending_sos=Array.from(soNums).map((el,i)=>({so:el.value.trim(),reason:soReasons[i]?.value.trim()||''})).filter(s=>s.so);
+  const payload={
+    agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,
+    report_date:new Date().toISOString().slice(0,10),
+    registration:g('reg'),daily_requests:g('dreq'),rectification:g('rect'),
+    renewal_retail:g('rret'),renewal_reseller:g('rres'),renewal_csu:g('rcsu'),
+    ownership:g('own'),plate_change:g('plt'),tickets:g('tkt'),
+    pending_sos,remarks:document.getElementById('dr_remarks')?.value.trim()||'',
+    submitted_at:new Date().toISOString()
+  };
+  let error;
+  if(existingId){({error}=await _db.from('daily_reports').update(payload).eq('id',existingId));}
+  else{({error}=await _db.from('daily_reports').insert(payload));}
+  if(error){showToast('Error: '+error.message,'err');btn.disabled=false;btn.textContent='Submit Report';return;}
+  showToast(_i('check')+' Daily report submitted!','ok');
+  renderAgentDailyReport();
+}
+
+// ── DAILY REPORTS ADMIN VIEW ──────────────────────────────────
+async function renderAdminDailyReports(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
+  const today=new Date().toISOString().slice(0,10);
+  let selDate=today;
+  const render=async()=>{
+    let q=_db.from('daily_reports').select('*').eq('report_date',selDate).order('submitted_at',{ascending:false});
+    if(isManager&&managerDept)q=q.eq('dept',managerDept);
+    else if(isSubAdmin&&subAdminDepts.length)q=q.in('dept',subAdminDepts);
+    const{data:reps}=await q;
+    const totals={registration:0,daily_requests:0,rectification:0,renewal_retail:0,renewal_reseller:0,renewal_csu:0,ownership:0,plate_change:0,tickets:0};
+    (reps||[]).forEach(r=>Object.keys(totals).forEach(k=>totals[k]+=(r[k]||0)));
+    const totalRenewal=totals.renewal_retail+totals.renewal_reseller+totals.renewal_csu;
+    const allPending=(reps||[]).flatMap(r=>(r.pending_sos||[]).map(s=>({...s,agent:r.agent_name,dept:r.dept})));
+    c.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <input type="date" value="${selDate}" onchange="window._drDate=this.value;window._drRender()" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+      <span style="font-size:13px;color:var(--mu)">${(reps||[]).length} reports submitted</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px">
+      ${[['Registration',totals.registration,'var(--ac)'],['Daily Req',totals.daily_requests,'var(--gr)'],['Rectification',totals.rectification,'var(--yl)'],['Renewals',totalRenewal,'#a78bfa'],['Ownership',totals.ownership,'var(--rd)'],['Plate Change',totals.plate_change,'var(--mu)'],['Tickets',totals.tickets,'#38bdf8']].map(([lbl,val,col])=>`
+      <div class="card" style="text-align:center;padding:14px 10px">
+        <div style="font-size:24px;font-weight:700;color:${col}">${val}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">${lbl}</div>
+      </div>`).join('')}
+    </div>
+    ${allPending.length?`<div class="card" style="margin-bottom:16px;border-left:3px solid var(--yl)">
+      <div class="card-title" style="margin-bottom:10px;display:flex;align-items:center;gap:6px">${_i('alert-circle')} Pending S/Os (${allPending.length})</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${allPending.map(s=>`<div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="font-weight:700;color:var(--ac);min-width:90px">${s.so}</span><span style="color:var(--mu);min-width:80px">${s.agent||''}</span><span>${s.reason||''}</span></div>`).join('')}
+      </div>
+    </div>`:''}
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${(reps||[]).length?reps.map(r=>{
+        const pen=r.pending_sos||[];
+        const totalRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
+        return`<div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <div><span style="font-weight:700">${r.agent_name||'—'}</span> <span style="font-size:12px;color:var(--mu)">${r.dept||''}</span></div>
+            <span style="font-size:11px;color:var(--mu)">${new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-bottom:${pen.length?'10px':'0'}">
+            ${[['Reg',r.registration],['Req',r.daily_requests],['Rect',r.rectification],['Renewal',totalRen],['Owner',r.ownership],['Plate',r.plate_change],['Tickets',r.tickets]].map(([l,v])=>`<div style="background:var(--s2);border-radius:var(--r);padding:6px 8px;text-align:center"><div style="font-size:16px;font-weight:700">${v||0}</div><div style="font-size:10px;color:var(--mu)">${l}</div></div>`).join('')}
+          </div>
+          ${pen.length?`<div style="border-top:1px solid var(--b2);padding-top:8px;display:flex;flex-direction:column;gap:4px">
+            ${pen.map(s=>`<div style="font-size:12px;display:flex;gap:8px"><span style="color:var(--yl);font-weight:700">${_i('alert-circle',12)} ${s.so}</span><span style="color:var(--mu)">${s.reason||''}</span></div>`).join('')}
+          </div>`:''}
+          ${r.remarks?`<div style="margin-top:8px;font-size:12px;color:var(--mu);border-top:1px solid var(--b2);padding-top:8px">${_i('message-square',12)} ${r.remarks}</div>`:''}
+        </div>`;
+      }).join(''):`<div class="empty-state"><p>No reports submitted for this date.</p></div>`}
+    </div>`;
+    window._drRender=render;
+    // attach date picker listener
+    const dp=c.querySelector('input[type=date]');
+    if(dp)dp.onchange=function(){selDate=this.value;render();};
+  };
+  await render();
+}
+
 function renderHelp(){
   const c=document.getElementById('pageContent');
   c.innerHTML=`
