@@ -2032,7 +2032,54 @@ async function renderAgentDailyReport(){
     ${submitBtn(existing?.id)}`;
   }
 
-  c.innerHTML=submittedBanner+bodyHtml;
+  const myReportsHtml=`<div id="myReportsTab" style="display:none"></div>`;
+  const tabBar=`<div style="display:flex;gap:8px;margin-bottom:16px">
+    <button id="drTabSubmit" onclick="window._drAgentTab('submit')" style="padding:7px 16px;border-radius:var(--r);border:1px solid var(--ac);background:rgba(108,99,255,.15);color:var(--ac);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">Today's Report</button>
+    <button id="drTabHistory" onclick="window._drAgentTab('history')" style="padding:7px 16px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-weight:400;cursor:pointer;font-family:var(--font)">${_i('list',13)} My Reports</button>
+  </div>
+  <div id="drSubmitPane">${submittedBanner}${bodyHtml}</div>
+  <div id="drHistoryPane" style="display:none"></div>`;
+  c.innerHTML=tabBar;
+
+  window._drAgentTab=async(tab)=>{
+    const sb=document.getElementById('drTabSubmit');
+    const hb=document.getElementById('drTabHistory');
+    const sp=document.getElementById('drSubmitPane');
+    const hp=document.getElementById('drHistoryPane');
+    if(tab==='submit'){
+      sb.style.cssText='padding:7px 16px;border-radius:var(--r);border:1px solid var(--ac);background:rgba(108,99,255,.15);color:var(--ac);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)';
+      hb.style.cssText='padding:7px 16px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-weight:400;cursor:pointer;font-family:var(--font)';
+      sp.style.display='';hp.style.display='none';
+    } else {
+      hb.style.cssText='padding:7px 16px;border-radius:var(--r);border:1px solid var(--ac);background:rgba(108,99,255,.15);color:var(--ac);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)';
+      sb.style.cssText='padding:7px 16px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-weight:400;cursor:pointer;font-family:var(--font)';
+      sp.style.display='none';hp.style.display='';
+      if(!hp.dataset.loaded){
+        hp.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
+        const{data:reps}=await _db.from('daily_reports').select('*').eq('agent_id',aid).order('report_date',{ascending:false});
+        hp.dataset.loaded='1';
+        if(!reps||!reps.length){hp.innerHTML='<div class="empty-state"><p>No reports submitted yet.</p></div>';return;}
+        const tplName={data_team:'Data Team',customer_support:'Customer Support',retail_manager:'Retail Manager'};
+        hp.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap"><table>
+            <thead><tr><th>Date</th><th>Reg</th><th>Requests</th><th>Rect</th><th>Renewal</th><th>Owner</th><th>Plate</th><th>Tickets</th><th>Remarks</th><th></th></tr></thead>
+            <tbody>${reps.map(r=>{
+              const tRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
+              const isCS=r.cs_calls||r.cs_whatsapp;
+              return`<tr>
+                <td style="white-space:nowrap;font-weight:600">${r.report_date}</td>
+                ${isCS?`<td colspan="7" style="color:var(--mu);font-size:12px">Calls: ${r.cs_calls||0} &nbsp; WA: ${r.cs_whatsapp||0} &nbsp; Revenue: ${r.cs_revenue||0} SAR</td>`:`
+                <td>${r.registration||0}</td><td>${r.daily_requests||0}</td><td>${r.rectification||0}</td>
+                <td>${tRen}</td><td>${r.ownership||0}</td><td>${r.plate_change||0}</td><td>${r.tickets||0}</td>`}
+                <td style="max-width:160px;font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.remarks||'—'}</td>
+                <td><button onclick="viewReportModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="padding:3px 8px;font-size:11px;background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3);border-radius:var(--r);cursor:pointer;font-family:var(--font)">${_i('eye',11)}</button></td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table></div>
+        </div>`;
+      }
+    }
+  };
 }
 function addTickRow(){
   const cont=document.getElementById('tickContainer');
@@ -2121,13 +2168,17 @@ async function renderAdminDailyReports(){
   const agentCard=(r)=>{
     const pen=r.pending_sos||[];
     const totalRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
+    const rid='dr_'+r.id;
     return`<div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-weight:700">${r.agent_name||'—'}</span>
           <span style="font-size:11px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;color:var(--mu)">${r.dept||''}</span>
         </div>
-        <span style="font-size:11px;color:var(--mu)">${r.report_date||''} &nbsp;${r.submitted_at?new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--mu)">${r.report_date||''} &nbsp;${r.submitted_at?new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}</span>
+          <button onclick="viewReportModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="padding:4px 10px;font-size:11px;background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3);border-radius:var(--r);cursor:pointer;font-family:var(--font)">${_i('eye',11)} View</button>
+        </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:5px;margin-bottom:${pen.length||r.remarks?'10px':'0'}">
         ${[['Reg',r.registration],['Requests',r.daily_requests],['Rect',r.rectification],['Renewal',totalRen],['Owner',r.ownership],['Plate',r.plate_change],['Tickets',r.tickets]].map(([l,v])=>`<div style="background:var(--s2);border-radius:var(--r);padding:5px 6px;text-align:center"><div style="font-size:15px;font-weight:700">${v||0}</div><div style="font-size:10px;color:var(--mu)">${l}</div></div>`).join('')}
@@ -2253,6 +2304,47 @@ async function renderAdminDailyReports(){
     window._drTab=_tab;window._drRender=()=>{_tab=window._drTab||_tab;mainRender();};
   };
   await mainRender();
+}
+
+function viewReportModal(r){
+  const totalRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
+  const pen=r.pending_sos||[];
+  const tix=r.pending_tickets||[];
+  const isCS=r.cs_calls||r.cs_whatsapp||r.cs_renewals||r.cs_so_created||r.cs_revenue||r.cs_complaints_closed||r.cs_complaints_pending||r.cs_escalations;
+  const row=(l,v,col)=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--b);font-size:13px"><span style="color:var(--mu)">${l}</span><span style="font-weight:700;color:${col||'var(--tx)'}"> ${v??0}</span></div>`;
+  let body=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+    <span style="font-weight:700;font-size:15px">${r.agent_name||'—'}</span>
+    <span style="font-size:11px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:2px 10px;color:var(--mu)">${r.dept||''}</span>
+    <span style="margin-left:auto;font-size:12px;color:var(--mu)">${r.report_date||''} &nbsp; ${r.submitted_at?new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}</span>
+  </div>`;
+  if(isCS){
+    body+=`<div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:4px;letter-spacing:.5px">CALLS & COMMUNICATION</div>
+    ${row('Total Calls',r.cs_calls,'var(--ac)')}${row('WhatsApp Chats',r.cs_whatsapp,'#25d366')}
+    <div style="font-size:11px;font-weight:700;color:var(--mu);margin-top:12px;margin-bottom:4px;letter-spacing:.5px">SALES & RENEWALS</div>
+    ${row('Renewals Done',r.cs_renewals,'#a78bfa')}${row('S/Os Created',r.cs_so_created,'var(--gr)')}${row('Revenue (SAR)',r.cs_revenue,'var(--yl)')}
+    <div style="font-size:11px;font-weight:700;color:var(--mu);margin-top:12px;margin-bottom:4px;letter-spacing:.5px">SUPPORT & COMPLAINTS</div>
+    ${row('Complaints Closed',r.cs_complaints_closed,'var(--gr)')}${row('Complaints Pending',r.cs_complaints_pending,'var(--rd)')}${row('Escalations',r.cs_escalations,'var(--or)')}`;
+  } else {
+    body+=`<div style="font-size:11px;font-weight:700;color:var(--mu);margin-bottom:4px;letter-spacing:.5px">DAILY NUMBERS</div>
+    ${row('Registration',r.registration,'var(--ac)')}${row('Daily Requests',r.daily_requests,'var(--gr)')}${row('Rectification',r.rectification,'var(--yl)')}
+    <div style="font-size:11px;font-weight:700;color:var(--mu);margin-top:12px;margin-bottom:4px;letter-spacing:.5px">RENEWALS</div>
+    ${row('Retail Renewal',r.renewal_retail,'#a78bfa')}${row('Reseller Renewal',r.renewal_reseller,'#a78bfa')}${row('CSU Renewal',r.renewal_csu,'#a78bfa')}${row('Total Renewal',totalRen,'#a78bfa')}
+    <div style="font-size:11px;font-weight:700;color:var(--mu);margin-top:12px;margin-bottom:4px;letter-spacing:.5px">OTHER TASKS</div>
+    ${row('Ownership',r.ownership,'var(--rd)')}${row('Plate Change',r.plate_change,'var(--mu)')}${row('Tickets',r.tickets,'#38bdf8')}`;
+  }
+  if(pen.length){
+    body+=`<div style="font-size:11px;font-weight:700;color:var(--yl);margin-top:14px;margin-bottom:6px;letter-spacing:.5px">${_i('alert-circle',11)} PENDING S/Os (${pen.length})</div>`;
+    pen.forEach(s=>{ body+=`<div style="font-size:12px;display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--b)"><span style="color:var(--yl);font-weight:700;min-width:90px">${s.so}</span><span style="color:var(--mu)">${s.reason||''}</span></div>`; });
+  }
+  if(tix.length){
+    body+=`<div style="font-size:11px;font-weight:700;color:#38bdf8;margin-top:14px;margin-bottom:6px;letter-spacing:.5px">${_i('tag',11)} PENDING TICKETS (${tix.length})</div>`;
+    tix.forEach(t=>{ body+=`<div style="font-size:12px;display:flex;gap:10px;padding:5px 0;border-bottom:1px solid var(--b)"><span style="color:#38bdf8;font-weight:700;min-width:90px">${t.tick}</span><span style="color:var(--mu)">${t.reason||''}</span></div>`; });
+  }
+  if(r.remarks) body+=`<div style="margin-top:12px;padding:10px;background:var(--s2);border-radius:var(--r);font-size:12px;color:var(--mu)">${_i('message-square',12)} ${r.remarks}</div>`;
+  document.getElementById('modalTitle').textContent='Report Details';
+  document.getElementById('modalBody').innerHTML=`<div style="max-height:60vh;overflow-y:auto;padding-right:4px">${body}</div>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-sm" onclick="closeModal()">Close</button>`;
+  openModal();
 }
 
 function renderHelp(){
