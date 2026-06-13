@@ -8,7 +8,7 @@
 <title>ShiftDesk - Agent Workforce</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -152,6 +152,15 @@ tr:hover td{background:var(--b)}
 .inbox-empty{padding:24px;text-align:center;color:var(--mu);font-size:13px}
 /* Print styles for PDF export */
 @media print{.sidebar,.topbar,.no-print{display:none!important}.main{overflow:visible!important}.content{overflow:visible!important}body{background:#fff!important;color:#000!important}}
+[dir="rtl"] .sidebar{border-right:none;border-left:1px solid var(--b)}
+[dir="rtl"] .nav-icon{margin-right:0;margin-left:10px}
+[dir="rtl"] .td-actions{flex-direction:row-reverse}
+[dir="rtl"] .modal{text-align:right}
+[dir="rtl"] .auth-box{text-align:right}
+[dir="rtl"] .card-title{flex-direction:row-reverse;justify-content:flex-end}
+[dir="rtl"] input,[dir="rtl"] select,[dir="rtl"] textarea{text-align:right}
+[dir="rtl"] .agents-header{flex-direction:row-reverse}
+[dir="rtl"] .badge{flex-direction:row-reverse}
 </style>
 </head>
 <body>
@@ -203,11 +212,12 @@ tr:hover td{background:var(--b)}
     <div class="sidebar-user">
       <div class="sidebar-user-name" id="sideUserName">—</div>
       <div class="sidebar-user-role" id="sideUserRole">—</div>
-      <button class="sidebar-logout" onclick="logout()">Logout</button>
+      <button class="sidebar-logout" onclick="logout()" id="logoutBtn">Logout</button>
     </div>
   </div>
   <div class="main">
-    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo((isAdmin||isManager)?'tasks':'mytasks')" title="Pending Tasks"><span style="display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap" style="display:none"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div></div>
+    <div class="topbar"><h1 id="pageTitle">Dashboard</h1><div style="display:flex;align-items:center;gap:10px"><div class="topbar-time" id="liveClock">—</div><div class="notif-wrap" onclick="navTo((isAdmin||isManager)?'tasks':'mytasks')" title="Pending Tasks"><span style="display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></span><span class="notif-badge" id="notifBadge">0</span></div><div class="inbox-wrap" id="inboxWrap" style="display:none"><button class="inbox-btn" onclick="toggleInbox()" title="Messages Inbox" style="color:var(--tx);font-family:var(--font)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> <span class="inbox-badge" id="inboxBadge"></span></button><div class="inbox-dropdown" id="inboxDropdown"><div class="inbox-header"><span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Messages</span><a onclick="navTo('chat');closeInbox()">Open Chat →</a></div><div id="inboxList"><div class="inbox-empty">No new messages</div></div></div></div><button onclick="setLang(_lang==='en'?'ar':'en')" id="langBtn" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:13px;font-weight:700;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1;min-width:36px" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'">عر</button>
+<button onclick="toggleTheme()" id="themeBtn" title="Toggle Light/Dark" style="background:var(--b2);border:1px solid var(--b2);border-radius:var(--r);padding:5px 11px;cursor:pointer;font-size:16px;color:var(--tx);font-family:var(--font);transition:var(--tr);line-height:1" onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='var(--b2)'"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div></div>
     <div class="content" id="pageContent"></div>
   </div>
 </div>
@@ -510,6 +520,103 @@ async function _getAgents(cols){
 }
 
 // Separate client for creating new auth users — isolated storage key
+let _lang=localStorage.getItem('sd_lang')||'en';
+const _T={
+  en:{
+    dashboard:'Dashboard',agents:'Agents',tasks:'Tasks',leaves:'Leaves',announce:'Announce',
+    tracking:'Tracking',activity:'Activity',reports:'Reports',help:'Help',
+    myshift:'My Shift',mytasks:'My Tasks',myleave:'Leave',myannounce:'Announcements',
+    actlog:'Activity Log',dailyreport:'Daily Report',
+    dashboard_title:'Dashboard',agents_title:'Manage Agents',tasks_title:'Task Management',
+    tracking_title:'Activity Tracking',activity_title:'Activity Log',myshift_title:'My Shift',
+    mytasks_title:'My Tasks',mydashboard_title:'My Dashboard',reports_title:'Reports',
+    myleave_title:'Leave Requests',leaves_title:'Leave Requests',announce_title:'Announcements',
+    myannounce_title:'Announcements',chat_title:'Chat',help_title:'Help & Downloads',
+    dailyreport_title:'Daily Reports',
+    login:'Login',logout:'Logout',save:'Save',cancel:'Cancel',submit:'Submit',
+    edit:'Edit',delete:'Delete',add:'Add',search:'Search',filter:'Filter',
+    name:'Full Name',email:'Official Email',dept:'Department',role:'Role / Designation',
+    country:'Country',shift_start:'Shift Start',shift_end:'Shift End',access:'Access Level',
+    password:'Password',report_template:'Report Template',
+    add_agent:'+ Add Agent',save_agent:'Save Agent',
+    checkin:'Check In',checkout:'Check Out',break:'Take Break',resume:'Resume',
+    pending:'Pending',approved:'Approved',rejected:'Rejected',
+    no_data:'No data found.',loading:'Loading...',
+    approve:'Approve',reject:'Reject',
+    agent_login:'Agent Login',admin_login:'Admin Login',
+    welcome:'Welcome back',enter_email:'Email address',enter_pass:'Password',
+    forgot_pass:'Forgot password?',
+    all_depts:'All Departments',all_agents:'All Agents',
+    daily:'Daily',monthly:'Monthly',
+    submitted:'Report submitted for today. You can update it below.',
+    submit_report:'Submit Report',update_report:'Update Report',
+    no_report:'No reports submitted for this date.',
+    missing_agents:'Did not submit report',
+    pending_sos:'Pending S/Os',add_so:'Add S/O',remarks:'Remarks / Notes',
+    registration:'Registration',daily_requests:'Daily Requests',rectification:'Rectification',
+    renewal:'Renewals',retail_renewal:'Retail Renewal',reseller_renewal:'Reseller Renewal',
+    csu_renewal:'CSU Renewal',ownership:'Ownership',plate_change:'Plate Change',tickets:'Tickets',
+    total_calls:'Total Calls',whatsapp:'WhatsApp Chats',renewals_done:'Renewals Done',
+    so_created:'S/Os Created',revenue:'Revenue (SAR)',complaints_closed:'Complaints Closed',
+    complaints_pending:'Complaints Pending',escalations:'Escalations',
+    pending_tickets:'Pending Tickets',add_ticket:'Add Ticket',
+    days_reported:'days reported',days_missing:'days missing',
+    administrator:'Administrator',dept_manager:'Dept Manager',sub_admin:'Sub Admin',
+  },
+  ar:{
+    dashboard:'لوحة التحكم',agents:'الموظفون',tasks:'المهام',leaves:'الإجازات',
+    announce:'الإعلانات',tracking:'التتبع',activity:'النشاط',reports:'التقارير',help:'المساعدة',
+    myshift:'وردیتي',mytasks:'مهامي',myleave:'إجازة',myannounce:'الإعلانات',
+    actlog:'سجل النشاط',dailyreport:'التقرير اليومي',
+    dashboard_title:'لوحة التحكم',agents_title:'إدارة الموظفين',tasks_title:'إدارة المهام',
+    tracking_title:'تتبع النشاط',activity_title:'سجل النشاط',myshift_title:'وردیتي',
+    mytasks_title:'مهامي',mydashboard_title:'لوحتي',reports_title:'التقارير',
+    myleave_title:'طلبات الإجازة',leaves_title:'طلبات الإجازة',announce_title:'الإعلانات',
+    myannounce_title:'الإعلانات',chat_title:'المحادثة',help_title:'المساعدة والتنزيلات',
+    dailyreport_title:'التقارير اليومية',
+    login:'تسجيل الدخول',logout:'تسجيل الخروج',save:'حفظ',cancel:'إلغاء',
+    submit:'إرسال',edit:'تعديل',delete:'حذف',add:'إضافة',search:'بحث',filter:'تصفية',
+    name:'الاسم الكامل',email:'البريد الرسمي',dept:'القسم',role:'المسمى الوظيفي',
+    country:'الدولة',shift_start:'بداية الوردية',shift_end:'نهاية الوردية',
+    access:'مستوى الصلاحية',password:'كلمة المرور',report_template:'نموذج التقرير',
+    add_agent:'+ إضافة موظف',save_agent:'حفظ الموظف',
+    checkin:'تسجيل الدخول',checkout:'تسجيل الخروج',break:'استراحة',resume:'استئناف',
+    pending:'قيد الانتظار',approved:'موافق عليه',rejected:'مرفوض',
+    no_data:'لا توجد بيانات.',loading:'جارٍ التحميل...',
+    approve:'موافقة',reject:'رفض',
+    agent_login:'دخول الموظف',admin_login:'دخول المشرف',
+    welcome:'مرحباً بعودتك',enter_email:'البريد الإلكتروني',enter_pass:'كلمة المرور',
+    forgot_pass:'نسيت كلمة المرور؟',
+    all_depts:'جميع الأقسام',all_agents:'جميع الموظفين',
+    daily:'يومي',monthly:'شهري',
+    submitted:'تم إرسال التقرير اليوم. يمكنك تحديثه أدناه.',
+    submit_report:'إرسال التقرير',update_report:'تحديث التقرير',
+    no_report:'لم يتم إرسال تقارير لهذا التاريخ.',
+    missing_agents:'لم يرسلوا التقرير',
+    pending_sos:'طلبات S/O معلّقة',add_so:'إضافة S/O',remarks:'ملاحظات',
+    registration:'التسجيل',daily_requests:'الطلبات اليومية',rectification:'التصحيح',
+    renewal:'التجديدات',retail_renewal:'تجديد Retail',reseller_renewal:'تجديد Reseller',
+    csu_renewal:'تجديد CSU',ownership:'نقل الملكية',plate_change:'تغيير اللوحة',
+    tickets:'التذاكر',
+    total_calls:'إجمالي المكالمات',whatsapp:'محادثات واتساب',renewals_done:'التجديدات المنجزة',
+    so_created:'S/Os تم إنشاؤها',revenue:'الإيراد (ريال)',complaints_closed:'الشكاوى المغلقة',
+    complaints_pending:'الشكاوى المعلّقة',escalations:'التصعيدات',
+    pending_tickets:'تذاكر معلّقة',add_ticket:'إضافة تذكرة',
+    days_reported:'أيام أُرسل فيها التقرير',days_missing:'أيام مفقودة',
+    administrator:'مشرف',dept_manager:'مدير القسم',sub_admin:'مشرف فرعي',
+  }
+};
+function t(key){return(_T[_lang]||_T.en)[key]||(_T.en)[key]||key;}
+function setLang(lang){
+  _lang=lang;localStorage.setItem('sd_lang',lang);
+  document.documentElement.lang=lang;
+  document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  document.documentElement.style.fontFamily=lang==='ar'?"'Cairo',-apple-system,sans-serif":"'Inter',-apple-system,sans-serif";
+  const btn=document.getElementById('langBtn');
+  if(btn)btn.textContent=lang==='ar'?'EN':'عر';
+  if(typeof buildNav==='function')buildNav();
+  if(typeof navTo==='function'&&currentPage)navTo(currentPage);
+}
 let currentUser=null,currentAgent=null,isAdmin=false,isManager=false,managerDept='',isSubAdmin=false,subAdminDepts=[],editingAgentId=null,clockInterval=null;
 let lastActivityTime=Date.now(),trackingInterval=null,isTracking=false;
 let currentPage='',realtimeChannel=null,_chatPollInterval=null,_bgPollInterval=null,_lastMsgTime=null;
@@ -688,6 +795,8 @@ function showAuth(){
 function showApp(){
   document.getElementById('authScreen').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+  // Apply saved language
+  setLang(_lang);
   // Restore saved theme
   const saved=localStorage.getItem('sd_theme')||'dark';
   applyTheme(saved);
@@ -868,7 +977,7 @@ const _SVG={
 
 function buildNav(){
   document.getElementById('sideUserName').textContent=isAdmin?'Admin':isManager?(currentAgent?.name||'Manager'):isSubAdmin?(currentAgent?.name||'Sub Admin'):(currentAgent?.name||'Agent');
-  document.getElementById('sideUserRole').textContent=isAdmin?'Administrator':isManager?('Dept Manager'+(managerDept?' — '+managerDept:'')):isSubAdmin?('Sub Admin'+(subAdminDepts.length?' — '+subAdminDepts.join(', '):'')):( currentAgent?.role||'Agent');
+  document.getElementById('sideUserRole').textContent=isAdmin?t('administrator'):isManager?(t('dept_manager')+(managerDept?' — '+managerDept:'')):isSubAdmin?(t('sub_admin')+(subAdminDepts.length?' — '+subAdminDepts.join(', '):'')):( currentAgent?.role||'Agent');
   // Agent nav: filter based on permissions field
   const agentPerms=(currentAgent?.permissions||'myshift,mytasks,activity,mydashboard').split(',');
   const allAgentPages=[
@@ -882,17 +991,17 @@ function buildNav(){
     {id:'dailyreport', label:'Daily Report'},
   ];
   const items=isAdmin
-    ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'tracking',label:'Tracking'},{id:'activity',label:'Activity'},{id:'reports',label:'Reports'},{id:'dailyreport',label:'Daily Reports'},{id:'help',label:'Help'}]
+    ?[{id:'dashboard',label:t('dashboard')},{id:'agents',label:t('agents')},{id:'tasks',label:t('tasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'tracking',label:t('tracking')},{id:'activity',label:t('activity')},{id:'reports',label:t('reports')},{id:'dailyreport',label:t('dailyreport')},{id:'help',label:t('help')}]
     :(isManager||isSubAdmin)
-    ?[{id:'dashboard',label:'Dashboard'},{id:'agents',label:'Agents'},{id:'tasks',label:'Tasks'},{id:'leaves',label:'Leaves'},{id:'announce',label:'Announce'},{id:'dailyreport',label:'Daily Reports'},{id:'help',label:'Help'}]
-    :[...allAgentPages,{id:'help',label:'Help'}];
+    ?[{id:'dashboard',label:t('dashboard')},{id:'agents',label:t('agents')},{id:'tasks',label:t('tasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'dailyreport',label:t('dailyreport')},{id:'help',label:t('help')}]
+    :[...allAgentPages.map(p=>({...p,label:t(p.id)||p.label})),{id:'help',label:t('help')}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${_SVG[i.id]||''}</span><span class="nav-label">${i.label}</span>${i.id==='chat'?'<span class="chat-unread" id="chatUnreadBadge"></span>':(i.id==='announce'||i.id==='myannounce')?'<span class="chat-unread" id="announceUnreadBadge"></span>':''}</div>`).join('');
 }
 
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:'Dashboard',agents:'Manage Agents',tasks:'Task Management',tracking:'Activity Tracking',activity:'Activity Log',myshift:'My Shift',mytasks:'My Tasks',mydashboard:'My Dashboard',reports:'Reports',myleave:'Leave Requests',leaves:'Leave Requests',announce:'Announcements',myannounce:'Announcements',chat:'Chat',help:'Help & Downloads',dailyreport:'Daily Reports'};
+  const titles={dashboard:t('dashboard_title'),agents:t('agents_title'),tasks:t('tasks_title'),tracking:t('tracking_title'),activity:t('activity_title'),myshift:t('myshift_title'),mytasks:t('mytasks_title'),mydashboard:t('mydashboard_title'),reports:t('reports_title'),myleave:t('myleave_title'),leaves:t('leaves_title'),announce:t('announce_title'),myannounce:t('myannounce_title'),chat:t('chat_title'),help:t('help_title'),dailyreport:t('dailyreport_title')};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   // Reset content area styles (chat overrides them for full-height layout)
