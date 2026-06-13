@@ -2441,6 +2441,7 @@ function renderHelp(){
         {icon:_i('monitor'),title:'Activity Tracking',desc:'Tracked automatically via the desktop app — active time and idle time. Each agent\'s daily productivity is shown in a bar chart.'},
         {icon:_i('file-text'),title:'Activity Log',desc:'All agent check-in, check-out, and break events in chronological order.'},
         {icon:_i('trending-up'),title:'Reports',desc:'Filter by month, department, or agent. View detailed reports or a heatmap. PDF export available for payroll.'},
+        {icon:_i('file-text'),title:'Daily Reports',desc:'Agents submit their daily work report from here. As admin you can view all submitted reports, filter by date/department/agent, see who has not submitted, check monthly totals, view full report details, and delete any report if needed.'},
       ]:[
         {icon:_i('clock'),title:'My Shift',desc:'Check in at the start of your shift every day. Click "Take Break" when you need a break — then resume when you return. Check out when your shift ends. A 2nd shift is optional.'},
         {icon:_i('check-square'),title:'My Tasks',desc:'Tasks assigned to you by admin or other agents appear here. Mark them complete or reject with a remark. You can also track your own work using "New Task".'},
@@ -2449,6 +2450,7 @@ function renderHelp(){
         {icon:_i('bell'),title:'Announcements',desc:'Any notices from admin appear here — office meetings, holidays, or important updates.'},
         {icon:_i('chat',12),title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
         {icon:_i('file-text'),title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
+        {icon:_i('file-text'),title:'Daily Report',desc:'Submit your daily work report here every day. Fill in all the fields and click Submit. You can update it later the same day. Switch to the "My Reports" tab to see your full history with date filters and totals.'},
       ]).map(s=>`
       <div style="display:flex;gap:14px;padding:12px;background:var(--s2);border-radius:var(--r);border:1px solid var(--b)">
         <span style="font-size:22px;flex-shrink:0">${s.icon}</span>
