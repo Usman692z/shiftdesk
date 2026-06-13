@@ -2056,27 +2056,63 @@ async function renderAgentDailyReport(){
       sp.style.display='none';hp.style.display='';
       if(!hp.dataset.loaded){
         hp.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
-        const{data:reps}=await _db.from('daily_reports').select('*').eq('agent_id',aid).order('report_date',{ascending:false});
+        const{data:allReps}=await _db.from('daily_reports').select('*').eq('agent_id',aid).order('report_date',{ascending:false});
         hp.dataset.loaded='1';
-        if(!reps||!reps.length){hp.innerHTML='<div class="empty-state"><p>No reports submitted yet.</p></div>';return;}
-        const tplName={data_team:'Data Team',customer_support:'Customer Support',retail_manager:'Retail Manager'};
-        hp.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
-          <div class="table-wrap"><table>
-            <thead><tr><th>Date</th><th>Reg</th><th>Requests</th><th>Rect</th><th>Renewal</th><th>Owner</th><th>Plate</th><th>Tickets</th><th>Remarks</th><th></th></tr></thead>
-            <tbody>${reps.map(r=>{
-              const tRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
-              const isCS=r.cs_calls||r.cs_whatsapp;
-              return`<tr>
-                <td style="white-space:nowrap;font-weight:600">${r.report_date}</td>
-                ${isCS?`<td colspan="7" style="color:var(--mu);font-size:12px">Calls: ${r.cs_calls||0} &nbsp; WA: ${r.cs_whatsapp||0} &nbsp; Revenue: ${r.cs_revenue||0} SAR</td>`:`
-                <td>${r.registration||0}</td><td>${r.daily_requests||0}</td><td>${r.rectification||0}</td>
-                <td>${tRen}</td><td>${r.ownership||0}</td><td>${r.plate_change||0}</td><td>${r.tickets||0}</td>`}
-                <td style="max-width:160px;font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.remarks||'—'}</td>
-                <td><button onclick="viewReportModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="padding:3px 8px;font-size:11px;background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3);border-radius:var(--r);cursor:pointer;font-family:var(--font)">${_i('eye',11)}</button></td>
-              </tr>`;
-            }).join('')}</tbody>
-          </table></div>
-        </div>`;
+        if(!allReps||!allReps.length){hp.innerHTML='<div class="empty-state"><p>No reports submitted yet.</p></div>';return;}
+
+        const renderHistoryTable=(from,to)=>{
+          const filtered=allReps.filter(r=>(!from||r.report_date>=from)&&(!to||r.report_date<=to));
+          if(!filtered.length)return'<div class="empty-state"><p>No reports in this range.</p></div>';
+          // totals
+          const tot={reg:0,req:0,rect:0,ren:0,own:0,plt:0,tkt:0};
+          filtered.forEach(r=>{tot.reg+=r.registration||0;tot.req+=r.daily_requests||0;tot.rect+=r.rectification||0;tot.ren+=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);tot.own+=r.ownership||0;tot.plt+=r.plate_change||0;tot.tkt+=r.tickets||0;});
+          return`<div class="card" style="padding:0;overflow:hidden">
+            <div class="table-wrap"><table>
+              <thead><tr><th>Date</th><th>Reg</th><th>Requests</th><th>Rect</th><th>Renewal</th><th>Owner</th><th>Plate</th><th>Tickets</th><th>Remarks</th><th></th></tr></thead>
+              <tbody>${filtered.map(r=>{
+                const tRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
+                const isCS=r.cs_calls||r.cs_whatsapp;
+                return`<tr>
+                  <td style="white-space:nowrap;font-weight:600">${r.report_date}</td>
+                  ${isCS?`<td colspan="7" style="color:var(--mu);font-size:12px">Calls: ${r.cs_calls||0} &nbsp; WA: ${r.cs_whatsapp||0} &nbsp; Revenue: ${r.cs_revenue||0} SAR</td>`:`
+                  <td>${r.registration||0}</td><td>${r.daily_requests||0}</td><td>${r.rectification||0}</td>
+                  <td>${tRen}</td><td>${r.ownership||0}</td><td>${r.plate_change||0}</td><td>${r.tickets||0}</td>`}
+                  <td style="max-width:140px;font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.remarks||'—'}</td>
+                  <td><button onclick="viewReportModal(${JSON.stringify(r).replace(/"/g,'&quot;')})" style="padding:3px 8px;font-size:11px;background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3);border-radius:var(--r);cursor:pointer;font-family:var(--font)">${_i('eye',11)}</button></td>
+                </tr>`;
+              }).join('')}</tbody>
+              <tfoot><tr style="background:var(--s3)">
+                <td style="font-weight:700;font-size:12px;color:var(--mu)">TOTAL (${filtered.length} days)</td>
+                <td style="font-weight:700;color:var(--ac)">${tot.reg}</td>
+                <td style="font-weight:700;color:var(--gr)">${tot.req}</td>
+                <td style="font-weight:700;color:var(--yl)">${tot.rect}</td>
+                <td style="font-weight:700;color:#a78bfa">${tot.ren}</td>
+                <td style="font-weight:700;color:var(--rd)">${tot.own}</td>
+                <td style="font-weight:700;color:var(--mu)">${tot.plt}</td>
+                <td style="font-weight:700;color:#38bdf8">${tot.tkt}</td>
+                <td colspan="2"></td>
+              </tr></tfoot>
+            </table></div>
+          </div>`;
+        };
+
+        const inpStyle='padding:6px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)';
+        hp.innerHTML=`
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <span style="font-size:13px;color:var(--mu)">From</span>
+            <input type="date" id="hrFrom" style="${inpStyle}">
+            <span style="font-size:13px;color:var(--mu)">To</span>
+            <input type="date" id="hrTo" style="${inpStyle}">
+            <button onclick="window._hrFilter()" style="padding:6px 14px;border-radius:var(--r);border:1px solid var(--ac);background:rgba(108,99,255,.15);color:var(--ac);font-size:13px;cursor:pointer;font-family:var(--font)">${_i('filter',13)} Filter</button>
+            <button onclick="document.getElementById('hrFrom').value='';document.getElementById('hrTo').value='';window._hrFilter()" style="padding:6px 12px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--mu);font-size:13px;cursor:pointer;font-family:var(--font)">Clear</button>
+          </div>
+          <div id="hrTableWrap">${renderHistoryTable('','')}</div>`;
+
+        window._hrFilter=()=>{
+          const f=document.getElementById('hrFrom')?.value||'';
+          const t=document.getElementById('hrTo')?.value||'';
+          document.getElementById('hrTableWrap').innerHTML=renderHistoryTable(f,t);
+        };
       }
     }
   };
