@@ -644,7 +644,7 @@ async function init(){
   // Then check Supabase Auth (for admin)
   _db.auth.onAuthStateChange(async(event,session)=>{
     if(event==='SIGNED_OUT'){
-      // Sirf admin logout karo — regular agents ka localStorage session rehne do
+      // Only clear admin session — keep agent localStorage session intact
       if(currentUser){currentUser=null;isAdmin=false;showAuth();}
       return;
     }
@@ -2154,7 +2154,7 @@ async function renderAdminDailyReports(){
     const allPending=(reps||[]).flatMap(r=>(r.pending_sos||[]).map(s=>({...s,agent:r.agent_name,dept:r.dept})));
     return`
     ${missing.length?`<div class="card" style="margin-bottom:12px;border-left:3px solid var(--rd)">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Report nahi bheji — ${missing.length} agent</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Report not submitted — ${missing.length} agent</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px">
         ${missing.map(a=>`<span style="font-size:12px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:20px;padding:3px 10px">${a.name} <span style="opacity:.6">${a.dept||''}</span></span>`).join('')}
       </div>
@@ -2175,7 +2175,7 @@ async function renderAdminDailyReports(){
       </div>
     </div>`:''}
     <div style="display:flex;flex-direction:column;gap:8px">
-      ${(reps||[]).length?reps.map(agentCard).join(''):`<div class="empty-state"><p>Is date ke liye koi report nahi mili.</p></div>`}
+      ${(reps||[]).length?reps.map(agentCard).join(''):`<div class="empty-state"><p>No reports found for this date.</p></div>`}
     </div>`;
   };
 
@@ -2214,8 +2214,8 @@ async function renderAdminDailyReports(){
               <span style="font-size:11px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;color:var(--mu)">${a.dept||''}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:12px;color:var(--gr)">${_i('check-circle',12)} ${a.days} din report di</span>
-              ${missedDays>0?`<span style="font-size:12px;color:var(--rd)">${_i('x-circle',12)} ${missedDays} din missing</span>`:''}
+              <span style="font-size:12px;color:var(--gr)">${_i('check-circle',12)} ${a.days} days reported</span>
+              ${missedDays>0?`<span style="font-size:12px;color:var(--rd)">${_i('x-circle',12)} ${missedDays} days missing</span>`:''}
               ${a.pending_count?`<span style="font-size:12px;color:var(--yl)">${_i('alert-circle',12)} ${a.pending_count} pending S/O</span>`:''}
             </div>
           </div>
@@ -2223,7 +2223,7 @@ async function renderAdminDailyReports(){
             ${[['Reg',a.registration,'var(--ac)'],['Requests',a.daily_requests,'var(--gr)'],['Rect',a.rectification,'var(--yl)'],['Renewal',tRen,'#a78bfa'],['Owner',a.ownership,'var(--rd)'],['Plate',a.plate_change,'var(--mu)'],['Tickets',a.tickets,'#38bdf8'],['Total',total,'var(--tx)']].map(([l,v,col])=>`<div style="background:var(--s2);border-radius:var(--r);padding:6px 8px;text-align:center"><div style="font-size:15px;font-weight:700;color:${col}">${v}</div><div style="font-size:10px;color:var(--mu)">${l}</div></div>`).join('')}
           </div>
         </div>`;
-      }).join(''):`<div class="empty-state"><p>Is month ki koi report nahi mili.</p></div>`}
+      }).join(''):`<div class="empty-state"><p>No reports found for this month.</p></div>`}
     </div>`;
   };
 
