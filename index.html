@@ -1921,59 +1921,156 @@ async function renderAdminDailyReports(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  let selDate=today;
-  const render=async()=>{
-    let q=_db.from('daily_reports').select('*').eq('report_date',selDate).order('submitted_at',{ascending:false});
+  // state
+  let _tab='daily'; // 'daily' | 'monthly'
+  let _date=today;
+  let _month=today.slice(0,7); // YYYY-MM
+  let _deptFilter='';
+  let _agentFilter='';
+  // load all agents once
+  let allAgents=await _getAgents('id,name,dept,type');
+  if(isManager&&managerDept)allAgents=(allAgents||[]).filter(a=>a.dept===managerDept);
+  else if(isSubAdmin&&subAdminDepts.length)allAgents=(allAgents||[]).filter(a=>subAdminDepts.includes(a.dept));
+  allAgents=(allAgents||[]).filter(a=>a.type!=='admin'&&a.type!=='manager'&&a.type!=='subadmin');
+  const depts=[...new Set(allAgents.map(a=>a.dept).filter(Boolean))].sort();
+
+  const tabBtn=(id,label,active)=>`<button onclick="window._drTab='${id}';window._drRender()" style="padding:7px 16px;border-radius:var(--r);border:1px solid ${active?'var(--ac)':'var(--b2)'};background:${active?'rgba(108,99,255,.15)':'var(--s2)'};color:${active?'var(--ac)':'var(--tx)'};font-size:13px;font-weight:${active?700:400};cursor:pointer;font-family:var(--font)">${label}</button>`;
+  const statBox=(label,val,col)=>`<div class="card" style="text-align:center;padding:12px 8px"><div style="font-size:22px;font-weight:700;color:${col}">${val}</div><div style="font-size:10px;color:var(--mu);margin-top:2px">${label}</div></div>`;
+  const agentCard=(r)=>{
+    const pen=r.pending_sos||[];
+    const totalRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
+    return`<div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-weight:700">${r.agent_name||'—'}</span>
+          <span style="font-size:11px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;color:var(--mu)">${r.dept||''}</span>
+        </div>
+        <span style="font-size:11px;color:var(--mu)">${r.report_date||''} &nbsp;${r.submitted_at?new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):''}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:5px;margin-bottom:${pen.length||r.remarks?'10px':'0'}">
+        ${[['Reg',r.registration],['Requests',r.daily_requests],['Rect',r.rectification],['Renewal',totalRen],['Owner',r.ownership],['Plate',r.plate_change],['Tickets',r.tickets]].map(([l,v])=>`<div style="background:var(--s2);border-radius:var(--r);padding:5px 6px;text-align:center"><div style="font-size:15px;font-weight:700">${v||0}</div><div style="font-size:10px;color:var(--mu)">${l}</div></div>`).join('')}
+      </div>
+      ${pen.length?`<div style="border-top:1px solid var(--b2);padding-top:8px;margin-bottom:${r.remarks?'8px':'0'};display:flex;flex-direction:column;gap:4px">
+        ${pen.map(s=>`<div style="font-size:12px;display:flex;gap:8px"><span style="color:var(--yl);font-weight:700;min-width:90px">${_i('alert-circle',12)} ${s.so}</span><span style="color:var(--mu)">${s.reason||''}</span></div>`).join('')}
+      </div>`:''}
+      ${r.remarks?`<div style="font-size:12px;color:var(--mu);border-top:1px solid var(--b2);padding-top:8px">${_i('message-square',12)} ${r.remarks}</div>`:''}
+    </div>`;
+  };
+
+  const renderDaily=async()=>{
+    let q=_db.from('daily_reports').select('*').eq('report_date',_date).order('submitted_at',{ascending:false});
     if(isManager&&managerDept)q=q.eq('dept',managerDept);
     else if(isSubAdmin&&subAdminDepts.length)q=q.in('dept',subAdminDepts);
+    if(_deptFilter)q=q.eq('dept',_deptFilter);
+    if(_agentFilter)q=q.eq('agent_id',_agentFilter);
     const{data:reps}=await q;
+    const submittedIds=new Set((reps||[]).map(r=>r.agent_id));
+    const missing=allAgents.filter(a=>(!_deptFilter||a.dept===_deptFilter)&&(!_agentFilter||a.id===_agentFilter)&&!submittedIds.has(a.id));
     const totals={registration:0,daily_requests:0,rectification:0,renewal_retail:0,renewal_reseller:0,renewal_csu:0,ownership:0,plate_change:0,tickets:0};
     (reps||[]).forEach(r=>Object.keys(totals).forEach(k=>totals[k]+=(r[k]||0)));
-    const totalRenewal=totals.renewal_retail+totals.renewal_reseller+totals.renewal_csu;
+    const tRen=totals.renewal_retail+totals.renewal_reseller+totals.renewal_csu;
     const allPending=(reps||[]).flatMap(r=>(r.pending_sos||[]).map(s=>({...s,agent:r.agent_name,dept:r.dept})));
-    c.innerHTML=`
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-      <input type="date" value="${selDate}" onchange="window._drDate=this.value;window._drRender()" style="padding:7px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
-      <span style="font-size:13px;color:var(--mu)">${(reps||[]).length} reports submitted</span>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px">
-      ${[['Registration',totals.registration,'var(--ac)'],['Daily Req',totals.daily_requests,'var(--gr)'],['Rectification',totals.rectification,'var(--yl)'],['Renewals',totalRenewal,'#a78bfa'],['Ownership',totals.ownership,'var(--rd)'],['Plate Change',totals.plate_change,'var(--mu)'],['Tickets',totals.tickets,'#38bdf8']].map(([lbl,val,col])=>`
-      <div class="card" style="text-align:center;padding:14px 10px">
-        <div style="font-size:24px;font-weight:700;color:${col}">${val}</div>
-        <div style="font-size:11px;color:var(--mu);margin-top:2px">${lbl}</div>
-      </div>`).join('')}
-    </div>
-    ${allPending.length?`<div class="card" style="margin-bottom:16px;border-left:3px solid var(--yl)">
-      <div class="card-title" style="margin-bottom:10px;display:flex;align-items:center;gap:6px">${_i('alert-circle')} Pending S/Os (${allPending.length})</div>
-      <div style="display:flex;flex-direction:column;gap:6px">
-        ${allPending.map(s=>`<div style="display:flex;align-items:center;gap:10px;font-size:13px"><span style="font-weight:700;color:var(--ac);min-width:90px">${s.so}</span><span style="color:var(--mu);min-width:80px">${s.agent||''}</span><span>${s.reason||''}</span></div>`).join('')}
+    return`
+    ${missing.length?`<div class="card" style="margin-bottom:12px;border-left:3px solid var(--rd)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-weight:600;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Report nahi bheji — ${missing.length} agent</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${missing.map(a=>`<span style="font-size:12px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--rd);border-radius:20px;padding:3px 10px">${a.name} <span style="opacity:.6">${a.dept||''}</span></span>`).join('')}
       </div>
     </div>`:''}
-    <div style="display:flex;flex-direction:column;gap:10px">
-      ${(reps||[]).length?reps.map(r=>{
-        const pen=r.pending_sos||[];
-        const totalRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
-        return`<div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-            <div><span style="font-weight:700">${r.agent_name||'—'}</span> <span style="font-size:12px;color:var(--mu)">${r.dept||''}</span></div>
-            <span style="font-size:11px;color:var(--mu)">${new Date(r.submitted_at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-bottom:${pen.length?'10px':'0'}">
-            ${[['Reg',r.registration],['Req',r.daily_requests],['Rect',r.rectification],['Renewal',totalRen],['Owner',r.ownership],['Plate',r.plate_change],['Tickets',r.tickets]].map(([l,v])=>`<div style="background:var(--s2);border-radius:var(--r);padding:6px 8px;text-align:center"><div style="font-size:16px;font-weight:700">${v||0}</div><div style="font-size:10px;color:var(--mu)">${l}</div></div>`).join('')}
-          </div>
-          ${pen.length?`<div style="border-top:1px solid var(--b2);padding-top:8px;display:flex;flex-direction:column;gap:4px">
-            ${pen.map(s=>`<div style="font-size:12px;display:flex;gap:8px"><span style="color:var(--yl);font-weight:700">${_i('alert-circle',12)} ${s.so}</span><span style="color:var(--mu)">${s.reason||''}</span></div>`).join('')}
-          </div>`:''}
-          ${r.remarks?`<div style="margin-top:8px;font-size:12px;color:var(--mu);border-top:1px solid var(--b2);padding-top:8px">${_i('message-square',12)} ${r.remarks}</div>`:''}
-        </div>`;
-      }).join(''):`<div class="empty-state"><p>No reports submitted for this date.</p></div>`}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:14px">
+      ${statBox('Registration',totals.registration,'var(--ac)')}
+      ${statBox('Daily Req',totals.daily_requests,'var(--gr)')}
+      ${statBox('Rectification',totals.rectification,'var(--yl)')}
+      ${statBox('Renewal',tRen,'#a78bfa')}
+      ${statBox('Ownership',totals.ownership,'var(--rd)')}
+      ${statBox('Plate Change',totals.plate_change,'var(--mu)')}
+      ${statBox('Tickets',totals.tickets,'#38bdf8')}
+    </div>
+    ${allPending.length?`<div class="card" style="margin-bottom:12px;border-left:3px solid var(--yl)">
+      <div class="card-title" style="margin-bottom:8px;color:var(--yl)">${_i('alert-circle')} Pending S/Os (${allPending.length})</div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${allPending.map(s=>`<div style="font-size:12px;display:flex;gap:10px;align-items:center"><span style="font-weight:700;color:var(--ac);min-width:90px">${s.so}</span><span style="color:var(--mu);min-width:90px">${s.agent||''}</span><span style="color:var(--tx)">${s.reason||''}</span></div>`).join('')}
+      </div>
+    </div>`:''}
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${(reps||[]).length?reps.map(agentCard).join(''):`<div class="empty-state"><p>Is date ke liye koi report nahi mili.</p></div>`}
     </div>`;
-    window._drRender=render;
-    // attach date picker listener
-    const dp=c.querySelector('input[type=date]');
-    if(dp)dp.onchange=function(){selDate=this.value;render();};
   };
-  await render();
+
+  const renderMonthly=async()=>{
+    const monthStart=_month+'-01';
+    const monthEnd=_month+'-31';
+    let q=_db.from('daily_reports').select('*').gte('report_date',monthStart).lte('report_date',monthEnd).order('report_date',{ascending:true});
+    if(isManager&&managerDept)q=q.eq('dept',managerDept);
+    else if(isSubAdmin&&subAdminDepts.length)q=q.in('dept',subAdminDepts);
+    if(_deptFilter)q=q.eq('dept',_deptFilter);
+    if(_agentFilter)q=q.eq('agent_id',_agentFilter);
+    const{data:reps}=await q;
+    // Group by agent
+    const byAgent={};
+    (reps||[]).forEach(r=>{
+      if(!byAgent[r.agent_id])byAgent[r.agent_id]={name:r.agent_name,dept:r.dept,days:0,registration:0,daily_requests:0,rectification:0,renewal_retail:0,renewal_reseller:0,renewal_csu:0,ownership:0,plate_change:0,tickets:0,pending_count:0};
+      const a=byAgent[r.agent_id];
+      a.days++;
+      ['registration','daily_requests','rectification','renewal_retail','renewal_reseller','renewal_csu','ownership','plate_change','tickets'].forEach(k=>a[k]+=(r[k]||0));
+      a.pending_count+=(r.pending_sos||[]).length;
+    });
+    const rows=Object.values(byAgent).sort((a,b)=>b.registration-a.registration);
+    // Working days in month so far
+    const now=new Date(); const m=parseInt(_month.split('-')[1])-1; const y=parseInt(_month.split('-')[0]);
+    const daysInMonth=_month===today.slice(0,7)?now.getDate():new Date(y,m+1,0).getDate();
+    return`
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${rows.length?rows.map(a=>{
+        const tRen=a.renewal_retail+a.renewal_reseller+a.renewal_csu;
+        const total=a.registration+a.daily_requests+a.rectification+tRen+a.ownership+a.plate_change+a.tickets;
+        const missedDays=daysInMonth-a.days;
+        return`<div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-weight:700">${a.name}</span>
+              <span style="font-size:11px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;color:var(--mu)">${a.dept||''}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:12px;color:var(--gr)">${_i('check-circle',12)} ${a.days} din report di</span>
+              ${missedDays>0?`<span style="font-size:12px;color:var(--rd)">${_i('x-circle',12)} ${missedDays} din missing</span>`:''}
+              ${a.pending_count?`<span style="font-size:12px;color:var(--yl)">${_i('alert-circle',12)} ${a.pending_count} pending S/O</span>`:''}
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:5px">
+            ${[['Reg',a.registration,'var(--ac)'],['Requests',a.daily_requests,'var(--gr)'],['Rect',a.rectification,'var(--yl)'],['Renewal',tRen,'#a78bfa'],['Owner',a.ownership,'var(--rd)'],['Plate',a.plate_change,'var(--mu)'],['Tickets',a.tickets,'#38bdf8'],['Total',total,'var(--tx)']].map(([l,v,col])=>`<div style="background:var(--s2);border-radius:var(--r);padding:6px 8px;text-align:center"><div style="font-size:15px;font-weight:700;color:${col}">${v}</div><div style="font-size:10px;color:var(--mu)">${l}</div></div>`).join('')}
+          </div>
+        </div>`;
+      }).join(''):`<div class="empty-state"><p>Is month ki koi report nahi mili.</p></div>`}
+    </div>`;
+  };
+
+  const mainRender=async()=>{
+    const filtersHtml=`
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      ${tabBtn('daily','Daily',_tab==='daily')} ${tabBtn('monthly','Monthly',_tab==='monthly')}
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        ${_tab==='daily'?`<input type="date" id="drDatePick" value="${_date}" style="padding:6px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">`:`<input type="month" id="drMonthPick" value="${_month}" style="padding:6px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">`}
+        <select id="drDeptPick" style="padding:6px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+          <option value="">All Departments</option>
+          ${depts.map(d=>`<option value="${d}" ${_deptFilter===d?'selected':''}>${d}</option>`).join('')}
+        </select>
+        <select id="drAgentPick" style="padding:6px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+          <option value="">All Agents</option>
+          ${allAgents.filter(a=>!_deptFilter||a.dept===_deptFilter).map(a=>`<option value="${a.id}" ${_agentFilter===a.id?'selected':''}>${a.name}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+    const body=_tab==='daily'?await renderDaily():await renderMonthly();
+    c.innerHTML=filtersHtml+body;
+    // wire up filter controls
+    const dp=document.getElementById('drDatePick');if(dp)dp.onchange=()=>{_date=dp.value;mainRender();};
+    const mp=document.getElementById('drMonthPick');if(mp)mp.onchange=()=>{_month=mp.value;mainRender();};
+    const dpt=document.getElementById('drDeptPick');if(dpt)dpt.onchange=()=>{_deptFilter=dpt.value;_agentFilter='';mainRender();};
+    const apt=document.getElementById('drAgentPick');if(apt)apt.onchange=()=>{_agentFilter=apt.value;mainRender();};
+    window._drTab=_tab;window._drRender=()=>{_tab=window._drTab||_tab;mainRender();};
+  };
+  await mainRender();
 }
 
 function renderHelp(){
