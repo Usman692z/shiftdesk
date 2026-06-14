@@ -2178,7 +2178,7 @@ async function submitDailyReport(existingId){
   const pending_tickets=Array.from(tickNums).map((el,i)=>({tick:el.value.trim(),reason:tickReasons[i]?.value.trim()||''})).filter(t=>t.tick);
   const payload={
     agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,
-    report_date:new Date().toISOString().slice(0,10),
+    report_date:(()=>{const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;})(),
     registration:g('reg'),daily_requests:g('dreq'),rectification:g('rect'),
     renewal_retail:g('rret'),renewal_reseller:g('rres'),renewal_csu:g('rcsu'),
     ownership:g('own'),plate_change:g('plt'),tickets:g('tkt'),
