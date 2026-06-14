@@ -2627,7 +2627,7 @@ async function renderEmailReports(){
     btn.disabled=true;btn.textContent='Sending...';
     status.innerHTML='';
     try{
-      const resp=await fetch('https://lasnonlixtvmarubbegf.functions.supabase.co/v1/send-report-email',{
+      const resp=await fetch('https://lasnonlixtvmarubbegf.supabase.co/functions/v1/send-report-email',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
         body:JSON.stringify({type,date,dept,settings:JSON.parse(localStorage.getItem('sd_email_settings')||'{}')}),
