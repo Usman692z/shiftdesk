@@ -357,6 +357,13 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
   </div>
 </div>
 <!-- Leave Request Modal -->
+<div class="modal-bg" id="genModal">
+  <div class="modal" style="max-width:640px;width:100%">
+    <h2 id="modalTitle"></h2>
+    <div id="modalBody"></div>
+    <div id="modalFooter" style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px"></div>
+  </div>
+</div>
 <div class="modal-bg" id="leaveModal">
   <div class="modal" style="max-width:420px">
     <h2>Apply for Leave</h2>
@@ -2667,8 +2674,8 @@ async function renderEmailReports(){
     }).join('');
     document.getElementById('modalTitle').textContent='Email Preview — '+date;
     document.getElementById('modalBody').innerHTML=`<div style="max-height:65vh;overflow-y:auto">${rows}</div>`;
-    document.getElementById('modalFooter').innerHTML=`<button class="btn btn-sm" onclick="closeModal()">Close</button>`;
-    openModal();
+    document.getElementById('modalFooter').innerHTML=`<button class="btn btn-sm" onclick="document.getElementById('genModal').classList.remove('open')">Close</button>`;
+    document.getElementById('genModal').classList.add('open');
   };
 }
 
@@ -2718,8 +2725,8 @@ function viewReportModal(r){
   if(r.remarks) body+=`<div style="margin-top:12px;padding:10px;background:var(--s2);border-radius:var(--r);font-size:12px;color:var(--mu)">${_i('message-square',12)} ${r.remarks}</div>`;
   document.getElementById('modalTitle').textContent='Report Details';
   document.getElementById('modalBody').innerHTML=`<div style="max-height:60vh;overflow-y:auto;padding-right:4px">${body}</div>`;
-  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-sm" onclick="closeModal()">Close</button>`;
-  openModal();
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-sm" onclick="document.getElementById('genModal').classList.remove('open')">Close</button>`;
+  document.getElementById('genModal').classList.add('open');
 }
 
 function renderHelp(){
