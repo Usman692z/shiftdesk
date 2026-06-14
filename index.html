@@ -2364,8 +2364,10 @@ async function renderEmailReports(){
   const agents=await _getAgents('id,name,email,dept,type');
   const recipAgents=(agents||[]).filter(a=>a.type!=='admin');
   const depts=[...new Set((agents||[]).map(a=>a.dept).filter(Boolean))].sort();
-  // load saved settings from localStorage (no extra table needed)
-  const saved=JSON.parse(localStorage.getItem('sd_email_settings')||'{}');
+  // load settings from Supabase (fallback to localStorage)
+  const {data:dbSettings}=await _db.from('email_settings').select('*').eq('id',1).maybeSingle();
+  const saved=dbSettings||JSON.parse(localStorage.getItem('sd_email_settings')||'{}');
+  if(dbSettings)localStorage.setItem('sd_email_settings',JSON.stringify(dbSettings));
   const recipients=saved.recipients||{};
   const extraEmails=saved.extra_emails||[];
   const include=saved.include||{daily:true,attendance:true,sos:true,remarks:true,monthly:true,missing:false};
@@ -2373,8 +2375,19 @@ async function renderEmailReports(){
   const sendTime=saved.send_time||'00:00';
 
   const chk=(id,label,checked)=>`<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--tx)"><input type="checkbox" id="inc_${id}" ${checked?'checked':''} style="accent-color:var(--ac);width:14px;height:14px"> ${label}</label>`;
-  const togBtn=(agId,on)=>`<div onclick="window._erToggle('${agId}')" id="ertog_${agId}" style="width:36px;height:20px;border-radius:10px;background:${on?'var(--gr)':'var(--b2)'};position:relative;cursor:pointer;flex-shrink:0;transition:background .2s"><div style="position:absolute;top:3px;${on?'left:19px':'left:3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s"></div></div>`;
-  const typeOpts=(agId,cur)=>`<select id="ertype_${agId}" onchange="window._erSave()" style="padding:3px 6px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:11px;font-family:var(--font)"><option value="all" ${cur==='all'?'selected':''}>All agents</option><option value="dept" ${cur==='dept'?'selected':''}>Dept summary</option><option value="individual" ${cur==='individual'?'selected':''}>Individual</option></select>`;
+  const togBtn=(agId,on)=>`<div onclick="window._erToggle('${agId}')" id="ertog_${agId}" data-on="${on?'1':'0'}" style="width:36px;height:20px;border-radius:10px;background:${on?'var(--gr)':'var(--b2)'};position:relative;cursor:pointer;flex-shrink:0;transition:background .2s"><div style="position:absolute;top:3px;${on?'left:19px':'left:3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s"></div></div>`;
+  const deptMulti=(agId,selDepts)=>{
+    const sel=Array.isArray(selDepts)&&selDepts.length?selDepts:[];
+    const label=sel.length===0?'All depts':sel.length===depts.length?'All depts':sel.join(', ');
+    const opts=depts.map(d=>`<label style="display:flex;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--tx);white-space:nowrap"><input type="checkbox" class="erdck_${agId}" value="${d}" ${sel.includes(d)||sel.length===0?'checked':''} onchange="window._erDeptChange('${agId}')" style="accent-color:var(--ac)"> ${d}</label>`).join('');
+    return`<div style="position:relative;flex-shrink:0" id="erdw_${agId}">
+      <div onclick="window._erDeptOpen('${agId}')" id="erdbtn_${agId}" style="padding:4px 8px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:11px;cursor:pointer;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label} ▾</div>
+      <div id="erdrop_${agId}" style="display:none;position:absolute;right:0;top:28px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);z-index:999;min-width:140px;box-shadow:0 4px 16px rgba(0,0,0,.3)">
+        <label style="display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;font-size:12px;color:var(--ac);border-bottom:1px solid var(--b);white-space:nowrap"><input type="checkbox" id="erall_${agId}" onchange="window._erDeptAll('${agId}')" style="accent-color:var(--ac)" ${sel.length===0||sel.length===depts.length?'checked':''}> All departments</label>
+        ${opts}
+      </div>
+    </div>`;
+  };
 
   c.innerHTML=`
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
@@ -2445,14 +2458,14 @@ async function renderEmailReports(){
     <p style="font-size:12px;color:var(--mu);margin-bottom:12px">Toggle who gets the nightly email. Choose what type of report each person receives.</p>
     <div style="display:flex;flex-direction:column;gap:0">
       ${recipAgents.map(a=>{
-        const rec=recipients[a.id]||{on:false,type:'dept'};
+        const rec=recipients[a.id]||{on:false,depts:[]};
         return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
           <div style="width:34px;height:34px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--mu);flex-shrink:0">${(a.name||'?').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase()}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;color:var(--tx)">${a.name}</div>
             <div style="font-size:11px;color:var(--mu)">${a.email||''} &nbsp;·&nbsp; <span style="color:var(--ac)">${a.dept||''}</span></div>
           </div>
-          ${typeOpts(a.id,rec.type)}
+          ${deptMulti(a.id,rec.depts||[])}
           ${togBtn(a.id,rec.on)}
         </div>`;
       }).join('')}
@@ -2509,12 +2522,52 @@ async function renderEmailReports(){
     const recs={};
     recipAgents.forEach(a=>{
       const tog=document.getElementById('ertog_'+a.id);
-      const typ=document.getElementById('ertype_'+a.id);
-      recs[a.id]={on:tog?.dataset.on==='1',type:typ?.value||'dept',email:a.email,name:a.name,dept:a.dept};
+      const selDepts=[...document.querySelectorAll('.erdck_'+a.id+':checked')].map(c=>c.value);
+      recs[a.id]={on:tog?.dataset.on==='1',depts:selDepts,email:a.email,name:a.name,dept:a.dept};
     });
     updated.recipients=recs;
+    // also save to Supabase email_settings table
     localStorage.setItem('sd_email_settings',JSON.stringify(updated));
+    _db.from('email_settings').upsert({id:1,...updated,recipients:recs}).then(()=>{});
     if(notify)showToast(_i('check')+' Settings saved!','ok');
+  };
+
+  // close all dept dropdowns when clicking outside
+  document.addEventListener('click',function _erOutside(e){
+    if(!e.target.closest('[id^="erdw_"]')){
+      document.querySelectorAll('[id^="erdrop_"]').forEach(d=>d.style.display='none');
+    }
+  },{capture:true,once:false});
+
+  window._erDeptOpen=(agId)=>{
+    const drop=document.getElementById('erdrop_'+agId);
+    if(!drop)return;
+    const isOpen=drop.style.display==='block';
+    document.querySelectorAll('[id^="erdrop_"]').forEach(d=>d.style.display='none');
+    drop.style.display=isOpen?'none':'block';
+  };
+
+  window._erDeptAll=(agId)=>{
+    const allChk=document.getElementById('erall_'+agId);
+    document.querySelectorAll('.erdck_'+agId).forEach(c=>c.checked=allChk.checked);
+    window._erUpdateDeptBtn(agId);
+    window._erSave();
+  };
+
+  window._erDeptChange=(agId)=>{
+    const all=document.querySelectorAll('.erdck_'+agId);
+    const checked=[...all].filter(c=>c.checked);
+    const allChk=document.getElementById('erall_'+agId);
+    if(allChk)allChk.checked=checked.length===all.length;
+    window._erUpdateDeptBtn(agId);
+    window._erSave();
+  };
+
+  window._erUpdateDeptBtn=(agId)=>{
+    const checked=[...document.querySelectorAll('.erdck_'+agId+':checked')].map(c=>c.value);
+    const btn=document.getElementById('erdbtn_'+agId);
+    if(!btn)return;
+    btn.textContent=(checked.length===0||checked.length===depts.length?'All depts':checked.join(', '))+' ▾';
   };
 
   window._erToggle=(agId)=>{
