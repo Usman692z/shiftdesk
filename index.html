@@ -2296,7 +2296,9 @@ async function renderAdminDailyReports(){
     else if(isSubAdmin&&subAdminDepts.length)q=q.in('dept',subAdminDepts);
     if(_deptFilter)q=q.eq('dept',_deptFilter);
     if(_agentFilter)q=q.eq('agent_id',_agentFilter);
-    const{data:reps}=await q;
+    const{data:reps,error:repErr}=await q;
+    if(repErr)return`<div class="empty-state"><p>Query error: ${repErr.message}</p></div>`;
+    console.log('Monthly query:',monthStart,'to',monthEnd,'results:',reps?.length,reps);
     // Group by agent
     const byAgent={};
     (reps||[]).forEach(r=>{
