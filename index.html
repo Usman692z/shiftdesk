@@ -2300,7 +2300,6 @@ async function renderAdminDailyReports(){
     if(_agentFilter)q=q.eq('agent_id',_agentFilter);
     const{data:reps,error:repErr}=await q;
     if(repErr)return`<div class="empty-state"><p>Query error: ${repErr.message}</p></div>`;
-    console.log('Monthly query:',monthStart,'to',monthEnd,'results:',reps?.length,reps);
     // Group by agent
     const byAgent={};
     (reps||[]).forEach(r=>{
