@@ -2291,7 +2291,7 @@ async function renderAdminDailyReports(){
   const renderMonthly=async()=>{
     const monthStart=_month+'-01';
     const monthEnd=_month+'-31';
-    let q=_db.from('daily_reports').select('*').gte('report_date',monthStart).lte('report_date',monthEnd).order('report_date',{ascending:true});
+    let q=_db.from('daily_reports').select('*').gte('report_date',monthStart).lte('report_date',monthEnd).order('submitted_at',{ascending:true});
     if(isManager&&managerDept)q=q.eq('dept',managerDept);
     else if(isSubAdmin&&subAdminDepts.length)q=q.in('dept',subAdminDepts);
     if(_deptFilter)q=q.eq('dept',_deptFilter);
