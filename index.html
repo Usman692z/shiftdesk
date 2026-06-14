@@ -2640,7 +2640,7 @@ async function renderEmailReports(){
         status.innerHTML=`<div style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Error: ${result.error||'Unknown error'}</div>`;
       }
     }catch(e){
-      status.innerHTML=`<div style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Edge Function not deployed yet. Deploy it first.</div>`;
+      status.innerHTML=`<div style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Error: ${e?.message||String(e)}</div>`;
     }
     btn.disabled=false;btn.innerHTML=_i('send',14)+' Send Now';
   };
