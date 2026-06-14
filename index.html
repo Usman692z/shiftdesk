@@ -542,7 +542,7 @@ const _T={
     mytasks_title:'My Tasks',mydashboard_title:'My Dashboard',reports_title:'Reports',
     myleave_title:'Leave Requests',leaves_title:'Leave Requests',announce_title:'Announcements',
     myannounce_title:'Announcements',chat_title:'Chat',help_title:'Help & Downloads',
-    dailyreport_title:'Daily Reports',
+    dailyreport_title:'Daily Reports',emailreports:'Email Reports',emailreports_title:'Report Emails',
     login:'Login',logout:'Logout',save:'Save',cancel:'Cancel',submit:'Submit',
     edit:'Edit',delete:'Delete',add:'Add',search:'Search',filter:'Filter',
     name:'Full Name',email:'Official Email',dept:'Department',role:'Role / Designation',
@@ -583,7 +583,7 @@ const _T={
     mytasks_title:'مهامي',mydashboard_title:'لوحتي',reports_title:'التقارير',
     myleave_title:'طلبات الإجازة',leaves_title:'طلبات الإجازة',announce_title:'الإعلانات',
     myannounce_title:'الإعلانات',chat_title:'المحادثة',help_title:'المساعدة والتنزيلات',
-    dailyreport_title:'التقارير اليومية',
+    dailyreport_title:'التقارير اليومية',emailreports:'تقارير البريد',emailreports_title:'إعدادات البريد',
     login:'تسجيل الدخول',logout:'تسجيل الخروج',save:'حفظ',cancel:'إلغاء',
     submit:'إرسال',edit:'تعديل',delete:'حذف',add:'إضافة',search:'بحث',filter:'تصفية',
     name:'الاسم الكامل',email:'البريد الرسمي',dept:'القسم',role:'المسمى الوظيفي',
@@ -981,6 +981,7 @@ const _SVG={
   myleave:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
   myannounce:`<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
   dailyreport:`<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  emailreports:`<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
   mydashboard:`<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
   chat:`<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
 };
@@ -1001,7 +1002,7 @@ function buildNav(){
     {id:'dailyreport', label:'Daily Report'},
   ];
   const items=isAdmin
-    ?[{id:'dashboard',label:t('dashboard')},{id:'agents',label:t('agents')},{id:'tasks',label:t('tasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'tracking',label:t('tracking')},{id:'activity',label:t('activity')},{id:'reports',label:t('reports')},{id:'dailyreport',label:t('dailyreport')},{id:'help',label:t('help')}]
+    ?[{id:'dashboard',label:t('dashboard')},{id:'agents',label:t('agents')},{id:'tasks',label:t('tasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'tracking',label:t('tracking')},{id:'activity',label:t('activity')},{id:'reports',label:t('reports')},{id:'dailyreport',label:t('dailyreport')},{id:'emailreports',label:t('emailreports')},{id:'help',label:t('help')}]
     :(isManager||isSubAdmin)
     ?[{id:'dashboard',label:t('dashboard')},{id:'agents',label:t('agents')},{id:'tasks',label:t('tasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'dailyreport',label:t('dailyreport')},{id:'help',label:t('help')}]
     :[...allAgentPages.map(p=>({...p,label:t(p.id)||p.label})),{id:'help',label:t('help')}];
@@ -1011,7 +1012,7 @@ function buildNav(){
 function navTo(page){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
   const el=document.getElementById('nav_'+page);if(el)el.classList.add('active');
-  const titles={dashboard:t('dashboard_title'),agents:t('agents_title'),tasks:t('tasks_title'),tracking:t('tracking_title'),activity:t('activity_title'),myshift:t('myshift_title'),mytasks:t('mytasks_title'),mydashboard:t('mydashboard_title'),reports:t('reports_title'),myleave:t('myleave_title'),leaves:t('leaves_title'),announce:t('announce_title'),myannounce:t('myannounce_title'),chat:t('chat_title'),help:t('help_title'),dailyreport:t('dailyreport_title')};
+  const titles={dashboard:t('dashboard_title'),agents:t('agents_title'),tasks:t('tasks_title'),tracking:t('tracking_title'),activity:t('activity_title'),myshift:t('myshift_title'),mytasks:t('mytasks_title'),mydashboard:t('mydashboard_title'),reports:t('reports_title'),myleave:t('myleave_title'),leaves:t('leaves_title'),announce:t('announce_title'),myannounce:t('myannounce_title'),chat:t('chat_title'),help:t('help_title'),dailyreport:t('dailyreport_title'),emailreports:t('emailreports_title')};
   document.getElementById('pageTitle').textContent=titles[page]||page;
   currentPage=page;
   // Reset content area styles (chat overrides them for full-height layout)
@@ -1034,6 +1035,7 @@ function navTo(page){
   else if(page==='chat'){clearChatUnread();renderChat();}
   else if(page==='help')renderHelp();
   else if(page==='dailyreport'){if(isAdmin||isManager||isSubAdmin)renderAdminDailyReports();else renderAgentDailyReport();}
+  else if(page==='emailreports')renderEmailReports();
 }
 
 let _realtimeDebounce={};
@@ -2352,6 +2354,269 @@ async function renderAdminDailyReports(){
     window._drTab=_tab;window._drRender=()=>{_tab=window._drTab||_tab;mainRender();};
   };
   await mainRender();
+}
+
+// ── EMAIL REPORTS ─────────────────────────────────────────────
+async function renderEmailReports(){
+  const c=document.getElementById('pageContent');
+  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
+  // load agents + settings
+  const agents=await _getAgents('id,name,email,dept,type');
+  const recipAgents=(agents||[]).filter(a=>a.type!=='admin');
+  const depts=[...new Set((agents||[]).map(a=>a.dept).filter(Boolean))].sort();
+  // load saved settings from localStorage (no extra table needed)
+  const saved=JSON.parse(localStorage.getItem('sd_email_settings')||'{}');
+  const recipients=saved.recipients||{};
+  const extraEmails=saved.extra_emails||[];
+  const include=saved.include||{daily:true,attendance:true,sos:true,remarks:true,monthly:true,missing:false};
+  const autoEnabled=saved.auto_enabled!==false;
+  const sendTime=saved.send_time||'00:00';
+
+  const chk=(id,label,checked)=>`<label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--tx)"><input type="checkbox" id="inc_${id}" ${checked?'checked':''} style="accent-color:var(--ac);width:14px;height:14px"> ${label}</label>`;
+  const togBtn=(agId,on)=>`<div onclick="window._erToggle('${agId}')" id="ertog_${agId}" style="width:36px;height:20px;border-radius:10px;background:${on?'var(--gr)':'var(--b2)'};position:relative;cursor:pointer;flex-shrink:0;transition:background .2s"><div style="position:absolute;top:3px;${on?'left:19px':'left:3px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s"></div></div>`;
+  const typeOpts=(agId,cur)=>`<select id="ertype_${agId}" onchange="window._erSave()" style="padding:3px 6px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:11px;font-family:var(--font)"><option value="all" ${cur==='all'?'selected':''}>All agents</option><option value="dept" ${cur==='dept'?'selected':''}>Dept summary</option><option value="individual" ${cur==='individual'?'selected':''}>Individual</option></select>`;
+
+  c.innerHTML=`
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+    <div>
+      <p style="font-size:13px;color:var(--mu)">Auto-send nightly reports via Microsoft 365</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:13px;color:var(--mu)">Auto send:</span>
+      <div onclick="window._erToggleAuto()" id="erAutoToggle" style="width:44px;height:24px;border-radius:12px;background:${autoEnabled?'var(--gr)':'var(--b2)'};position:relative;cursor:pointer;transition:background .2s"><div style="position:absolute;top:4px;${autoEnabled?'left:23px':'left:4px'};width:16px;height:16px;border-radius:50%;background:#fff;transition:left .2s"></div></div>
+      <span id="erAutoLabel" style="font-size:13px;font-weight:600;color:${autoEnabled?'var(--gr)':'var(--mu)'}">${autoEnabled?'ON':'OFF'}</span>
+    </div>
+  </div>
+
+  <!-- Schedule -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">${_i('clock')} Schedule & Content</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:5px">Send time (daily)</label>
+        <input type="time" id="erSendTime" value="${sendTime}" onchange="window._erSave()" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+      </div>
+      <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:5px">Sender email</label>
+        <div style="padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s3);color:var(--mu);font-size:13px">${_i('mail',13)} csu.east@tracking.me</div>
+      </div>
+    </div>
+    <label style="font-size:12px;color:var(--mu);display:block;margin-bottom:8px">Include in email</label>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 20px">
+      ${chk('daily','Daily numbers',include.daily)}
+      ${chk('attendance','Attendance (check-in/out + late)',include.attendance)}
+      ${chk('sos','Pending S/Os',include.sos)}
+      ${chk('remarks','Agent remarks',include.remarks)}
+      ${chk('monthly','Month-to-date totals',include.monthly)}
+      ${chk('missing','Missing agents only',include.missing)}
+    </div>
+  </div>
+
+  <!-- Manual Send -->
+  <div class="card" style="margin-bottom:12px;border:1px solid rgba(108,99,255,.3)">
+    <div class="card-title">${_i('send')} Manual Send</div>
+    <p style="font-size:12px;color:var(--mu);margin-bottom:12px">Send a report right now for any date.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+      <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:5px">Report type</label>
+        <select id="erManualType" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+          <option value="all">All agents combined</option>
+          <option value="dept">Department summary</option>
+          <option value="individual">Individual agent</option>
+        </select>
+      </div>
+      <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:5px">Date</label>
+        <input type="date" id="erManualDate" value="${new Date().toISOString().slice(0,10)}" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+      </div>
+      <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:5px">Department</label>
+        <select id="erManualDept" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+          <option value="">All departments</option>
+          ${depts.map(d=>`<option value="${d}">${d}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button onclick="window._erSendNow()" id="erSendBtn" style="flex:1;padding:10px;background:var(--ac);border:none;border-radius:var(--r);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px">${_i('send',14)} Send Now</button>
+      <button onclick="window._erPreview()" style="flex:1;padding:10px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);color:var(--tx);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);display:flex;align-items:center;justify-content:center;gap:6px">${_i('eye',14)} Preview</button>
+    </div>
+    <div id="erSendStatus" style="margin-top:10px"></div>
+  </div>
+
+  <!-- Recipients -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">${_i('users')} Recipients</div>
+    <p style="font-size:12px;color:var(--mu);margin-bottom:12px">Toggle who gets the nightly email. Choose what type of report each person receives.</p>
+    <div style="display:flex;flex-direction:column;gap:0">
+      ${recipAgents.map(a=>{
+        const rec=recipients[a.id]||{on:false,type:'dept'};
+        return`<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--b)">
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--s3);border:1px solid var(--b2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--mu);flex-shrink:0">${(a.name||'?').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase()}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--tx)">${a.name}</div>
+            <div style="font-size:11px;color:var(--mu)">${a.email||''} &nbsp;·&nbsp; <span style="color:var(--ac)">${a.dept||''}</span></div>
+          </div>
+          ${typeOpts(a.id,rec.type)}
+          ${togBtn(a.id,rec.on)}
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--b)">
+      <label style="font-size:12px;color:var(--mu);display:block;margin-bottom:8px">${_i('mail',12)} Extra email addresses (CC)</label>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input type="email" id="erExtraEmail" placeholder="extra@email.com" style="flex:1;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
+        <button onclick="window._erAddExtra()" style="padding:8px 14px;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);color:var(--tx);font-size:13px;cursor:pointer;font-family:var(--font)">${_i('plus',13)} Add</button>
+      </div>
+      <div id="erExtraList" style="display:flex;flex-wrap:wrap;gap:6px">
+        ${extraEmails.map((e,i)=>`<span style="display:inline-flex;align-items:center;gap:5px;background:var(--s2);border:1px solid var(--b2);border-radius:20px;padding:3px 10px;font-size:12px;color:var(--mu)">${e} <span onclick="window._erRemoveExtra(${i})" style="cursor:pointer;color:var(--rd);font-size:14px;line-height:1">&times;</span></span>`).join('')}
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:flex-end">
+    <button onclick="window._erSave(true)" style="padding:10px 24px;background:var(--gr);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font)">${_i('check',14)} Save Settings</button>
+  </div>`;
+
+  // ── helpers ──
+  window._erGetSettings=()=>({
+    auto_enabled:document.getElementById('erAutoToggle')?.style.background?.includes('gr')||false,
+    send_time:document.getElementById('erSendTime')?.value||'00:00',
+    include:{
+      daily:document.getElementById('inc_daily')?.checked,
+      attendance:document.getElementById('inc_attendance')?.checked,
+      sos:document.getElementById('inc_sos')?.checked,
+      remarks:document.getElementById('inc_remarks')?.checked,
+      monthly:document.getElementById('inc_monthly')?.checked,
+      missing:document.getElementById('inc_missing')?.checked,
+    },
+    recipients:JSON.parse(localStorage.getItem('sd_email_settings')||'{}').recipients||{},
+    extra_emails:JSON.parse(localStorage.getItem('sd_email_settings')||'{}').extra_emails||[],
+  });
+
+  window._erSave=(notify=false)=>{
+    const cur=JSON.parse(localStorage.getItem('sd_email_settings')||'{}');
+    const updated={
+      ...cur,
+      auto_enabled:document.getElementById('erAutoLabel')?.textContent==='ON',
+      send_time:document.getElementById('erSendTime')?.value||'00:00',
+      include:{
+        daily:document.getElementById('inc_daily')?.checked,
+        attendance:document.getElementById('inc_attendance')?.checked,
+        sos:document.getElementById('inc_sos')?.checked,
+        remarks:document.getElementById('inc_remarks')?.checked,
+        monthly:document.getElementById('inc_monthly')?.checked,
+        missing:document.getElementById('inc_missing')?.checked,
+      },
+    };
+    // collect recipient toggles
+    const recs={};
+    recipAgents.forEach(a=>{
+      const tog=document.getElementById('ertog_'+a.id);
+      const typ=document.getElementById('ertype_'+a.id);
+      recs[a.id]={on:tog?.dataset.on==='1',type:typ?.value||'dept',email:a.email,name:a.name,dept:a.dept};
+    });
+    updated.recipients=recs;
+    localStorage.setItem('sd_email_settings',JSON.stringify(updated));
+    if(notify)showToast(_i('check')+' Settings saved!','ok');
+  };
+
+  window._erToggle=(agId)=>{
+    const tog=document.getElementById('ertog_'+agId);
+    if(!tog)return;
+    const isOn=tog.dataset.on==='1';
+    tog.dataset.on=isOn?'0':'1';
+    tog.style.background=isOn?'var(--b2)':'var(--gr)';
+    tog.children[0].style.left=isOn?'3px':'19px';
+    window._erSave();
+  };
+
+  window._erToggleAuto=()=>{
+    const tog=document.getElementById('erAutoToggle');
+    const lbl=document.getElementById('erAutoLabel');
+    if(!tog||!lbl)return;
+    const isOn=lbl.textContent==='ON';
+    tog.style.background=isOn?'var(--b2)':'var(--gr)';
+    tog.children[0].style.left=isOn?'4px':'23px';
+    lbl.textContent=isOn?'OFF':'ON';
+    lbl.style.color=isOn?'var(--mu)':'var(--gr)';
+    window._erSave();
+  };
+
+  // init toggle data-on from saved
+  recipAgents.forEach(a=>{
+    const rec=recipients[a.id]||{on:false};
+    const tog=document.getElementById('ertog_'+a.id);
+    if(tog){tog.dataset.on=rec.on?'1':'0';}
+  });
+
+  window._erAddExtra=()=>{
+    const inp=document.getElementById('erExtraEmail');
+    const val=inp?.value.trim();
+    if(!val||!val.includes('@')){showToast('Invalid email','err');return;}
+    const cur=JSON.parse(localStorage.getItem('sd_email_settings')||'{}');
+    const extras=[...(cur.extra_emails||[]),val];
+    cur.extra_emails=extras;
+    localStorage.setItem('sd_email_settings',JSON.stringify(cur));
+    inp.value='';
+    renderEmailReports();
+  };
+
+  window._erRemoveExtra=(idx)=>{
+    const cur=JSON.parse(localStorage.getItem('sd_email_settings')||'{}');
+    cur.extra_emails=(cur.extra_emails||[]).filter((_,i)=>i!==idx);
+    localStorage.setItem('sd_email_settings',JSON.stringify(cur));
+    renderEmailReports();
+  };
+
+  window._erSendNow=async()=>{
+    const btn=document.getElementById('erSendBtn');
+    const status=document.getElementById('erSendStatus');
+    const type=document.getElementById('erManualType')?.value||'all';
+    const date=document.getElementById('erManualDate')?.value||new Date().toISOString().slice(0,10);
+    const dept=document.getElementById('erManualDept')?.value||'';
+    btn.disabled=true;btn.textContent='Sending...';
+    status.innerHTML='';
+    try{
+      const resp=await fetch('https://lasnonlixtvmarubbegf.functions.supabase.co/v1/send-report-email',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
+        body:JSON.stringify({type,date,dept,settings:JSON.parse(localStorage.getItem('sd_email_settings')||'{}')}),
+      });
+      const result=await resp.json();
+      if(result.ok){
+        status.innerHTML=`<div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--gr)">${_i('check-circle',14)} Email sent successfully to ${result.sent||0} recipient(s)!</div>`;
+        showToast(_i('mail')+' Report sent!','ok');
+      } else {
+        status.innerHTML=`<div style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Error: ${result.error||'Unknown error'}</div>`;
+      }
+    }catch(e){
+      status.innerHTML=`<div style="background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--rd)">${_i('x-circle',14)} Edge Function not deployed yet. Deploy it first.</div>`;
+    }
+    btn.disabled=false;btn.innerHTML=_i('send',14)+' Send Now';
+  };
+
+  window._erPreview=async()=>{
+    const type=document.getElementById('erManualType')?.value||'all';
+    const date=document.getElementById('erManualDate')?.value||new Date().toISOString().slice(0,10);
+    const dept=document.getElementById('erManualDept')?.value||'';
+    const{data:reps}=await _db.from('daily_reports').select('*').eq('report_date',date).then(r=>dept?{data:(r.data||[]).filter(x=>x.dept===dept)}:r);
+    if(!reps?.length){showToast('No reports found for this date','err');return;}
+    const rows=reps.map(r=>{
+      const tRen=(r.renewal_retail||0)+(r.renewal_reseller||0)+(r.renewal_csu||0);
+      return`<div style="border:1px solid var(--b2);border-radius:var(--r);margin-bottom:10px;overflow:hidden">
+        <div style="background:var(--s2);padding:8px 12px;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-weight:700">${r.agent_name}</span>
+          <span style="font-size:11px;color:var(--mu)">${r.dept||''} · ${r.report_date}</span>
+        </div>
+        <div style="padding:8px 12px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+          ${[['Reg',r.registration,'var(--ac)'],['Req',r.daily_requests,'var(--gr)'],['Renewal',tRen,'#a78bfa'],['Rect',r.rectification,'var(--yl)']].map(([l,v,col])=>`<div style="text-align:center;background:var(--s2);border-radius:var(--r);padding:6px"><div style="font-size:16px;font-weight:700;color:${col}">${v||0}</div><div style="font-size:10px;color:var(--mu)">${l}</div></div>`).join('')}
+        </div>
+        ${(r.pending_sos||[]).length?`<div style="padding:6px 12px;font-size:12px;color:var(--yl)">${_i('alert-circle',11)} ${r.pending_sos.length} pending S/O(s)</div>`:''}
+        ${r.remarks?`<div style="padding:6px 12px;font-size:12px;color:var(--mu);font-style:italic">${_i('message-square',11)} ${r.remarks}</div>`:''}
+      </div>`;
+    }).join('');
+    document.getElementById('modalTitle').textContent='Email Preview — '+date;
+    document.getElementById('modalBody').innerHTML=`<div style="max-height:65vh;overflow-y:auto">${rows}</div>`;
+    document.getElementById('modalFooter').innerHTML=`<button class="btn btn-sm" onclick="closeModal()">Close</button>`;
+    openModal();
+  };
 }
 
 async function deleteReport(id){
