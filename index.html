@@ -2206,7 +2206,7 @@ async function submitDailyReport(existingId){
 async function renderAdminDailyReports(){
   const c=document.getElementById('pageContent');
   c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
-  const today=new Date().toISOString().slice(0,10);
+  const _now=new Date(); const today=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
   // state
   let _tab='daily'; // 'daily' | 'monthly'
   let _date=today;
