@@ -390,6 +390,10 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
     <div class="form-group"><label>Message</label><textarea id="aMsg" rows="3" placeholder="Write your announcement..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
     <div class="form-group"><label>Department <span style="color:var(--mu);font-weight:400">(leave blank for all)</span></label><select id="aDept" style="width:100%;padding:10px 14px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:14px;font-family:var(--font)"><option value="">All Departments</option></select></div>
     <div class="form-group"><label>Expires On <span style="color:var(--mu);font-weight:400">(optional)</span></label><input type="date" id="aExpiry"></div>
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px 14px;background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.2);border-radius:var(--r);margin-bottom:16px">
+      <input type="checkbox" id="aUrgent" style="width:16px;height:16px;accent-color:var(--rd);cursor:pointer">
+      <span style="font-size:13px;font-weight:600;color:var(--rd)">⚠️ Mark as Important / Urgent</span>
+    </label>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" onclick="closeAnnounceModal()">Cancel</button>
       <button class="btn btn-primary btn-sm" id="saveAnnounceBtn" onclick="saveAnnouncement()">Post Announcement</button>
@@ -458,7 +462,7 @@ const C={
   shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2',
   tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
-  announce:'id,title,message,expires_at,created_at,dept',
+  announce:'id,title,message,expires_at,created_at,dept,is_urgent',
   leave:'id,agent_id,agent_name,date_from,date_to,reason,status,leave_type,created_at',
   messages:'id,from_id,from_name,to_id,message,created_at,is_broadcast',
   logs:'id,agent_id,action,detail,date,time',
@@ -1927,10 +1931,11 @@ async function renderAnnouncements(){
   </div>
   ${!list?.length?'<div class="empty-state"><div class="icon">🎉</div><p>No announcements yet.</p></div>':list.map(a=>{
     const expired=a.expires_at&&a.expires_at<today;
-    return `<div class="card" style="margin-bottom:12px;border-left:3px solid ${expired?'var(--mu)':'var(--ac)'}">
+    const urgentColor=a.is_urgent?'var(--rd)':expired?'var(--mu)':'var(--ac)';
+    return `<div class="card" style="margin-bottom:12px;border-left:3px solid ${urgentColor};${a.is_urgent?'background:rgba(244,63,94,.04)':''}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
         <div>
-          <div style="font-size:15px;font-weight:700;margin-bottom:6px">${a.title} ${expired?'<span style="font-size:11px;color:var(--mu)">(Expired)</span>':''}</div>
+          <div style="font-size:15px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px">${a.is_urgent?'<span style="font-size:12px;background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);border-radius:4px;padding:1px 7px">⚠️ URGENT</span>':''} ${a.title} ${expired?'<span style="font-size:11px;color:var(--mu);font-weight:400">(Expired)</span>':''}</div>
           <div style="font-size:13px;color:var(--mu);margin-bottom:8px">${a.message}</div>
           <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:6px;flex-wrap:wrap">${_i('calendar',11)} ${new Date(a.created_at).toLocaleDateString()} ${a.expires_at?'· Expires: '+a.expires_at:''} ${a.dept?`<span style="background:rgba(108,99,255,.15);color:var(--ac);border:1px solid rgba(108,99,255,.3);border-radius:20px;padding:1px 8px;font-size:10px">${_i('building',10)} ${a.dept}</span>`:'<span style="background:rgba(16,185,129,.1);color:var(--gr);border:1px solid rgba(16,185,129,.25);border-radius:20px;padding:1px 8px;font-size:10px">All Departments</span>'}</div>
         </div>
@@ -2511,6 +2516,7 @@ async function openAnnounceModal(){
   const agents=await _getAgents('dept');
   const depts=[...new Set((agents||[]).map(a=>a.dept).filter(Boolean))].sort();
   depts.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
+  const urg=document.getElementById('aUrgent');if(urg)urg.checked=false;
   document.getElementById('announceModal').classList.add('open');
 }
 function closeAnnounceModal(){document.getElementById('announceModal').classList.remove('open');}
@@ -2523,7 +2529,8 @@ async function saveAnnouncement(){
   if(!message){errEl.textContent='Message required';errEl.classList.add('show');return;}
   const btn=document.getElementById('saveAnnounceBtn');btn.disabled=true;btn.textContent='Posting...';
   const dept=document.getElementById('aDept')?.value||null;
-  const{error}=await _db.from('announcements').insert({title,message,expires_at,created_by:'Admin',dept:dept||null});
+  const is_urgent=document.getElementById('aUrgent')?.checked||false;
+  const{error}=await _db.from('announcements').insert({title,message,expires_at,created_by:'Admin',dept:dept||null,is_urgent});
   btn.disabled=false;btn.textContent='Post Announcement';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('announcements');
@@ -3342,10 +3349,10 @@ async function _getAnnounceBanner(){
   const active=(list||[]).filter(a=>(!a.expires_at||a.expires_at>=today)&&(!a.dept||a.dept===agentDept));
   if(!active.length)return '';
   return `<div style="margin-bottom:16px">${active.map(a=>`
-  <div style="background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(139,92,246,.08));border:1px solid rgba(108,99,255,.3);border-left:4px solid var(--ac);border-radius:var(--r);padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
-    <span style="color:var(--ac);flex-shrink:0;margin-top:1px">${_i('bell',18)}</span>
+  <div style="${a.is_urgent?'background:rgba(244,63,94,.06);border:1px solid rgba(244,63,94,.3);border-left:4px solid var(--rd)':'background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(139,92,246,.08));border:1px solid rgba(108,99,255,.3);border-left:4px solid var(--ac)'};border-radius:var(--r);padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
+    <span style="color:${a.is_urgent?'var(--rd)':'var(--ac)'};flex-shrink:0;margin-top:1px">${a.is_urgent?'⚠️':_i('bell',18)}</span>
     <div style="min-width:0">
-      <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:var(--tx)">${a.title}</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:4px;color:${a.is_urgent?'var(--rd)':'var(--tx)'}">${a.is_urgent?'[URGENT] ':''}${a.title}</div>
       <div style="font-size:12px;color:var(--mu);line-height:1.5">${a.message}</div>
       ${a.expires_at?`<div style="font-size:10px;color:var(--mu);margin-top:4px;display:flex;align-items:center;gap:4px">${_i('calendar',10)} Expires: ${a.expires_at}</div>`:''}
     </div>
