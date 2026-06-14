@@ -2290,7 +2290,9 @@ async function renderAdminDailyReports(){
 
   const renderMonthly=async()=>{
     const monthStart=_month+'-01';
-    const monthEnd=_month+'-31';
+    const [my,mm]=_month.split('-');
+    const lastDay=new Date(parseInt(my),parseInt(mm),0).getDate();
+    const monthEnd=_month+'-'+String(lastDay).padStart(2,'0');
     let q=_db.from('daily_reports').select('*').gte('report_date',monthStart).lte('report_date',monthEnd).order('submitted_at',{ascending:true});
     if(isManager&&managerDept)q=q.eq('dept',managerDept);
     else if(isSubAdmin&&subAdminDepts.length)q=q.in('dept',subAdminDepts);
