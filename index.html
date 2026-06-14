@@ -893,6 +893,7 @@ function applyTheme(theme){
   localStorage.setItem('sd_theme',theme);
 }
 
+function closeModal(){document.getElementById('genModal').classList.remove('open');}
 function toggleTheme(){
   const current=localStorage.getItem('sd_theme')||'dark';
   applyTheme(current==='dark'?'light':'dark');
