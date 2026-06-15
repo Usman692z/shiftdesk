@@ -1377,28 +1377,42 @@ let breakCountdownInterval=null;
 function startBreakCountdown(){
   if(breakCountdownInterval)clearInterval(breakCountdownInterval);
   const card=document.getElementById('breakCountdownCard');
-  if(!card)return;
-  const startISO=card.dataset.start;
-  const completedMs=parseInt(card.dataset.completed||'0',10);
+  const miniBar=document.getElementById('breakMiniBar');
+  if(!card&&!miniBar)return;
+  const startISO=card?card.dataset.start:null;
+  const completedMs=card?parseInt(card.dataset.completed||'0',10):0;
   const ring=document.getElementById('breakRing');
   const timeEl=document.getElementById('breakTime');
   const subEl=document.getElementById('breakSub');
+  const miniTimeEl=document.getElementById('breakMiniTime');
   const CIRC=464.96, ALLOW=BREAK_ALLOWANCE_MIN*60000;
   function tick(){
-    if(!document.getElementById('breakCountdownCard')){clearInterval(breakCountdownInterval);return;}
+    const stillCard=document.getElementById('breakCountdownCard');
+    const stillMini=document.getElementById('breakMiniTime');
+    if(!stillCard&&!stillMini){clearInterval(breakCountdownInterval);return;}
     const usedMs=completedMs+(startISO?(Date.now()-new Date(startISO)):0);
     const remainMs=ALLOW-usedMs;
     const over=remainMs<0;
     const abs=Math.abs(remainMs);
     const mm=Math.floor(abs/60000), ss=Math.floor((abs%60000)/1000);
-    timeEl.textContent=(over?'-':'')+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
     const remainMin=remainMs/60000;
     const col=over?'var(--rd)':(remainMin<=5?'var(--rd)':(remainMin<=15?'var(--yl)':'var(--gr)'));
-    ring.setAttribute('stroke',col);
-    timeEl.style.color=col;
-    const frac=Math.max(0,Math.min(1,remainMs/ALLOW));
-    ring.setAttribute('stroke-dashoffset',CIRC*(1-frac));
-    if(subEl)subEl.textContent=over?(t('break_over')+' '+mm+'m '+ss+'s'):t('break_of_total').replace('{n}',BREAK_ALLOWANCE_MIN);
+    // big ring
+    if(stillCard&&timeEl){
+      timeEl.textContent=(over?'-':'')+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+      ring&&ring.setAttribute('stroke',col);
+      timeEl.style.color=col;
+      const frac=Math.max(0,Math.min(1,remainMs/ALLOW));
+      ring&&ring.setAttribute('stroke-dashoffset',CIRC*(1-frac));
+      if(subEl)subEl.textContent=over?(t('break_over')+' '+mm+'m '+ss+'s'):t('break_of_total').replace('{n}',BREAK_ALLOWANCE_MIN);
+    }
+    // mini bar at top
+    if(stillMini){
+      stillMini.style.color=col;
+      stillMini.innerHTML=(over?'-':'')+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0')+' <span style="font-size:11px;font-weight:400;color:var(--mu)">/ '+BREAK_ALLOWANCE_MIN+'m</span>';
+      const bar=document.getElementById('breakMiniBar');
+      if(bar)bar.style.borderColor=col==='var(--rd)'?'rgba(244,63,94,.4)':(col==='var(--yl)'?'rgba(251,191,36,.4)':'rgba(16,185,129,.3)');
+    }
     if(over)fireOverBreakAlert(Math.floor(usedMs/60000));
   }
   tick();breakCountdownInterval=setInterval(tick,1000);
@@ -1990,6 +2004,31 @@ async function renderMyDashboard(){
       <div style="font-size:11px;color:var(--mu);margin-top:4px">Shift ends: ${shiftEndTime}</div>
     </div>
   </div>
+  ${(()=>{
+    const tr=byDate[today];
+    if(!tr?.check_in)return '';
+    const _bms=(a,b)=>a&&b?Math.max(0,new Date(b)-new Date(a)):0;
+    const compMs=_bms(tr.break_start,tr.break_end)+_bms(tr.break_start_2,tr.break_end_2);
+    const onBrk=(tr.break_start&&!tr.break_end)||(tr.break_start_2&&!tr.break_end_2);
+    const actStart=tr.break_start&&!tr.break_end?tr.break_start:(tr.break_start_2&&!tr.break_end_2?tr.break_start_2:null);
+    const usedMin=Math.floor((compMs+(actStart?(Date.now()-new Date(actStart)):0))/60000);
+    const leftMin=BREAK_ALLOWANCE_MIN-usedMin;
+    const col=onBrk?'var(--yl)':(leftMin<=0?'var(--rd)':leftMin<=15?'var(--yl)':'var(--gr)');
+    const label=onBrk?('On Break — '+leftMin+'m left'):(leftMin<=0?Math.abs(leftMin)+'m over limit':leftMin+'m remaining');
+    return `<div class="card" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:50%;background:${onBrk?'rgba(251,191,36,.15)':'rgba(16,185,129,.1)'};border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-size:16px">☕</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${col}">${label}</div>
+          <div style="font-size:11px;color:var(--mu)">Daily break allowance: ${BREAK_ALLOWANCE_MIN} min</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:800;color:${col}">${usedMin}m <span style="font-size:12px;font-weight:400;color:var(--mu)">used</span></div>
+        <button onclick="navigate('myshift')" style="font-size:11px;color:var(--ac);background:none;border:none;cursor:pointer;padding:0;font-family:var(--font)">Go to My Shift →</button>
+      </div>
+    </div>`;
+  })()}
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -3391,6 +3430,10 @@ async function renderMyShift(){
     <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('clock',13)} Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">${countryLabel}</div></div>
     <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('calendar',13)} Shift Start</h3><div class="shift-time">${currentAgent.shift_start||'09:00'}</div><div class="shift-status-text">${countryLabel}</div></div>
   </div>
+  ${isIn?`<div id="breakMiniBar" style="background:${onBreak?'rgba(251,191,36,.1)':'var(--s2)'};border:1px solid ${onBreak?'rgba(251,191,36,.3)':'var(--b)'};border-radius:var(--r);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <span style="font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px">${_i('coffee',14)} ${t('break_left')}</span>
+    <span id="breakMiniTime" style="font-family:monospace;font-size:18px;font-weight:800;color:${onBreak?'var(--yl)':(breakLeftMin<=5?'var(--rd)':breakLeftMin<=15?'var(--yl)':'var(--gr)')}">${onBreak?'--:--':(breakLeftMin<0?'-'+Math.abs(breakLeftMin)+'m':breakLeftMin+'m')} <span style="font-size:11px;font-weight:400;color:var(--mu)">/ ${BREAK_ALLOWANCE_MIN}m</span></span>
+  </div>`:''}
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
