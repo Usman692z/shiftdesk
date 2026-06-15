@@ -481,6 +481,9 @@ const C={
   depts:'id,name,created_at',
 };
 
+// Daily break allowance (minutes) — same for all agents
+const BREAK_ALLOWANCE_MIN=60;
+
 // ── Department helpers ────────────────────────────────────────────────────
 async function _getDepts(){
   return _q('departments',300000,()=>_db.from('departments').select(C.depts).order('name').then(r=>r.data||[]));
@@ -557,6 +560,7 @@ const _T={
     password:'Password',report_template:'Report Template',
     add_agent:'+ Add Agent',save_agent:'Save Agent',
     checkin:'Check In',checkout:'Check Out',break:'Take Break',resume:'Resume',
+    break_left:'Break left',break_of_total:'of {n} min today',break_started:'Started at',break_end_hint:'tap End Break to resume',break_over:'over',break_over_title:'Break limit exceeded',break_over_msg:'{name} has exceeded the {n}-minute daily break limit.',
     pending:'Pending',approved:'Approved',rejected:'Rejected',
     no_data:'No data found.',loading:'Loading...',
     approve:'Approve',reject:'Reject',
@@ -598,6 +602,7 @@ const _T={
     access:'مستوى الصلاحية',password:'كلمة المرور',report_template:'نموذج التقرير',
     add_agent:'+ إضافة موظف',save_agent:'حفظ الموظف',
     checkin:'تسجيل الدخول',checkout:'تسجيل الخروج',break:'استراحة',resume:'استئناف',
+    break_left:'المتبقي من الاستراحة',break_of_total:'من {n} دقيقة اليوم',break_started:'بدأت في',break_end_hint:'اضغط إنهاء الاستراحة للعودة',break_over:'تجاوز',break_over_title:'تم تجاوز حد الاستراحة',break_over_msg:'{name} تجاوز حد الاستراحة اليومي البالغ {n} دقيقة.',
     pending:'قيد الانتظار',approved:'موافق عليه',rejected:'مرفوض',
     no_data:'لا توجد بيانات.',loading:'جارٍ التحميل...',
     approve:'موافقة',reject:'رفض',
@@ -1317,6 +1322,21 @@ async function _bgPollUnread(){
     }
     if(Notification.permission==='default')Notification.requestPermission();
   }
+
+  // ── 4. Over-break alerts (managers & admins only) ────────────
+  if(isAdmin||isManager){
+    let bq=_db.from('break_alerts').select('id,agent_name,dept,used_minutes,created_at').gt('created_at',since).order('created_at',{ascending:false}).limit(10);
+    if(isManager&&managerDept)bq=bq.eq('dept',managerDept);
+    const{data:newBrk}=await bq;
+    if(newBrk?.length){
+      newBrk.forEach(b=>{
+        showToast(_i('alert')+' '+b.agent_name+' — '+t('break_over_title')+' ('+b.used_minutes+'m)','err');
+        if(Notification.permission==='granted'){
+          new Notification(t('break_over_title'),{body:b.agent_name+' • '+(b.dept||'')+' • '+b.used_minutes+'m',icon:'logo.svg',tag:'shiftdesk-break'});
+        }
+      });
+    }
+  }
 }
 
 let _adminAgentId=null;
@@ -1351,6 +1371,57 @@ function startClock(){
     const sc=document.getElementById('shiftClock');if(sc)sc.textContent=t;
   }
   tick();clockInterval=setInterval(tick,1000);
+}
+
+let breakCountdownInterval=null;
+function startBreakCountdown(){
+  if(breakCountdownInterval)clearInterval(breakCountdownInterval);
+  const card=document.getElementById('breakCountdownCard');
+  if(!card)return;
+  const startISO=card.dataset.start;
+  const completedMs=parseInt(card.dataset.completed||'0',10);
+  const ring=document.getElementById('breakRing');
+  const timeEl=document.getElementById('breakTime');
+  const subEl=document.getElementById('breakSub');
+  const CIRC=464.96, ALLOW=BREAK_ALLOWANCE_MIN*60000;
+  function tick(){
+    if(!document.getElementById('breakCountdownCard')){clearInterval(breakCountdownInterval);return;}
+    const usedMs=completedMs+(startISO?(Date.now()-new Date(startISO)):0);
+    const remainMs=ALLOW-usedMs;
+    const over=remainMs<0;
+    const abs=Math.abs(remainMs);
+    const mm=Math.floor(abs/60000), ss=Math.floor((abs%60000)/1000);
+    timeEl.textContent=(over?'-':'')+String(mm).padStart(2,'0')+':'+String(ss).padStart(2,'0');
+    const remainMin=remainMs/60000;
+    const col=over?'var(--rd)':(remainMin<=5?'var(--rd)':(remainMin<=15?'var(--yl)':'var(--gr)'));
+    ring.setAttribute('stroke',col);
+    timeEl.style.color=col;
+    const frac=Math.max(0,Math.min(1,remainMs/ALLOW));
+    ring.setAttribute('stroke-dashoffset',CIRC*(1-frac));
+    if(subEl)subEl.textContent=over?(t('break_over')+' '+mm+'m '+ss+'s'):t('break_of_total').replace('{n}',BREAK_ALLOWANCE_MIN);
+    if(over)fireOverBreakAlert(Math.floor(usedMs/60000));
+  }
+  tick();breakCountdownInterval=setInterval(tick,1000);
+}
+
+async function fireOverBreakAlert(usedMin){
+  const today=new Date().toISOString().slice(0,10);
+  const guard='sd_overbreak_'+currentAgent.id+'_'+today;
+  if(localStorage.getItem(guard))return;
+  localStorage.setItem(guard,'1');
+  // Mark on shift_status so it fires once even across reloads/devices
+  _db.from('shift_status').update({over_break_notified:true}).eq('agent_id',currentAgent.id).eq('date',today).then(()=>{},()=>{});
+  // Feed for managers/admins (realtime)
+  _db.from('break_alerts').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,used_minutes:usedMin,report_date:today}).then(()=>{},()=>{});
+  // Email alert (agent + manager + admin)
+  try{
+    await fetch('https://lasnonlixtvmarubbegf.supabase.co/functions/v1/send-break-alert',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
+      body:JSON.stringify({agent_id:currentAgent.id,used_minutes:usedMin})
+    });
+  }catch(e){}
+  showToast(_i('alert')+' '+t('break_over_title'),'err');
 }
 
 async function renderDashboard(){
@@ -2381,7 +2452,7 @@ async function renderEmailReports(){
   if(dbSettings)localStorage.setItem('sd_email_settings',JSON.stringify(dbSettings));
   const recipients=saved.recipients||{};
   const extraEmails=saved.extra_emails||[];
-  const include=saved.include||{daily:true,attendance:true,sos:true,remarks:true,monthly:true,missing:false};
+  const include=saved.include||{daily:true,attendance:true,sos:true,remarks:true,monthly:true,missing:false,overbreak:true};
   const autoEnabled=saved.auto_enabled!==false;
   const sendTime=saved.send_time||'00:00';
 
@@ -2431,6 +2502,7 @@ async function renderEmailReports(){
       ${chk('remarks','Agent remarks',include.remarks)}
       ${chk('monthly','Month-to-date totals',include.monthly)}
       ${chk('missing','Missing agents only',include.missing)}
+      ${chk('overbreak','Over-break alerts',include.overbreak)}
     </div>
   </div>
 
@@ -2509,6 +2581,7 @@ async function renderEmailReports(){
       remarks:document.getElementById('inc_remarks')?.checked,
       monthly:document.getElementById('inc_monthly')?.checked,
       missing:document.getElementById('inc_missing')?.checked,
+      overbreak:document.getElementById('inc_overbreak')?.checked,
     },
     recipients:JSON.parse(localStorage.getItem('sd_email_settings')||'{}').recipients||{},
     extra_emails:JSON.parse(localStorage.getItem('sd_email_settings')||'{}').extra_emails||[],
@@ -2527,6 +2600,7 @@ async function renderEmailReports(){
         remarks:document.getElementById('inc_remarks')?.checked,
         monthly:document.getElementById('inc_monthly')?.checked,
         missing:document.getElementById('inc_missing')?.checked,
+        overbreak:document.getElementById('inc_overbreak')?.checked,
       },
     };
     // collect recipient toggles
@@ -3237,6 +3311,13 @@ async function renderMyShift(){
   const netMins=Math.max(0,totalMins-totalBreakMins);
   const totalHrsLabel=netMins>0?fmtMins(netMins):'—';
 
+  // Break allowance tracking — completed break ms + the active (ongoing) break
+  const _brkMs=(st,en)=>{ if(!st||!en)return 0; return Math.max(0,new Date(en)-new Date(st)); };
+  const completedBreakMs=_brkMs(b1Start,b1End)+_brkMs(b2Start,s2BreakEnd);
+  const activeBreakStart=onBreak1?b1Start:(onBreak2?b2Start:null);
+  const breakUsedMin=Math.floor((completedBreakMs+(activeBreakStart?(Date.now()-new Date(activeBreakStart)):0))/60000);
+  const breakLeftMin=BREAK_ALLOWANCE_MIN-breakUsedMin;
+
   // ── Action buttons ────────────────────────────────────────────
   const breakBtn=(shiftN,onBrk)=>onBrk
     ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--yl),#d97706);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} End Break</button>`
@@ -3321,15 +3402,27 @@ async function renderMyShift(){
     ${actionBtn}
   </div>
 
-  ${onBreak?`<div style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:var(--r);padding:14px;margin-bottom:16px;text-align:center">
-    <div style="font-size:20px;margin-bottom:4px;display:flex;align-items:center;justify-content:center">${_i('coffee',20)}</div>
-    <div style="font-weight:700;color:var(--yl)">Break started at ${fmtTime(onBreak1?b1Start:b2Start)}</div>
-    <div style="font-size:12px;color:var(--mu);margin-top:4px">Click "End Break" when you return</div>
-  </div>`:''}
+  ${onBreak?`<div id="breakCountdownCard" data-start="${activeBreakStart||''}" data-completed="${completedBreakMs}" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:var(--r);padding:18px 14px;margin-bottom:16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div style="position:relative;width:170px;height:170px">
+      <svg viewBox="0 0 170 170" width="170" height="170">
+        <circle cx="85" cy="85" r="74" fill="none" stroke="var(--b2)" stroke-width="11"/>
+        <circle id="breakRing" cx="85" cy="85" r="74" fill="none" stroke="var(--yl)" stroke-width="11" stroke-linecap="round" transform="rotate(-90 85 85)" stroke-dasharray="464.96" stroke-dashoffset="0"/>
+      </svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div style="font-size:12px;color:var(--mu);display:flex;align-items:center;gap:4px">${_i('coffee',12)} ${t('break_left')}</div>
+        <div id="breakTime" style="font-family:monospace;font-size:34px;font-weight:800;color:var(--yl);line-height:1.1">--:--</div>
+        <div id="breakSub" style="font-size:11px;color:var(--mu)">${t('break_of_total').replace('{n}',BREAK_ALLOWANCE_MIN)}</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--mu)">${t('break_started')} ${fmtTime(activeBreakStart)} — ${t('break_end_hint')}</div>
+  </div>`:(isIn&&breakUsedMin>0?`<div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <span style="font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px">${_i('coffee',13)} ${t('break_left')}</span>
+    <span style="font-size:14px;font-weight:700;color:${breakLeftMin<0?'var(--rd)':breakLeftMin<=15?'var(--yl)':'var(--gr)'}">${breakLeftMin<0?'-'+Math.abs(breakLeftMin)+'m '+t('break_over'):breakLeftMin+'m / '+BREAK_ALLOWANCE_MIN+'m'}</span>
+  </div>`:'')}
 
   <div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('file-text')} Recent Activity</div><div id="myActivityLog">Loading...</div></div>`;
 
-  startClock();loadMyActivity();
+  startClock();loadMyActivity();startBreakCountdown();
 }
 
 let _pendingCheckInShift=1;
