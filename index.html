@@ -1824,6 +1824,11 @@ async function saveAgent(){
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
+      // Send welcome email with login credentials
+      fetch('https://lasnonlixtvmarubbegf.supabase.co/functions/v1/send-welcome-email',{
+        method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
+        body:JSON.stringify({name,email,pw,dept,shift_start,shift_end})
+      }).catch(()=>{});
       showToast(_i('check')+' Agent added: '+name,'ok');
     }else{
       const report_template=document.getElementById('mReportTemplate').value||'data_team';
