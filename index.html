@@ -366,20 +366,20 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 </div>
 <div class="modal-bg" id="leaveModal">
   <div class="modal" style="max-width:420px">
-    <h2>Apply for Half-Day Leave</h2>
+    <h2 id="leaveModalTitle">Apply for Half-Day Leave</h2>
     <div id="leaveErr" class="auth-err"></div>
     <!-- Leave Type (half day only) -->
     <div class="form-group">
-      <label>Leave Type</label>
+      <label id="leaveTypeLabel">Leave Type</label>
       <div style="display:flex;gap:8px" id="leaveTypeBtns">
         <button type="button" onclick="setLeaveType('half_am')" id="lt_half_am" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--ac);background:var(--ac);color:#fff;font-family:var(--font);transition:var(--tr)">Half Day (Morning)</button>
         <button type="button" onclick="setLeaveType('half_pm')" id="lt_half_pm" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--b2);background:transparent;color:var(--mu);font-family:var(--font);transition:var(--tr)">Half Day (Evening)</button>
       </div>
     </div>
-    <div class="form-group"><label>Time</label><input type="time" id="leaveTime" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none"></div>
-    <div class="form-group"><label>Reason</label><textarea id="leaveReason" rows="3" placeholder="Reason for half-day leave..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
+    <div class="form-group"><label id="leaveTimeLabel">Time</label><input type="time" id="leaveTime" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none"></div>
+    <div class="form-group"><label id="leaveReasonLabel">Reason</label><textarea id="leaveReason" rows="3" placeholder="Reason for half-day leave..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
     <div class="modal-footer">
-      <button class="btn btn-danger btn-sm" onclick="closeLeaveModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="closeLeaveModal()" id="leaveCancelBtn">Cancel</button>
       <button class="btn btn-primary btn-sm" id="saveLeaveBtn" onclick="submitLeave()">Submit Request</button>
     </div>
   </div>
@@ -557,6 +557,22 @@ const _T={
     add_agent:'+ Add Agent',save_agent:'Save Agent',
     checkin:'Check In',checkout:'Check Out',break:'Take Break',resume:'Resume',
     break_left:'Break left',break_of_total:'of {n} min today',break_started:'Started at',break_end_hint:'tap End Break to resume',break_over:'over',break_over_title:'Break limit exceeded',break_over_msg:'{name} has exceeded the {n}-minute daily break limit.',
+    end_break:'End Break',shift_word:'Shift',shift1_done:'Shift 1 Complete for Today',start_2nd:'Start 2nd Shift',optional:'optional',
+    on_break_badge:'On Break',active_caps:'ACTIVE',active_word:'Active',wfh:'Work From Home',office:'Office',
+    break_word:'Break',work_time:'Work Time',online:'Online',offline:'Offline',idle:'Idle',
+    current_time:'Current Time',todays_shifts:"Today's Shifts",total_word:'Total',recent_activity:'Recent Activity',agent_word:'Agent',
+    no_activity:'No activity yet',checked_in:'Checked In',checked_out:'Checked Out',break_started_log:'Break Started',break_ended_log:'Break Ended',
+    days_worked:'Days Worked',total_hours:'Total Hours',avg_day:'Avg/Day',late_days:'Late Days',
+    performance_score:'Performance Score',excellent:'Excellent',good:'Good',needs_improvement:'Needs Improvement',
+    attend_short:'Attend',punct_short:'Punct',tasks_short:'Tasks',overtime_month:'OVERTIME THIS MONTH',shift_ends:'Shift ends',
+    on_time:'On Time',late_word:'Late',absent:'Absent',leave_word:'Leave',off_fri:'Off=Fri',off_word:'Off',
+    used_word:'used',daily_break_allowance:'Daily break allowance',over_limit:'over limit',remaining:'remaining',go_to_myshift:'Go to My Shift',
+    no_tasks:'No tasks assigned',completed:'Completed',in_progress:'In Progress',todo:'To Do',mark_done:'Mark Done',view:'View',priority:'Priority',due:'Due',
+    apply_half_leave:'Apply Half-Day Leave',no_leaves:'No leave requests yet',half_morning:'Half Day (Morning)',half_evening:'Half Day (Evening)',
+    leave_type:'Leave Type',time_word:'Time',reason:'Reason',submit_request:'Submit Request',select_time:'Please select a time',
+    no_announcements:'No announcements yet',urgent:'URGENT',expired:'Expired',
+    entries:'entries',no_activity_recorded:'No check-in/out activity recorded yet',activity_log:'Activity Log',
+    reviewed_by:'Reviewed by',day_word:'day',days_word:'days',morning:'Morning',evening:'Evening',expires:'Expires',
     pending:'Pending',approved:'Approved',rejected:'Rejected',
     no_data:'No data found.',loading:'Loading...',
     approve:'Approve',reject:'Reject',
@@ -599,6 +615,22 @@ const _T={
     add_agent:'+ إضافة موظف',save_agent:'حفظ الموظف',
     checkin:'تسجيل الدخول',checkout:'تسجيل الخروج',break:'استراحة',resume:'استئناف',
     break_left:'المتبقي من الاستراحة',break_of_total:'من {n} دقيقة اليوم',break_started:'بدأت في',break_end_hint:'اضغط إنهاء الاستراحة للعودة',break_over:'تجاوز',break_over_title:'تم تجاوز حد الاستراحة',break_over_msg:'{name} تجاوز حد الاستراحة اليومي البالغ {n} دقيقة.',
+    end_break:'إنهاء الاستراحة',shift_word:'وردية',shift1_done:'انتهت الوردية الأولى لليوم',start_2nd:'بدء الوردية الثانية',optional:'اختياري',
+    on_break_badge:'في استراحة',active_caps:'نشط',active_word:'نشط',wfh:'عمل من المنزل',office:'المكتب',
+    break_word:'استراحة',work_time:'وقت العمل',online:'متصل',offline:'غير متصل',idle:'خامل',
+    current_time:'الوقت الحالي',todays_shifts:'ورديات اليوم',total_word:'الإجمالي',recent_activity:'النشاط الأخير',agent_word:'موظف',
+    no_activity:'لا يوجد نشاط بعد',checked_in:'تم تسجيل الدخول',checked_out:'تم تسجيل الخروج',break_started_log:'بدأت الاستراحة',break_ended_log:'انتهت الاستراحة',
+    days_worked:'أيام العمل',total_hours:'إجمالي الساعات',avg_day:'المعدل/اليوم',late_days:'أيام التأخير',
+    performance_score:'درجة الأداء',excellent:'ممتاز',good:'جيد',needs_improvement:'يحتاج تحسين',
+    attend_short:'الحضور',punct_short:'الالتزام',tasks_short:'المهام',overtime_month:'العمل الإضافي هذا الشهر',shift_ends:'تنتهي الوردية',
+    on_time:'في الوقت',late_word:'متأخر',absent:'غائب',leave_word:'إجازة',off_fri:'عطلة=الجمعة',off_word:'عطلة',
+    used_word:'مُستخدم',daily_break_allowance:'رصيد الاستراحة اليومي',over_limit:'تجاوز الحد',remaining:'متبقٍ',go_to_myshift:'الذهاب إلى ورديتي',
+    no_tasks:'لا توجد مهام مسندة',completed:'مكتملة',in_progress:'قيد التنفيذ',todo:'قيد الانتظار',mark_done:'وضع كمكتملة',view:'عرض',priority:'الأولوية',due:'الاستحقاق',
+    apply_half_leave:'طلب إجازة نصف يوم',no_leaves:'لا توجد طلبات إجازة بعد',half_morning:'نصف يوم (صباحي)',half_evening:'نصف يوم (مسائي)',
+    leave_type:'نوع الإجازة',time_word:'الوقت',reason:'السبب',submit_request:'إرسال الطلب',select_time:'يرجى اختيار الوقت',
+    no_announcements:'لا توجد إعلانات بعد',urgent:'عاجل',expired:'منتهي',
+    entries:'إدخالات',no_activity_recorded:'لا يوجد نشاط دخول/خروج مسجل بعد',activity_log:'سجل النشاط',
+    reviewed_by:'تمت المراجعة بواسطة',day_word:'يوم',days_word:'يوم',morning:'صباحي',evening:'مسائي',expires:'ينتهي',
     pending:'قيد الانتظار',approved:'موافق عليه',rejected:'مرفوض',
     no_data:'لا توجد بيانات.',loading:'جارٍ التحميل...',
     approve:'موافقة',reject:'رفض',
@@ -2035,10 +2067,10 @@ async function renderMyDashboard(){
   const taskScore=tasksTotal>0?Math.round(tasksDone/tasksTotal*100):100;
   const perfScore=Math.round(attendScore*0.4+punctScore*0.4+taskScore*0.2);
   const perfColor=perfScore>=80?'var(--gr)':perfScore>=60?'var(--yl)':'var(--rd)';
-  const perfLabel=perfScore>=80?'Excellent':perfScore>=60?'Good':'Needs Improvement';
+  const perfLabel=perfScore>=80?t('excellent'):perfScore>=60?t('good'):t('needs_improvement');
 
   // Calendar
-  const monthName=now.toLocaleString('en-US',{month:'long'});
+  const monthName=now.toLocaleString(_lang==='ar'?'ar':'en-US',{month:'long'});
   const firstDow=new Date(yr,mo,1).getDay(); // 0=Sun
   let calCells='';
   // Headers Sun-Sat
@@ -2057,10 +2089,10 @@ async function renderMyDashboard(){
     const isToday=ds===today;
     const r=byDate[ds];
     let bg='transparent',color='var(--tx)',label='',title='';
-    if(isFri){bg='rgba(244,63,94,.1)';color='var(--rd)';label='Off';}
+    if(isFri){bg='rgba(244,63,94,.1)';color='var(--rd)';label=t('off_word');}
     else if(isSun){bg='var(--s2)';color='var(--mu)';}
     else if(isFuture){bg='transparent';color='var(--mu)';}
-    else if(leaveSet.has(ds)){bg='rgba(139,92,246,.2)';color='#a78bfa';label='Leave';}
+    else if(leaveSet.has(ds)){bg='rgba(139,92,246,.2)';color='#a78bfa';label=t('leave_word');}
     else if(r?.check_in){
       const s1=(r.check_out?new Date(r.check_out):new Date())-new Date(r.check_in);
       const mins=Math.floor(s1/60000);
@@ -2088,10 +2120,10 @@ async function renderMyDashboard(){
 
   <div style="margin-bottom:16px;display:grid;grid-template-columns:repeat(2,1fr);gap:12px">
     <div style="grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
-      <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${workedDays}</div><div class="stat-label">Days Worked</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${totalH}h ${totalM}m</div><div class="stat-label">Total Hours</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${avgH}h ${avgM}m</div><div class="stat-label">Avg/Day</div></div>
-      <div class="stat-card"><div class="stat-num" style="color:var(--rd)">${lateDays}</div><div class="stat-label">Late Days</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${workedDays}</div><div class="stat-label">${t('days_worked')}</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${totalH}h ${totalM}m</div><div class="stat-label">${t('total_hours')}</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${avgH}h ${avgM}m</div><div class="stat-label">${t('avg_day')}</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--rd)">${lateDays}</div><div class="stat-label">${t('late_days')}</div></div>
     </div>
     <!-- Performance Score -->
     <div class="card" style="margin:0;display:flex;align-items:center;gap:16px">
@@ -2104,15 +2136,15 @@ async function renderMyDashboard(){
       </div>
       <div>
         <div style="font-size:16px;font-weight:800;color:${perfColor}">${perfLabel}</div>
-        <div style="font-size:11px;color:var(--mu);margin-top:4px">Performance Score</div>
-        <div style="font-size:11px;color:var(--mu);margin-top:2px">Attend: ${attendScore}% · Punct: ${punctScore}% · Tasks: ${taskScore}%</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:4px">${t('performance_score')}</div>
+        <div style="font-size:11px;color:var(--mu);margin-top:2px">${t('attend_short')}: ${attendScore}% · ${t('punct_short')}: ${punctScore}% · ${t('tasks_short')}: ${taskScore}%</div>
       </div>
     </div>
     <!-- Overtime -->
     <div class="card" style="margin:0">
-      <div style="font-size:11px;color:var(--mu);font-weight:700;letter-spacing:.5px;margin-bottom:8px">⏰ OVERTIME THIS MONTH</div>
+      <div style="font-size:11px;color:var(--mu);font-weight:700;letter-spacing:.5px;margin-bottom:8px">⏰ ${t('overtime_month')}</div>
       <div style="font-size:28px;font-weight:800;color:${totalOvertimeMins>0?'var(--ac)':'var(--mu)'}">${totalOvertimeMins>0?otH+'h '+otM+'m':'—'}</div>
-      <div style="font-size:11px;color:var(--mu);margin-top:4px">Shift ends: ${shiftEndTime}</div>
+      <div style="font-size:11px;color:var(--mu);margin-top:4px">${t('shift_ends')}: ${shiftEndTime}</div>
     </div>
   </div>
   ${(()=>{
@@ -2128,18 +2160,18 @@ async function renderMyDashboard(){
     const usedMin=Math.floor((compMs+(actStart?(Date.now()-new Date(actStart)):0))/60000);
     const leftMin=BREAK_ALLOWANCE_MIN-usedMin;
     const col=onBrk?'var(--yl)':(leftMin<=0?'var(--rd)':leftMin<=15?'var(--yl)':'var(--gr)');
-    const label=onBrk?('On Break — '+leftMin+'m left'):(leftMin<=0?Math.abs(leftMin)+'m over limit':leftMin+'m remaining');
+    const label=onBrk?(t('on_break_badge')+' — '+leftMin+'m'):(leftMin<=0?Math.abs(leftMin)+'m '+t('over_limit'):leftMin+'m '+t('remaining'));
     return `<div class="card" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:38px;height:38px;border-radius:50%;background:${onBrk?'rgba(251,191,36,.15)':'rgba(16,185,129,.1)'};border:2px solid ${col};display:flex;align-items:center;justify-content:center;font-size:16px">☕</div>
         <div>
           <div style="font-size:13px;font-weight:700;color:${col}">${label}</div>
-          <div style="font-size:11px;color:var(--mu)">Daily break allowance: ${BREAK_ALLOWANCE_MIN} min</div>
+          <div style="font-size:11px;color:var(--mu)">${t('daily_break_allowance')}: ${BREAK_ALLOWANCE_MIN} min</div>
         </div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:20px;font-weight:800;color:${col}">${usedMin}m <span style="font-size:12px;font-weight:400;color:var(--mu)">used</span></div>
-        <button onclick="navigate('myshift')" style="font-size:11px;color:var(--ac);background:none;border:none;cursor:pointer;padding:0;font-family:var(--font)">Go to My Shift →</button>
+        <div style="font-size:20px;font-weight:800;color:${col}">${usedMin}m <span style="font-size:12px;font-weight:400;color:var(--mu)">${t('used_word')}</span></div>
+        <button onclick="navigate('myshift')" style="font-size:11px;color:var(--ac);background:none;border:none;cursor:pointer;padding:0;font-family:var(--font)">${t('go_to_myshift')} →</button>
       </div>
     </div>`;
   })()}
@@ -2148,11 +2180,11 @@ async function renderMyDashboard(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div class="card-title" style="margin:0;display:flex;align-items:center;gap:6px">${_i('calendar')} ${monthName} ${yr}</div>
       <div style="display:flex;gap:8px;font-size:11px;flex-wrap:wrap">
-        <span style="color:var(--gr);display:inline-flex;align-items:center;gap:3px">${_dot('var(--gr)')} On Time</span>
-        <span style="color:var(--yl);display:inline-flex;align-items:center;gap:3px">${_dot('var(--yl)')} Late</span>
-        <span style="color:var(--rd);display:inline-flex;align-items:center;gap:3px">${_dot('var(--rd)')} Absent</span>
-        <span style="color:#a78bfa;display:inline-flex;align-items:center;gap:3px">${_dot('var(--ac2)')} Leave</span>
-        <span style="color:var(--rd)">Off=Fri</span>
+        <span style="color:var(--gr);display:inline-flex;align-items:center;gap:3px">${_dot('var(--gr)')} ${t('on_time')}</span>
+        <span style="color:var(--yl);display:inline-flex;align-items:center;gap:3px">${_dot('var(--yl)')} ${t('late_word')}</span>
+        <span style="color:var(--rd);display:inline-flex;align-items:center;gap:3px">${_dot('var(--rd)')} ${t('absent')}</span>
+        <span style="color:#a78bfa;display:inline-flex;align-items:center;gap:3px">${_dot('var(--ac2)')} ${t('leave_word')}</span>
+        <span style="color:var(--rd)">${t('off_fri')}</span>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">${calCells}</div>
@@ -3054,7 +3086,7 @@ async function renderMyAnnouncements(){
   const list=await _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).then(r=>r.data));
   const agentDept=currentAgent?.dept||'';
   const active=(list||[]).filter(a=>(!a.expires_at||a.expires_at>=today)&&(!a.dept||a.dept.split(',').includes(agentDept)));
-  if(!active.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>No announcements right now.</p></div>';return;}
+  if(!active.length){c.innerHTML='<div class="empty-state"><div class="icon">🎉</div><p>'+t('no_announcements')+'</p></div>';return;}
   c.innerHTML=active.map(a=>`
   <div class="card" style="margin-bottom:12px;border-left:3px solid var(--ac)">
     <div style="display:flex;gap:12px;align-items:flex-start">
@@ -3062,7 +3094,7 @@ async function renderMyAnnouncements(){
       <div>
         <div style="font-size:15px;font-weight:700;margin-bottom:6px">${a.title}</div>
         <div style="font-size:13px;color:var(--mu);margin-bottom:8px;line-height:1.5">${a.message}</div>
-        <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:4px">${_i('calendar',11)} ${new Date(a.created_at).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}${a.expires_at?' · Expires: '+a.expires_at:''}</div>
+        <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:4px">${_i('calendar',11)} ${new Date(a.created_at).toLocaleDateString(_lang==='ar'?'ar':'en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'})}${a.expires_at?' · '+t('expires')+': '+a.expires_at:''}</div>
       </div>
     </div>
   </div>`).join('');
@@ -3120,6 +3152,17 @@ function openLeaveModal(){
   const tm=document.getElementById('leaveTime');if(tm)tm.value='';
   document.getElementById('leaveReason').value='';
   document.getElementById('leaveErr').classList.remove('show');
+  // Localize modal labels
+  const _set=(id,txt)=>{const e=document.getElementById(id);if(e)e.textContent=txt;};
+  _set('leaveModalTitle',t('apply_half_leave'));
+  _set('leaveTypeLabel',t('leave_type'));
+  _set('lt_half_am',t('half_morning'));
+  _set('lt_half_pm',t('half_evening'));
+  _set('leaveTimeLabel',t('time_word'));
+  _set('leaveReasonLabel',t('reason'));
+  _set('leaveCancelBtn',t('cancel'));
+  _set('saveLeaveBtn',t('submit_request'));
+  const ta=document.getElementById('leaveReason');if(ta)ta.placeholder=t('reason')+'...';
   setLeaveType('half_am');
   document.getElementById('leaveModal').classList.add('open');
 }
@@ -3158,20 +3201,20 @@ async function renderMyLeave(){
   c.innerHTML=`
   ${announceBanner}
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-    <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">${_i('plus')} Apply Half-Day Leave</button>
+    <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">${_i('plus')} ${t('apply_half_leave')}</button>
   </div>
-  ${!leaves?.length?'<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>No leave requests yet.</p></div>':leaves.map(l=>`
+  ${!leaves?.length?'<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>'+t('no_leaves')+'</p></div>':leaves.map(l=>`
   <div class="card" style="margin-bottom:12px;border-left:3px solid ${statusColor[l.status]||'var(--mu)'}">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
         <span style="font-weight:700">${l.date_from}${l.date_from!==l.date_to?' → '+l.date_to:''}</span>
-        <span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.leave_type)} day${_leaveDays(l.date_from,l.date_to,l.leave_type)>0.5?'s':''}</span>
+        <span style="background:var(--s3);border:1px solid var(--b2);border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;color:var(--ac)">${_leaveDays(l.date_from,l.date_to,l.leave_type)} ${_leaveDays(l.date_from,l.date_to,l.leave_type)>0.5?t('days_word'):t('day_word')}</span>
         ${_leaveTypeTag(l.leave_type)}
       </div>
-      <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44;display:inline-flex;align-items:center;gap:4px">${statusIcon[l.status]||_i('clock',12)} ${l.status||'pending'}</span>
+      <span class="badge" style="background:${statusColor[l.status]||'var(--mu)'}22;color:${statusColor[l.status]||'var(--mu)'};border:1px solid ${statusColor[l.status]||'var(--mu)'}44;display:inline-flex;align-items:center;gap:4px">${statusIcon[l.status]||_i('clock',12)} ${t(l.status||'pending')}</span>
     </div>
     ${_leaveReasonClean(l.reason)?`<div style="font-size:13px;color:var(--mu)">${_leaveReasonClean(l.reason)}</div>`:''}
-    ${l.status!=='pending'?`<div style="font-size:11px;color:var(--mu);margin-top:6px">Reviewed by: ${l.reviewed_by||'Admin'}</div>`:''}
+    ${l.status!=='pending'?`<div style="font-size:11px;color:var(--mu);margin-top:6px">${t('reviewed_by')}: ${l.reviewed_by||'Admin'}</div>`:''}
   </div>`).join('')}`;
 }
 
@@ -3182,8 +3225,8 @@ function _leaveDays(from,to,leaveType){
   return d>0?d:1;
 }
 function _leaveTypeTag(leaveType){
-  if(leaveType==='half_am')return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700">½ Morning</span>';
-  if(leaveType==='half_pm')return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700">½ Evening</span>';
+  if(leaveType==='half_am')return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700">½ '+t('morning')+'</span>';
+  if(leaveType==='half_pm')return '<span style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700">½ '+t('evening')+'</span>';
   return '';
 }
 function _leaveReasonClean(reason){return reason||'';}
@@ -3473,26 +3516,26 @@ async function renderMyShift(){
 
   // ── Action buttons ────────────────────────────────────────────
   const breakBtn=(shiftN,onBrk)=>onBrk
-    ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--yl),#d97706);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} End Break</button>`
-    :`<button onclick="doBreakStart(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--b2);font-family:var(--font);background:transparent;color:var(--mu);display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} Take Break</button>`;
+    ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--yl),#d97706);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} ${t('end_break')}</button>`
+    :`<button onclick="doBreakStart(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--b2);font-family:var(--font);background:transparent;color:var(--mu);display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} ${t('break')}</button>`;
 
   let actionBtn='';
   if(!s1In){
-    actionBtn=`<button class="checkin-btn checkin" onclick="doCheckIn(1)" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('check')} Check In — Shift 1</button>`;
+    actionBtn=`<button class="checkin-btn checkin" onclick="doCheckIn(1)" style="display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('check')} ${t('checkin')} — ${t('shift_word')} 1</button>`;
   } else if(!s1Out){
     actionBtn=`<div style="display:flex;gap:8px;margin-top:4px">
       ${breakBtn(1,onBreak1)}
-      <button class="checkin-btn checkout" style="flex:1;margin-top:0;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="doCheckOut(1)">${_i('x')} Check Out</button>
+      <button class="checkin-btn checkout" style="flex:1;margin-top:0;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="doCheckOut(1)">${_i('x')} ${t('checkout')}</button>
     </div>`;
   } else if(!s2In){
     actionBtn=`<div style="text-align:center;padding:14px 0 4px">
-      <div style="color:var(--gr);font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px">${_i('check-circle')} Shift 1 Complete for Today</div>
-      <button onclick="doCheckIn(2)" style="background:transparent;border:1px dashed var(--b2);color:var(--mu);padding:8px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--font);transition:var(--tr);display:inline-flex;align-items:center;gap:6px" onmouseover="this.style.borderColor='var(--gr)';this.style.color='var(--gr)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mu)'">${_i('plus')} Start 2nd Shift <span style="font-size:11px;opacity:.6">(optional)</span></button>
+      <div style="color:var(--gr);font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px">${_i('check-circle')} ${t('shift1_done')}</div>
+      <button onclick="doCheckIn(2)" style="background:transparent;border:1px dashed var(--b2);color:var(--mu);padding:8px 20px;border-radius:var(--r);font-size:13px;cursor:pointer;font-family:var(--font);transition:var(--tr);display:inline-flex;align-items:center;gap:6px" onmouseover="this.style.borderColor='var(--gr)';this.style.color='var(--gr)'" onmouseout="this.style.borderColor='var(--b2)';this.style.color='var(--mu)'">${_i('plus')} ${t('start_2nd')} <span style="font-size:11px;opacity:.6">(${t('optional')})</span></button>
     </div>`;
   } else if(!s2Out){
     actionBtn=`<div style="display:flex;gap:8px;margin-top:4px">
       ${breakBtn(2,onBreak2)}
-      <button class="checkin-btn checkout" style="flex:1;margin-top:0;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="doCheckOut(2)">${_i('x')} Check Out</button>
+      <button class="checkin-btn checkout" style="flex:1;margin-top:0;display:inline-flex;align-items:center;justify-content:center;gap:6px" onclick="doCheckOut(2)">${_i('x')} ${t('checkout')}</button>
     </div>`;
   } else {
     actionBtn='';
@@ -3503,21 +3546,21 @@ async function renderMyShift(){
     if(!inn)return '';
     const isActive=inn&&!out;
     const onBrk=brkStart&&!brkEnd;
-    const locBadge=loc?`<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${loc==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.15)'};color:${loc==='WFH'?'var(--ac)':'var(--gr)'};border:1px solid ${loc==='WFH'?'rgba(108,99,255,.3)':'rgba(16,185,129,.3)'};display:inline-flex;align-items:center;gap:4px">${loc==='WFH'?_i('home',11)+' Work From Home':_i('building',11)+' Office'}</span>`:'';
+    const locBadge=loc?`<span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${loc==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.15)'};color:${loc==='WFH'?'var(--ac)':'var(--gr)'};border:1px solid ${loc==='WFH'?'rgba(108,99,255,.3)':'rgba(16,185,129,.3)'};display:inline-flex;align-items:center;gap:4px">${loc==='WFH'?_i('home',11)+' '+t('wfh'):_i('building',11)+' '+t('office')}</span>`:'';
     return `
     <div style="background:var(--s2);border:1px solid ${onBrk?'rgba(251,191,36,.4)':isActive?'rgba(16,185,129,.25)':'var(--b)'};border-radius:var(--r);padding:14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
         <div style="display:flex;align-items:center;gap:8px">
-          <div style="font-size:12px;font-weight:700;color:var(--mu);letter-spacing:.5px">SHIFT ${num}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--mu);letter-spacing:.5px">${t('shift_word')} ${num}</div>
           ${locBadge}
         </div>
-        ${onBrk?`<span style="font-size:11px;font-weight:700;color:var(--yl);background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px">${_i('coffee',11)} On Break</span>`:isActive?'<span style="font-size:11px;font-weight:700;color:var(--gr)">● ACTIVE</span>':''}
+        ${onBrk?`<span style="font-size:11px;font-weight:700;color:var(--yl);background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px">${_i('coffee',11)} ${t('on_break_badge')}</span>`:isActive?'<span style="font-size:11px;font-weight:700;color:var(--gr)">● '+t('active_caps')+'</span>':''}
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
-        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--gr);font-size:14px">${fmtTime(inn)}</div><div class="stat-label">Check In</div></div>
-        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--rd);font-size:14px">${out?fmtTime(out):'—'}</div><div class="stat-label">Check Out</div></div>
-        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--yl);font-size:14px">${brkMins>0?fmtMins(brkMins):(onBrk?'Active':'—')}</div><div class="stat-label">Break</div></div>
-        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--ac);font-size:14px">${mins>0?fmtMins(Math.max(0,mins-brkMins)):(isActive&&!onBrk?'Active':'—')}</div><div class="stat-label">Work Time</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--gr);font-size:14px">${fmtTime(inn)}</div><div class="stat-label">${t('checkin')}</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--rd);font-size:14px">${out?fmtTime(out):'—'}</div><div class="stat-label">${t('checkout')}</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--yl);font-size:14px">${brkMins>0?fmtMins(brkMins):(onBrk?t('active_word'):'—')}</div><div class="stat-label">${t('break_word')}</div></div>
+        <div class="stat-card" style="margin:0"><div class="stat-num" style="color:var(--ac);font-size:14px">${mins>0?fmtMins(Math.max(0,mins-brkMins)):(isActive&&!onBrk?t('active_word'):'—')}</div><div class="stat-label">${t('work_time')}</div></div>
       </div>
       ${lateInfo?lateStatusBanner(lateInfo):''}
     </div>`;
@@ -3530,19 +3573,19 @@ async function renderMyShift(){
       <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
       <div>
         <div style="font-size:18px;font-weight:800">${currentAgent.name}</div>
-        <div style="color:var(--mu);font-size:13px">${currentAgent.role||'Agent'} • ${currentAgent.dept||''}</div>
+        <div style="color:var(--mu);font-size:13px">${currentAgent.role||t('agent_word')} • ${currentAgent.dept||''}</div>
         <div style="color:var(--mu);font-size:12px">${currentAgent.email||''}</div>
       </div>
       <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <span class="badge ${isIn?'badge-online':'badge-offline'}" style="display:inline-flex;align-items:center;gap:4px">${isIn?_dot('var(--gr)')+' Online':_dot('#6b728e')+' Offline'}</span>
-        ${isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3);display:inline-flex;align-items:center;gap:4px">'+_dot('var(--yl)')+' Idle</span>':''}
+        <span class="badge ${isIn?'badge-online':'badge-offline'}" style="display:inline-flex;align-items:center;gap:4px">${isIn?_dot('var(--gr)')+' '+t('online'):_dot('#6b728e')+' '+t('offline')}</span>
+        ${isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3);display:inline-flex;align-items:center;gap:4px">'+_dot('var(--yl)')+' '+t('idle')+'</span>':''}
       </div>
     </div>
   </div>
 
   <div class="shift-panel" style="margin-bottom:16px">
-    <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('clock',13)} Current Time</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">${countryLabel}</div></div>
-    <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('calendar',13)} Shift Start</h3><div class="shift-time">${currentAgent.shift_start||'09:00'}</div><div class="shift-status-text">${countryLabel}</div></div>
+    <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('clock',13)} ${t('current_time')}</h3><div class="shift-time" id="shiftClock">—</div><div class="shift-status-text">${countryLabel}</div></div>
+    <div class="shift-card"><h3 style="display:flex;align-items:center;gap:5px">${_i('calendar',13)} ${t('shift_start')}</h3><div class="shift-time">${currentAgent.shift_start||'09:00'}</div><div class="shift-status-text">${countryLabel}</div></div>
   </div>
   ${isIn?`<div id="breakMiniBar" style="background:${onBreak?'rgba(251,191,36,.1)':'var(--s2)'};border:1px solid ${onBreak?'rgba(251,191,36,.3)':'var(--b)'};border-radius:var(--r);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px">
     <span style="font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px">${_i('coffee',14)} ${t('break_left')}</span>
@@ -3551,8 +3594,8 @@ async function renderMyShift(){
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-      <div class="card-title" style="margin:0;display:flex;align-items:center;gap:6px">${_i('calendar')} Today's Shifts</div>
-      ${totalMins>0?`<div style="font-size:13px;font-weight:700;color:var(--ac);display:flex;align-items:center;gap:4px">${_i('clock',13)} Total: ${totalHrsLabel}</div>`:''}
+      <div class="card-title" style="margin:0;display:flex;align-items:center;gap:6px">${_i('calendar')} ${t('todays_shifts')}</div>
+      ${totalMins>0?`<div style="font-size:13px;font-weight:700;color:var(--ac);display:flex;align-items:center;gap:4px">${_i('clock',13)} ${t('total_word')}: ${totalHrsLabel}</div>`:''}
     </div>
     ${s1In?shiftRow(1,s1In,s1Out,lateInfo1,s1Mins,b1Start,b1End,b1Mins,s?.work_location):''}
     ${s2In?shiftRow(2,s2In,s2Out,null,s2Mins,b2Start,s2BreakEnd,b2Mins,s?.work_location_2):''}
@@ -3577,7 +3620,7 @@ async function renderMyShift(){
     <span style="font-size:14px;font-weight:700;color:${breakLeftMin<0?'var(--rd)':breakLeftMin<=15?'var(--yl)':'var(--gr)'}">${breakLeftMin<0?'-'+Math.abs(breakLeftMin)+'m '+t('break_over'):breakLeftMin+'m / '+BREAK_ALLOWANCE_MIN+'m'}</span>
   </div>`:'')}
 
-  <div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('file-text')} Recent Activity</div><div id="myActivityLog">Loading...</div></div>`;
+  <div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('file-text')} ${t('recent_activity')}</div><div id="myActivityLog">${t('loading')}</div></div>`;
 
   startClock();loadMyActivity();startBreakCountdown();
 }
@@ -3666,8 +3709,8 @@ async function doBreakEnd(shiftNum){
 async function loadMyActivity(){
   const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent.id).order('time',{ascending:false}).limit(20).then(r=>r.data));
   const el=document.getElementById('myActivityLog');if(!el)return;
-  if(!logs?.length){el.innerHTML=`<div class="empty-state"><div class="icon">${_i('mail')}</div>No activity yet</div>`;return;}
-  const actionLabel={check_in:_i('check-circle',12)+' Checked In',check_out:_i('x-circle',12)+' Checked Out',break_start:_i('coffee',12)+' Break Started',break_end:_i('check',12)+' Break Ended'};
+  if(!logs?.length){el.innerHTML=`<div class="empty-state"><div class="icon">${_i('mail')}</div>${t('no_activity')}</div>`;return;}
+  const actionLabel={check_in:_i('check-circle',12)+' '+t('checked_in'),check_out:_i('x-circle',12)+' '+t('checked_out'),break_start:_i('coffee',12)+' '+t('break_started_log'),break_end:_i('check',12)+' '+t('break_ended_log')};
   const actionDot={check_in:'dot-in',check_out:'dot-out',break_start:'dot-out',break_end:'dot-in'};
   el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>').join('');
 }
@@ -3686,8 +3729,8 @@ async function renderActivity(){
   ]);
   const agentMap={};
   if(agents)agents.forEach(a=>{agentMap[a.id]=a;});
-  const actionLabel={check_in:_i('check-circle',12)+' Checked In',check_out:_i('x-circle',12)+' Checked Out',break_start:_i('coffee',12)+' Break Started',break_end:_i('check',12)+' Break Ended'};
-  c.innerHTML=announceBanner+'<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">'+_i('file-text')+' Activity Log ('+(logs?.length||0)+' entries)</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">'+_i('mail')+'</div>No check-in/out activity recorded yet</div>':logs.map(l=>{const ag=agentMap[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin&&ag?'<b>'+ag.name+'</b> — ':'')+( actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+(isAdmin&&ag?ag.dept+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
+  const actionLabel={check_in:_i('check-circle',12)+' '+t('checked_in'),check_out:_i('x-circle',12)+' '+t('checked_out'),break_start:_i('coffee',12)+' '+t('break_started_log'),break_end:_i('check',12)+' '+t('break_ended_log')};
+  c.innerHTML=announceBanner+'<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">'+_i('file-text')+' '+t('activity_log')+' ('+(logs?.length||0)+' '+t('entries')+')</div>'+(!logs?.length?'<div class="empty-state"><div class="icon">'+_i('mail')+'</div>'+t('no_activity_recorded')+'</div>':logs.map(l=>{const ag=agentMap[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(isAdmin&&ag?'<b>'+ag.name+'</b> — ':'')+( actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+(isAdmin&&ag?ag.dept+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
 }
 
 // ── ACTIVITY TRACKING ────────────────────────────────────────
