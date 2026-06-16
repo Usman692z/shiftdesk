@@ -1625,6 +1625,52 @@ async function renderDashboard(){
     <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--yl);display:inline-block"></span> Idle</span>
     <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--s3);display:inline-block"></span> No data</span>
   </div>
+  <!-- Department summary -->
+  ${(()=>{
+    if(!agents?.length)return '';
+    const onlineSet=new Set((ts||[]).filter(s=>s.online).map(s=>s.agent_id));
+    const activeSet=new Set((tracking||[]).filter(t=>t.activity_status==='active').map(t=>t.agent_id));
+    const map={};
+    agents.forEach(a=>{
+      const d=a.dept||'No Department';
+      if(!map[d])map[d]={total:0,online:0,active:0};
+      map[d].total++;
+      if(onlineSet.has(a.id))map[d].online++;
+      if(activeSet.has(a.id))map[d].active++;
+    });
+    const depts=Object.keys(map).sort();
+    const rows=depts.map(d=>{
+      const m=map[d];const off=m.total-m.online;
+      return `<tr>
+        <td style="padding:9px 14px;font-weight:600">${d}</td>
+        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--ac)">${m.total}</td>
+        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--gr)">${m.online}</td>
+        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--yl)">${m.active}</td>
+        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--mu)">${off}</td>
+      </tr>`;
+    }).join('');
+    return `<div class="card" style="margin-bottom:20px;padding:0">
+      <div class="card-title" style="margin:0;padding:14px 16px 0;display:flex;align-items:center;gap:6px">${_i('building')} Department Breakdown</div>
+      <div class="table-wrap"><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
+        <thead><tr style="border-bottom:1px solid var(--b2)">
+          <th style="padding:9px 14px;text-align:left;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Department</th>
+          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Total</th>
+          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Online</th>
+          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Active</th>
+          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Offline</th>
+        </tr></thead>
+        <tbody>${rows}
+          <tr style="border-top:2px solid var(--b2)">
+            <td style="padding:9px 14px;font-weight:800">All</td>
+            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--ac)">${total}</td>
+            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--gr)">${online}</td>
+            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--yl)">${activeNow}</td>
+            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--mu)">${total-online}</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>`;
+  })()}
   <!-- Departments -->
   ${deptSections||`<div class="empty-state"><div class="icon">${_i('users')}</div>No agents found</div>`}`;
 }
