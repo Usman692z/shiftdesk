@@ -2062,9 +2062,12 @@ async function renderMyDashboard(){
     const tr=byDate[today];
     if(!tr?.check_in)return '';
     const _bms=(a,b)=>a&&b?Math.max(0,new Date(b)-new Date(a)):0;
-    const compMs=_bms(tr.break_start,tr.break_end)+_bms(tr.break_start_2,tr.break_end_2);
-    const onBrk=(tr.break_start&&!tr.break_end)||(tr.break_start_2&&!tr.break_end_2);
-    const actStart=tr.break_start&&!tr.break_end?tr.break_start:(tr.break_start_2&&!tr.break_end_2?tr.break_start_2:null);
+    // Effective break ends fall back to checkout time for stuck/legacy data
+    const be1=tr.break_end||(tr.check_out&&tr.break_start?tr.check_out:null);
+    const be2=tr.break_end_2||(tr.check_out_2&&tr.break_start_2?tr.check_out_2:null);
+    const compMs=_bms(tr.break_start,be1)+_bms(tr.break_start_2,be2);
+    const onBrk=(tr.break_start&&!be1&&!tr.check_out)||(tr.break_start_2&&!be2&&!tr.check_out_2);
+    const actStart=(tr.break_start&&!be1&&!tr.check_out)?tr.break_start:((tr.break_start_2&&!be2&&!tr.check_out_2)?tr.break_start_2:null);
     const usedMin=Math.floor((compMs+(actStart?(Date.now()-new Date(actStart)):0))/60000);
     const leftMin=BREAK_ALLOWANCE_MIN-usedMin;
     const col=onBrk?'var(--yl)':(leftMin<=0?'var(--rd)':leftMin<=15?'var(--yl)':'var(--gr)');
@@ -3382,11 +3385,16 @@ async function renderMyShift(){
   // ── Determine shift state ─────────────────────────────────────
   const s1In=s?.check_in||null, s1Out=s?.check_out||null;
   const s2In=s?.check_in_2||null, s2Out=s?.check_out_2||null;
-  const b1Start=s?.break_start||null, b1End=s?.break_end||null;
-  const b2Start=s?.break_start_2||null, s2BreakEnd=s?.break_end_2||null;
+  const b1Start=s?.break_start||null;
+  const b2Start=s?.break_start_2||null;
+  // Effective break end: if the shift is checked out but the break was never closed,
+  // treat the checkout time as the break end (handles stuck/legacy data).
+  const b1End=s?.break_end||(s1Out&&b1Start?s1Out:null);
+  const s2BreakEnd=s?.break_end_2||(s2Out&&b2Start?s2Out:null);
 
-  const onBreak1=b1Start&&!b1End;
-  const onBreak2=b2Start&&!s2BreakEnd;
+  // On break only while still checked in on that shift (not checked out).
+  const onBreak1=b1Start&&!b1End&&!s1Out;
+  const onBreak2=b2Start&&!s2BreakEnd&&!s2Out;
   const onBreak=onBreak1||onBreak2;
 
   const lateInfo1=s1In?getCheckinStatus(s1In,currentAgent.shift_start,currentAgent.timezone):null;
