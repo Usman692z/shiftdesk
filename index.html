@@ -539,14 +539,14 @@ async function _getAgents(cols){
 let _lang=localStorage.getItem('sd_lang')||'en';
 const _T={
   en:{
-    dashboard:'Dashboard',agents:'Agents',tasks:'Tasks',leaves:'Leaves',announce:'Announce',
+    dashboard:'Dashboard',agents:'Agents',tasks:'Tasks',leaves:'Half-Day Leaves',announce:'Announce',
     tracking:'Tracking',activity:'Activity',reports:'Reports',help:'Help',
-    myshift:'My Shift',mytasks:'My Tasks',myleave:'Leave',myannounce:'Announcements',
+    myshift:'My Shift',mytasks:'My Tasks',myleave:'Half-Day Leave',myannounce:'Announcements',
     actlog:'Activity Log',dailyreport:'Daily Report',
     dashboard_title:'Dashboard',agents_title:'Manage Agents',tasks_title:'Task Management',
     tracking_title:'Activity Tracking',activity_title:'Activity Log',myshift_title:'My Shift',
     mytasks_title:'My Tasks',mydashboard_title:'My Dashboard',reports_title:'Reports',
-    myleave_title:'Leave Requests',leaves_title:'Leave Requests',announce_title:'Announcements',
+    myleave_title:'Half-Day Leave',leaves_title:'Half-Day Leave Requests',announce_title:'Announcements',
     myannounce_title:'Announcements',chat_title:'Chat',help_title:'Help & Downloads',
     dailyreport_title:'Daily Reports',emailreports:'Email Reports',emailreports_title:'Report Emails',
     login:'Login',logout:'Logout',save:'Save',cancel:'Cancel',submit:'Submit',
@@ -581,14 +581,14 @@ const _T={
     administrator:'Administrator',dept_manager:'Dept Manager',sub_admin:'Sub Admin',
   },
   ar:{
-    dashboard:'لوحة التحكم',agents:'الموظفون',tasks:'المهام',leaves:'الإجازات',
+    dashboard:'لوحة التحكم',agents:'الموظفون',tasks:'المهام',leaves:'إجازات نصف يوم',
     announce:'الإعلانات',tracking:'التتبع',activity:'النشاط',reports:'التقارير',help:'المساعدة',
-    myshift:'وردیتي',mytasks:'مهامي',myleave:'إجازة',myannounce:'الإعلانات',
+    myshift:'وردیتي',mytasks:'مهامي',myleave:'إجازة نصف يوم',myannounce:'الإعلانات',
     actlog:'سجل النشاط',dailyreport:'التقرير اليومي',
     dashboard_title:'لوحة التحكم',agents_title:'إدارة الموظفين',tasks_title:'إدارة المهام',
     tracking_title:'تتبع النشاط',activity_title:'سجل النشاط',myshift_title:'وردیتي',
     mytasks_title:'مهامي',mydashboard_title:'لوحتي',reports_title:'التقارير',
-    myleave_title:'طلبات الإجازة',leaves_title:'طلبات الإجازة',announce_title:'الإعلانات',
+    myleave_title:'إجازة نصف يوم',leaves_title:'طلبات إجازة نصف يوم',announce_title:'الإعلانات',
     myannounce_title:'الإعلانات',chat_title:'المحادثة',help_title:'المساعدة والتنزيلات',
     dailyreport_title:'التقارير اليومية',emailreports:'تقارير البريد',emailreports_title:'إعدادات البريد',
     login:'تسجيل الدخول',logout:'تسجيل الخروج',save:'حفظ',cancel:'إلغاء',
@@ -3033,7 +3033,7 @@ function renderHelp(){
         {icon:_i('clock'),title:'My Shift',desc:'Check in at the start of your shift every day. Click "Take Break" when you need a break — then resume when you return. Check out when your shift ends. A 2nd shift is optional.'},
         {icon:_i('check-square'),title:'My Tasks',desc:'Tasks assigned to you by admin or other agents appear here. Mark them complete or reject with a remark. You can also track your own work using "New Task".'},
         {icon:_i('bars'),title:'My Dashboard',desc:'Monthly calendar — color coded: green=On time, yellow=Late, red=Absent, purple=Leave, Off=Friday. Shows your performance score (attendance + punctuality + tasks) and overtime.'},
-        {icon:_i('calendar'),title:'Leave',desc:'Click "Apply Leave", fill in the from/to dates and reason, and submit. Admin will approve it. Approved leave appears on your calendar in purple with a "Leave" label.'},
+        {icon:_i('calendar'),title:'Half-Day Leave',desc:'Open Half-Day Leave, choose Morning or Evening, pick the time, add a reason, and submit. The request is for today. Your manager will approve it. Approved leave appears on your calendar in purple.'},
         {icon:_i('bell'),title:'Announcements',desc:'Any notices from admin appear here — office meetings, holidays, or important updates.'},
         {icon:_i('chat',12),title:'Chat',desc:'Select a name on the left, type your message, and press Enter or Send. You can chat with admin or any colleague.'},
         {icon:_i('file-text'),title:'Activity Log',desc:'Your complete record of check-ins, check-outs, and breaks is available here.'},
@@ -3158,7 +3158,7 @@ async function renderMyLeave(){
   c.innerHTML=`
   ${announceBanner}
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-    <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">${_i('plus')} Apply Leave</button>
+    <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">${_i('plus')} Apply Half-Day Leave</button>
   </div>
   ${!leaves?.length?'<div class="empty-state"><div class="icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><p>No leave requests yet.</p></div>':leaves.map(l=>`
   <div class="card" style="margin-bottom:12px;border-left:3px solid ${statusColor[l.status]||'var(--mu)'}">
