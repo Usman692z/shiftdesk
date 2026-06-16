@@ -366,22 +366,18 @@ Sara Khan,sara@co.com,Retail,Senior,Saudi Arabia,09:00,senior</code>
 </div>
 <div class="modal-bg" id="leaveModal">
   <div class="modal" style="max-width:420px">
-    <h2>Apply for Leave</h2>
+    <h2>Apply for Half-Day Leave</h2>
     <div id="leaveErr" class="auth-err"></div>
-    <!-- Leave Type -->
+    <!-- Leave Type (half day only) -->
     <div class="form-group">
       <label>Leave Type</label>
       <div style="display:flex;gap:8px" id="leaveTypeBtns">
-        <button type="button" onclick="setLeaveType('full')" id="lt_full" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--ac);background:var(--ac);color:#fff;font-family:var(--font);transition:var(--tr)">Full Day</button>
-        <button type="button" onclick="setLeaveType('half_am')" id="lt_half_am" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--b2);background:transparent;color:var(--mu);font-family:var(--font);transition:var(--tr)">Half Day (Morning)</button>
+        <button type="button" onclick="setLeaveType('half_am')" id="lt_half_am" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--ac);background:var(--ac);color:#fff;font-family:var(--font);transition:var(--tr)">Half Day (Morning)</button>
         <button type="button" onclick="setLeaveType('half_pm')" id="lt_half_pm" style="flex:1;padding:8px;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;border:2px solid var(--b2);background:transparent;color:var(--mu);font-family:var(--font);transition:var(--tr)">Half Day (Evening)</button>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="form-group" style="margin:0"><label>From Date</label><input type="date" id="leaveFrom" oninput="onLeaveDateChange()"></div>
-      <div class="form-group" style="margin:0" id="leaveToWrap"><label>To Date</label><input type="date" id="leaveTo"></div>
-    </div>
-    <div class="form-group"><label>Reason</label><textarea id="leaveReason" rows="3" placeholder="Reason for leave..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
+    <div class="form-group"><label>Time</label><input type="time" id="leaveTime" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none"></div>
+    <div class="form-group"><label>Reason</label><textarea id="leaveReason" rows="3" placeholder="Reason for half-day leave..." style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:10px 14px;color:var(--tx);font-size:14px;font-family:var(--font);outline:none;resize:vertical"></textarea></div>
     <div class="modal-footer">
       <button class="btn btn-danger btn-sm" onclick="closeLeaveModal()">Cancel</button>
       <button class="btn btn-primary btn-sm" id="saveLeaveBtn" onclick="submitLeave()">Submit Request</button>
@@ -3110,43 +3106,38 @@ async function deleteAnnouncement(id){
 }
 
 // ── LEAVE REQUESTS ───────────────────────────────────────────────
-let _leaveType='full';
+let _leaveType='half_am';
 function setLeaveType(t){
   _leaveType=t;
-  ['full','half_am','half_pm'].forEach(k=>{
+  ['half_am','half_pm'].forEach(k=>{
     const b=document.getElementById('lt_'+k);if(!b)return;
     if(k===t){b.style.background='var(--ac)';b.style.color='#fff';b.style.borderColor='var(--ac)';}
     else{b.style.background='transparent';b.style.color='var(--mu)';b.style.borderColor='var(--b2)';}
   });
-  const toWrap=document.getElementById('leaveToWrap');
-  if(toWrap)toWrap.style.display=(t==='full'?'':'none');
-  if(t!=='full'){const from=document.getElementById('leaveFrom').value;if(from)document.getElementById('leaveTo').value=from;}
-}
-function onLeaveDateChange(){
-  if(_leaveType!=='full'){const from=document.getElementById('leaveFrom').value;document.getElementById('leaveTo').value=from;}
 }
 function openLeaveModal(){
-  _leaveType='full';
-  document.getElementById('leaveFrom').value='';
-  document.getElementById('leaveTo').value='';
+  _leaveType='half_am';
+  const tm=document.getElementById('leaveTime');if(tm)tm.value='';
   document.getElementById('leaveReason').value='';
   document.getElementById('leaveErr').classList.remove('show');
-  setLeaveType('full');
+  setLeaveType('half_am');
   document.getElementById('leaveModal').classList.add('open');
 }
 function closeLeaveModal(){document.getElementById('leaveModal').classList.remove('open');}
 
 async function submitLeave(){
-  const from=document.getElementById('leaveFrom').value;
-  let to=_leaveType!=='full'?from:document.getElementById('leaveTo').value;
+  // Half-day leave only — always for today; agent picks Morning/Evening + a time
+  const _now=new Date();
+  const today=`${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
+  const time=document.getElementById('leaveTime').value;
   const reason=document.getElementById('leaveReason').value.trim();
   const errEl=document.getElementById('leaveErr');
-  if(!from){errEl.textContent='Please select a date';errEl.classList.add('show');return;}
-  if(_leaveType==='full'&&!to){errEl.textContent='Please select To date';errEl.classList.add('show');return;}
-  if(to<from){errEl.textContent='To date must be after From date';errEl.classList.add('show');return;}
-  const leaveTypeVal=_leaveType==='half_am'?'half_am':_leaveType==='half_pm'?'half_pm':'full';
+  if(!time){errEl.textContent='Please select a time';errEl.classList.add('show');return;}
+  const leaveTypeVal=_leaveType==='half_pm'?'half_pm':'half_am';
+  // Store the time alongside the reason (no schema change needed)
+  const fullReason='Time: '+time+(reason?' — '+reason:'');
   const btn=document.getElementById('saveLeaveBtn');btn.disabled=true;btn.textContent='Submitting...';
-  const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:from,date_to:to,reason:reason||'',leave_type:leaveTypeVal,status:'pending'});
+  const{error}=await _db.from('leave_requests').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,date_from:today,date_to:today,reason:fullReason,leave_type:leaveTypeVal,status:'pending'});
   btn.disabled=false;btn.textContent='Submit Request';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('leaves_agent_'+currentAgent.id,'leaves_all','leaves_agent_approved_'+currentAgent.id);
