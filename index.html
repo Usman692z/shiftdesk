@@ -1702,7 +1702,7 @@ async function renderAgents(){
     if(!p)return'<span style="font-size:11px;background:rgba(16,185,129,.12);color:var(--gr);border:1px solid rgba(16,185,129,.25);border-radius:4px;padding:2px 7px">Full Access</span>';
     return p.split(',').filter(Boolean).map(x=>`<span style="font-size:11px;background:var(--s3);border:1px solid var(--b2);border-radius:4px;padding:2px 6px;color:var(--tx)">${names[x]||x}</span>`).join(' ');
   };
-  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openDeptModal()">${_i('building')} Departments</button><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':a.type==='manager'?'<span class="badge" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);display:inline-flex;align-items:center;gap:4px">'+_i('shield',11)+' Manager</span>':a.type==='subadmin'?'<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;border:1px solid rgba(14,165,233,.3);display:inline-flex;align-items:center;gap:4px">'+_i('users',11)+' Sub Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
+  c.innerHTML=`<div class="agents-header"><h2>All Agents (${agents?.length||0})</h2><div style="display:flex;gap:8px"><button class="btn btn-sm" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3)" onclick="openDeptModal()">${_i('building')} Departments</button><button class="btn btn-sm" style="background:rgba(16,185,129,.15);color:var(--gr);border:1px solid rgba(16,185,129,.3)" onclick="openBulkModal()">${_i('download')} Bulk Import</button><button class="btn btn-primary btn-sm" onclick="openAddAgent()">${_i('plus')} Add Agent</button></div></div><div class="card" style="padding:0"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Dept</th><th>Role</th><th>Access</th><th>Shift</th><th>Actions</th></tr></thead><tbody>${agents?.length?agents.map(a=>`<tr><td><b>${a.name}</b></td><td style="font-size:12px;color:var(--mu)">${a.email||'—'}</td><td>${a.dept||'—'}</td><td>${a.role||'—'}</td><td>${a.type==='admin'?'<span class="badge" style="background:rgba(244,63,94,.15);color:var(--rd);border:1px solid rgba(244,63,94,.3);display:inline-flex;align-items:center;gap:4px">'+_i('key',11)+' Admin</span>':a.type==='manager'?'<span class="badge" style="background:rgba(139,92,246,.15);color:#a78bfa;border:1px solid rgba(139,92,246,.3);display:inline-flex;align-items:center;gap:4px">'+_i('shield',11)+' Manager</span>':a.type==='subadmin'?'<span class="badge" style="background:rgba(14,165,233,.15);color:#38bdf8;border:1px solid rgba(14,165,233,.3);display:inline-flex;align-items:center;gap:4px">'+_i('users',11)+' Sub Admin</span>':permLabel(a.permissions)}</td><td>${a.shift_start||'09:00'}</td><td><div class="td-actions"><button class="btn btn-edit btn-sm" onclick="openEditAgent('${a.id}')">${_i('edit',14)} Edit</button><button class="btn btn-yellow btn-sm" onclick="resetAgentPassword('${a.id}','${a.name.replace(/'/g,'')}')">${_i('key',14)} Pass</button><button class="btn btn-sm" style="background:rgba(251,146,60,.15);color:var(--or);border:1px solid rgba(251,146,60,.3)" onclick="clearAgentData('${a.id}','${a.name.replace(/'/g,'')}')">${_i('refresh',14)} Reset</button><button class="btn btn-danger btn-sm" onclick="deleteAgent('${a.id}','${a.name.replace(/'/g,'')}')">${_i('trash',14)}</button></div></td></tr>`).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:30px">No agents yet.</td></tr>'}</tbody></table></div></div>`;
 }
 
 async function onTypeChange(val){
@@ -1850,6 +1850,31 @@ async function deleteAgent(id,name){
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
   showToast('Agent deleted: '+name,'ok');renderAgents();
+}
+
+// Clear an agent's attendance/break test data (keeps the agent account)
+async function clearAgentData(id,name){
+  const scope=prompt('Reset data for "'+name+'"?\n\nType "today" to clear only today\'s check-in/break,\nor type "all" to clear ALL attendance history.\n\n(Cancel to abort)');
+  if(!scope)return;
+  const s=scope.trim().toLowerCase();
+  if(s!=='today'&&s!=='all'){showToast('Type "today" or "all"','err');return;}
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    // shift_status: attendance + breaks
+    let q1=_db.from('shift_status').delete().eq('agent_id',id);
+    if(s==='today')q1=q1.eq('date',today);
+    const{error:e1}=await q1;
+    if(e1){showToast('Error: '+e1.message,'err');return;}
+    // break_alerts: over-break records
+    let q2=_db.from('break_alerts').delete().eq('agent_id',id);
+    if(s==='today')q2=q2.eq('report_date',today);
+    await q2;
+    // clear local over-break guard so the alert can fire again in testing
+    Object.keys(localStorage).filter(k=>k.startsWith('sd_overbreak_'+id)).forEach(k=>localStorage.removeItem(k));
+    // drop any cached shift/dashboard entries for this agent (prefix match)
+    [..._cache.keys()].filter(k=>k.includes(id)).forEach(k=>_cache.delete(k));
+    showToast(_i('check')+' Data reset ('+s+') for '+name,'ok');
+  }catch(e){showToast('Error: '+e.message,'err');}
 }
 
 async function resetAgentPassword(agentId,name){
