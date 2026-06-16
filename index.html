@@ -3540,6 +3540,12 @@ async function doCheckOut(shiftNum){
   let payload={online:false};
   if(shiftNum===1){payload.check_out=now;}
   else{payload.check_out_2=now;}
+  // Auto-close any open break so the break timer doesn't stay stuck after checkout
+  const{data:cur}=await _db.from('shift_status').select('break_start,break_end,break_start_2,break_end_2').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
+  if(cur){
+    if(cur.break_start&&!cur.break_end)payload.break_end=now;
+    if(cur.break_start_2&&!cur.break_end_2)payload.break_end_2=now;
+  }
   const{error}=await _db.from('shift_status').update(payload).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('myshift_today_'+currentAgent.id,'shift_today','shift_checkin_today','logs_agent_'+currentAgent.id,'logs_all');
