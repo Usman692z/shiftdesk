@@ -1865,12 +1865,23 @@ async function deleteAgent(id,name){
   showToast('Agent deleted: '+name,'ok');renderAgents();
 }
 
-// Clear an agent's attendance/break test data (keeps the agent account)
-async function clearAgentData(id,name){
-  const scope=prompt('Reset data for "'+name+'"?\n\nType "today" to clear only today\'s check-in/break,\nor type "all" to clear ALL attendance history.\n\n(Cancel to abort)');
-  if(!scope)return;
-  const s=scope.trim().toLowerCase();
-  if(s!=='today'&&s!=='all'){showToast('Type "today" or "all"','err');return;}
+// Clear an agent's attendance/break test data (keeps the agent account) — choose scope via modal
+function clearAgentData(id,name){
+  const safeName=(name||'').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+  document.getElementById('modalBody').innerHTML=`
+    <div style="font-size:14px;color:var(--tx);margin-bottom:6px">Reset shift data for <b>${name}</b></div>
+    <div style="font-size:12px;color:var(--mu);margin-bottom:18px">Choose what to clear. The agent account, password and settings stay safe — only attendance &amp; break records are removed.</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn" style="width:100%;justify-content:flex-start;gap:10px;background:rgba(251,146,60,.12);color:var(--or);border:1px solid rgba(251,146,60,.3)" onclick="doClearAgentData('${id}','${safeName}','today')">${_i('clock',16)} <div style="text-align:left"><div style="font-weight:700">Today only</div><div style="font-size:11px;color:var(--mu);font-weight:400">Clears today's check-in / check-out / break</div></div></button>
+      <button class="btn" style="width:100%;justify-content:flex-start;gap:10px;background:rgba(244,63,94,.12);color:var(--rd);border:1px solid rgba(244,63,94,.3)" onclick="doClearAgentData('${id}','${safeName}','all')">${_i('trash',16)} <div style="text-align:left"><div style="font-weight:700">All history</div><div style="font-size:11px;color:var(--mu);font-weight:400">Clears the entire attendance &amp; break history</div></div></button>
+    </div>`;
+  document.getElementById('modalFooter').innerHTML=`<button class="btn btn-sm" onclick="closeModal()">Cancel</button>`;
+  document.getElementById('genModal').classList.add('open');
+}
+
+async function doClearAgentData(id,name,s){
+  if(s==='all'&&!confirm('Clear ALL attendance history for "'+name+'"? This cannot be undone.'))return;
+  closeModal();
   try{
     const today=new Date().toISOString().slice(0,10);
     // shift_status: attendance + breaks
