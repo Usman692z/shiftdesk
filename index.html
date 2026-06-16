@@ -688,6 +688,21 @@ async function init(){
   }
 }
 
+// ── Cross-device sync: when the agent returns to this tab/device, pull the
+// latest shift state from the server (bypass cache) so check-in/break done on
+// another device shows up here. Realtime push handles live updates; this is the
+// catch-up safety net for when a tab was in the background.
+function _syncShiftNow(){
+  if(!currentAgent)return;
+  if(currentPage!=='myshift'&&currentPage!=='mydashboard')return;
+  // drop cached shift entries for this agent so the render refetches fresh
+  [..._cache.keys()].filter(k=>k.includes('myshift_today_'+currentAgent.id)||k.includes('mydash_shifts_'+currentAgent.id)).forEach(k=>_cache.delete(k));
+  if(currentPage==='myshift')renderMyShift();
+  else if(currentPage==='mydashboard')renderMyDashboard();
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')_syncShiftNow(); });
+window.addEventListener('focus',_syncShiftNow);
+
 function switchAuthTab(tab){
   document.getElementById('tabAgent').className='auth-tab'+(tab==='agent'?' active':'');
   document.getElementById('tabAdmin').className='auth-tab'+(tab==='admin'?' active':'');
