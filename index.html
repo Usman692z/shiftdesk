@@ -234,6 +234,18 @@ tr:hover td{background:var(--b)}
       <div class="form-group" style="margin:0"><label>Shift Start</label><input type="time" id="mShiftStart" value="09:00"></div>
       <div class="form-group" style="margin:0"><label>Shift End</label><input type="time" id="mShiftEnd" value="18:00"></div>
     </div>
+    <div class="form-group">
+      <label>Weekly Off Days <span style="font-size:11px;color:var(--mu);font-weight:400">(days the agent does not work)</span></label>
+      <div id="mOffDays" style="display:flex;gap:6px;flex-wrap:wrap">
+        <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="0" style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Sun</label>
+        <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="1" style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Mon</label>
+        <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="2" style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Tue</label>
+        <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="3" style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Wed</label>
+        <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="4" style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Thu</label>
+        <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="5" checked style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Fri</label>
+        <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="6" style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Sat</label>
+      </div>
+    </div>
     <div class="form-group"><label>Report Template</label><select id="mReportTemplate"><option value="data_team">Daily Report — Data Team</option><option value="customer_support">Daily Report — Customer Support Team</option><option value="retail_manager">Daily Report — Retail Manager</option></select></div>
     <div class="form-group"><label>Access Level</label><select id="mType" onchange="onTypeChange(this.value)"><option value="regular">User (Agent)</option><option value="manager">Manager (Single Dept)</option><option value="subadmin">Sub Admin (Multi Dept)</option><option value="admin">Admin (Full Access)</option></select></div>
     <!-- Sub Admin dept checkboxes -->
@@ -465,8 +477,8 @@ async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await 
 
 // ── Column selects (no select('*') — fetch only what we need) ────────────
 const C={
-  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template',
-  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template',
+  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days',
+  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template,off_days',
   shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2,meeting_start',
   tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
@@ -565,7 +577,7 @@ const _T={
     days_worked:'Days Worked',total_hours:'Total Hours',avg_day:'Avg/Day',late_days:'Late Days',
     performance_score:'Performance Score',excellent:'Excellent',good:'Good',needs_improvement:'Needs Improvement',
     attend_short:'Attend',punct_short:'Punct',tasks_short:'Tasks',overtime_month:'OVERTIME THIS MONTH',shift_ends:'Shift ends',
-    on_time:'On Time',late_word:'Late',absent:'Absent',leave_word:'Leave',off_fri:'Off=Fri',off_word:'Off',
+    on_time:'On Time',late_word:'Late',absent:'Absent',leave_word:'Leave',off_fri:'Off day',off_word:'Off',
     used_word:'used',daily_break_allowance:'Daily break allowance',over_limit:'over limit',remaining:'remaining',go_to_myshift:'Go to My Shift',
     no_tasks:'No tasks assigned',completed:'Completed',in_progress:'In Progress',todo:'To Do',mark_done:'Mark Done',view:'View',priority:'Priority',due:'Due',
     apply_half_leave:'Apply Half-Day Leave',no_leaves:'No leave requests yet',half_morning:'Half Day (Morning)',half_evening:'Half Day (Evening)',
@@ -625,7 +637,7 @@ const _T={
     days_worked:'أيام العمل',total_hours:'إجمالي الساعات',avg_day:'المعدل/اليوم',late_days:'أيام التأخير',
     performance_score:'درجة الأداء',excellent:'ممتاز',good:'جيد',needs_improvement:'يحتاج تحسين',
     attend_short:'الحضور',punct_short:'الالتزام',tasks_short:'المهام',overtime_month:'العمل الإضافي هذا الشهر',shift_ends:'تنتهي الوردية',
-    on_time:'في الوقت',late_word:'متأخر',absent:'غائب',leave_word:'إجازة',off_fri:'عطلة=الجمعة',off_word:'عطلة',
+    on_time:'في الوقت',late_word:'متأخر',absent:'غائب',leave_word:'إجازة',off_fri:'يوم عطلة',off_word:'عطلة',
     used_word:'مُستخدم',daily_break_allowance:'رصيد الاستراحة اليومي',over_limit:'تجاوز الحد',remaining:'متبقٍ',go_to_myshift:'الذهاب إلى ورديتي',
     no_tasks:'لا توجد مهام مسندة',completed:'مكتملة',in_progress:'قيد التنفيذ',todo:'قيد الانتظار',mark_done:'وضع كمكتملة',view:'عرض',priority:'الأولوية',due:'الاستحقاق',
     apply_half_leave:'طلب إجازة نصف يوم',no_leaves:'لا توجد طلبات إجازة بعد',half_morning:'نصف يوم (صباحي)',half_evening:'نصف يوم (مسائي)',
@@ -1864,6 +1876,7 @@ async function openAddAgent(){
   document.getElementById('mReportTemplate').value='data_team';
   await onTypeChange('regular');
   setPermCheckboxes('myshift,mytasks,activity,assign_task');
+  setOffDays('5');
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
   document.getElementById('modalTitle').innerHTML=_i('plus')+' Add New Agent';
   document.getElementById('agentModalErr').classList.remove('show');
@@ -1888,12 +1901,19 @@ async function openEditAgent(id){
   document.getElementById('mPass').value='';
   if(a.type==='subadmin')setSubAdminDepts(a.permissions||'');
   else setPermCheckboxes(a.permissions||'myshift,mytasks,activity');
+  setOffDays(a.off_days||'5');
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span>';
   document.getElementById('modalTitle').innerHTML=_i('edit')+' Edit Agent';
   document.getElementById('agentModalErr').classList.remove('show');
   document.getElementById('agentModal').classList.add('open');
 }
 function closeAgentModal(){document.getElementById('agentModal').classList.remove('open');}
+function setOffDays(str){
+  const set=new Set((str||'5').split(',').map(s=>s.trim()).filter(s=>s!==''));
+  document.querySelectorAll('.offDayCk').forEach(c=>{c.checked=set.has(c.value);});
+}
+// Parse an agent's off_days string into an array of day numbers (0=Sun..6=Sat)
+function _offDaysArr(str){return (str==null?'5':str).split(',').map(s=>parseInt(s,10)).filter(n=>!isNaN(n));}
 
 async function saveAgent(){
   const name=document.getElementById('mName').value.trim();
@@ -1922,12 +1942,14 @@ async function saveAgent(){
   if(!email){errEl.textContent='Email is required';errEl.classList.add('show');return;}
   if(!dept){errEl.textContent='Department is required';errEl.classList.add('show');return;}
   if(!editingAgentId&&!pw){errEl.textContent='Password is required for new agents';errEl.classList.add('show');return;}
+  // Weekly off days (comma-separated day numbers; default Friday if none picked)
+  const off_days=Array.from(document.querySelectorAll('.offDayCk:checked')).map(c=>c.value).join(',')||'5';
   const btn=document.getElementById('saveAgentBtn');btn.disabled=true;btn.textContent='Saving...';
   try{
     if(!editingAgentId){
       // Add new agent directly to agents table — no Supabase Auth needed
       const report_template=document.getElementById('mReportTemplate').value||'data_team';
-      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,pw:await hashPw(pw)};
+      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days,pw:await hashPw(pw)};
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
@@ -1939,7 +1961,7 @@ async function saveAgent(){
       showToast(_i('check')+' Agent added: '+name,'ok');
     }else{
       const report_template=document.getElementById('mReportTemplate').value||'data_team';
-      const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template};
+      const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days};
       if(pw)updateData.pw=await hashPw(pw);
       const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
@@ -2026,6 +2048,7 @@ async function renderMyDashboard(){
   ]);
   const mtgMonthMin=(mtgRows||[]).reduce((a,m)=>a+(m.duration_min||0),0);
   const mtgCount=(mtgRows||[]).length;
+  const offDays=_offDaysArr(currentAgent.off_days);
   const byDate={};(rows||[]).forEach(r=>{byDate[r.date]=r;});
   const leaveSet=new Set();
   (leaves||[]).forEach(l=>{
@@ -2039,7 +2062,7 @@ async function renderMyDashboard(){
   for(let d=1;d<=daysInMonth;d++){
     const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const dow=new Date(ds).getDay();
-    if(dow===5)continue;
+    if(offDays.includes(dow))continue;
     workingDaysCount++;
     if(leaveSet.has(ds))continue;
     const r=byDate[ds];
@@ -2082,8 +2105,8 @@ async function renderMyDashboard(){
   const firstDow=new Date(yr,mo,1).getDay(); // 0=Sun
   let calCells='';
   // Headers Sun-Sat
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{
-    calCells+=`<div style="text-align:center;font-size:11px;font-weight:700;color:${d==='Fri'?'var(--rd)':'var(--mu)'};padding:4px 0">${d}</div>`;
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((d,di)=>{
+    calCells+=`<div style="text-align:center;font-size:11px;font-weight:700;color:${offDays.includes(di)?'var(--rd)':'var(--mu)'};padding:4px 0">${d}</div>`;
   });
   // Empty cells before day 1
   for(let i=0;i<firstDow;i++) calCells+='<div></div>';
@@ -2091,7 +2114,7 @@ async function renderMyDashboard(){
   for(let d=1;d<=daysInMonth;d++){
     const ds=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const dow=new Date(ds).getDay();
-    const isFri=dow===5;
+    const isFri=offDays.includes(dow);
     const isSun=dow===0;
     const isFuture=ds>today;
     const isToday=ds===today;
@@ -4604,7 +4627,7 @@ async function loadHeatmapData(){
   const daysInMonth=new Date(yr,mo,0).getDate();
 
   // Load agents (cached)
-  let allAgents=await _getAgents('id,name,dept,type');
+  let allAgents=await _getAgents('id,name,dept,type,off_days');
   let agents=(allAgents||[]).filter(a=>a.type==='regular');
   if(deptFilter)agents=agents.filter(a=>a.dept===deptFilter);
   agents.sort((a,b)=>(a.dept||'').localeCompare(b.dept||'')||(a.name||'').localeCompare(b.name||''));
@@ -4633,8 +4656,9 @@ async function loadHeatmapData(){
 
   const rows2=agents.map(a=>{
     let totalMins=0,worked=0,late=0;
-    const cells=days.map(({d,ds,dow,isFri})=>{
-      if(isFri){
+    const aOff=_offDaysArr(a.off_days);
+    const cells=days.map(({d,ds,dow})=>{
+      if(aOff.includes(dow)){
         return `<td style="padding:3px;text-align:center"><div style="width:26px;height:26px;border-radius:4px;background:rgba(244,63,94,.12);margin:auto;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--rd);font-weight:700">Off</div></td>`;
       }
       const r=byAgentDate[a.id+'|'+ds];
