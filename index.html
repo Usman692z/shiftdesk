@@ -479,7 +479,7 @@ async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await 
 const C={
   agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days',
   agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template,off_days',
-  shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2,meeting_start,presence',
+  shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2,meeting_start',
   tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
   announce:'id,title,message,expires_at,created_at,dept,is_urgent',
@@ -587,7 +587,6 @@ const _T={
     reviewed_by:'Reviewed by',day_word:'day',days_word:'days',morning:'Morning',evening:'Evening',expires:'Expires',
     action_word:'Action',all_word:'All',today_word:'Today',yesterday_word:'Yesterday',date_word:'Date',no_logs_match:'No activity matches these filters.',
     start_meeting:'Start Meeting',end_meeting:'End Meeting',in_meeting:'In Meeting',meeting_time:'Meeting time',total_meeting_time:'Total meeting time',meeting_started_log:'Meeting Started',meeting_ended_log:'Meeting Ended',meetings_word:'Meetings',meeting_started_toast:'Meeting started',meeting_ended_toast:'Meeting ended',
-    set_status:'Set status',status_available:'Available',status_away:'Away',status_dnd:'Do Not Disturb',status_lunch:'Lunch',status_btrip:'Business Trip',
     pending:'Pending',approved:'Approved',rejected:'Rejected',
     no_data:'No data found.',loading:'Loading...',
     approve:'Approve',reject:'Reject',
@@ -648,7 +647,6 @@ const _T={
     reviewed_by:'تمت المراجعة بواسطة',day_word:'يوم',days_word:'يوم',morning:'صباحي',evening:'مسائي',expires:'ينتهي',
     action_word:'الإجراء',all_word:'الكل',today_word:'اليوم',yesterday_word:'أمس',date_word:'التاريخ',no_logs_match:'لا يوجد نشاط يطابق هذه الفلاتر.',
     start_meeting:'بدء الاجتماع',end_meeting:'إنهاء الاجتماع',in_meeting:'في اجتماع',meeting_time:'وقت الاجتماع',total_meeting_time:'إجمالي وقت الاجتماعات',meeting_started_log:'بدأ الاجتماع',meeting_ended_log:'انتهى الاجتماع',meetings_word:'الاجتماعات',meeting_started_toast:'بدأ الاجتماع',meeting_ended_toast:'انتهى الاجتماع',
-    set_status:'تعيين الحالة',status_available:'متاح',status_away:'بعيد',status_dnd:'عدم الإزعاج',status_lunch:'استراحة غداء',status_btrip:'رحلة عمل',
     pending:'قيد الانتظار',approved:'موافق عليه',rejected:'مرفوض',
     no_data:'لا توجد بيانات.',loading:'جارٍ التحميل...',
     approve:'موافقة',reject:'رفض',
@@ -1547,12 +1545,10 @@ async function renderDashboard(){
     const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
     const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
     const offP=100-activeP-idleP;
-    let _pi=_presenceInfo(s);
-    // Idle (from activity tracking) shows as Away when otherwise Available
-    if(_pi.key==='available'&&isOnline&&actStatus!=='active')_pi={key:'away',label:t('status_away'),color:'var(--or)'};
-    const statusDot=_dot(_pi.color);
-    const statusLabel=_pi.label;
-    const statusColor=_pi.color;
+    const inMtg=isOnline&&!!s.meeting_start;
+    const statusDot=inMtg?_dot('var(--ac)'):(isOnline?(actStatus==='active'?_dot('var(--gr)'):_dot('var(--yl)')):_dot('#6b728e'));
+    const statusLabel=inMtg?t('in_meeting'):(isOnline?(actStatus==='active'?t('active_word'):t('idle')):t('offline'));
+    const statusColor=inMtg?'var(--ac)':(isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'var(--mu)');
     const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'}[a.country]||'';
 
     // Leave/Absent overlay card
@@ -3567,7 +3563,6 @@ async function renderMyShift(){
   const onActiveShift=(s1In&&!s1Out)||(s2In&&!s2Out);
   const meetingDoneMin=(meetingLogs||[]).reduce((a,m)=>a+(m.duration_min||0),0);
   const meetingTotalMin=meetingDoneMin+(inMeeting?Math.floor((Date.now()-new Date(meetingStart))/60000):0);
-  const pres=_presenceInfo(s);
 
   // ── Action buttons ────────────────────────────────────────────
   const breakBtn=(shiftN,onBrk)=>onBrk
@@ -3643,14 +3638,8 @@ async function renderMyShift(){
         <div style="color:var(--mu);font-size:12px">${currentAgent.email||''}</div>
       </div>
       <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        ${isIn?`<div style="position:relative">
-          <button onclick="toggleStatusMenu()" style="display:inline-flex;align-items:center;gap:7px;background:${pres.color}1a;border:1px solid ${pres.color}55;color:${pres.color};border-radius:20px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">
-            <span style="width:10px;height:10px;border-radius:50%;background:${pres.color};display:inline-block"></span>${pres.label} <span style="font-size:10px;opacity:.8">▾</span>
-          </button>
-          <div id="statusMenu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);z-index:50;background:var(--s);border:1px solid var(--b2);border-radius:var(--r);box-shadow:0 12px 30px rgba(0,0,0,.4);min-width:190px;overflow:hidden">
-            ${_PRESENCE_OPTS.map(o=>`<button onclick="setPresence('${o.key}')" style="display:flex;align-items:center;gap:9px;width:100%;text-align:start;padding:10px 13px;background:${pres.key===o.key?'var(--s2)':'transparent'};border:none;border-bottom:1px solid var(--b);color:var(--tx);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)"><span style="width:10px;height:10px;border-radius:50%;background:${o.color};display:inline-block;flex-shrink:0"></span><span style="flex:1">${t('status_'+(o.key==='available'?'available':o.key==='away'?'away':o.key==='dnd'?'dnd':o.key==='lunch'?'lunch':'btrip'))}</span>${pres.key===o.key?_i('check',14):''}</button>`).join('')}
-          </div>
-        </div>`:`<span class="badge badge-offline" style="display:inline-flex;align-items:center;gap:4px">${_dot('#6b728e')} ${t('offline')}</span>`}
+        <span class="badge ${isIn?'badge-online':'badge-offline'}" style="display:inline-flex;align-items:center;gap:4px">${isIn?_dot('var(--gr)')+' '+t('online'):_dot('#6b728e')+' '+t('offline')}</span>
+        ${isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3);display:inline-flex;align-items:center;gap:4px">'+_dot('var(--yl)')+' '+t('idle')+'</span>':''}
       </div>
     </div>
   </div>
@@ -3845,51 +3834,6 @@ async function doMeetingEnd(){
   }catch(e){showToast('Error: '+e.message,'err');}
 }
 
-// ── Presence status (synced with check-in / break / meeting) ──
-// Returns {key,label,color} derived from a shift_status row.
-function _presenceInfo(s){
-  const C_AV='var(--gr)',C_AW='var(--or)',C_DND='var(--rd)',C_LU='#2dd4bf',C_BT='#3b82f6',C_OFF='#6b728e';
-  if(!s||!s.online)return{key:'offline',label:t('offline'),color:C_OFF};
-  if(s.meeting_start)return{key:'btrip',label:t('status_btrip'),color:C_BT};
-  const onBrk=(s.break_start&&!s.break_end&&!s.check_out)||(s.break_start_2&&!s.break_end_2&&!s.check_out_2);
-  if(onBrk)return{key:'lunch',label:t('status_lunch'),color:C_LU};
-  if(s.presence==='dnd')return{key:'dnd',label:t('status_dnd'),color:C_DND};
-  if(s.presence==='away')return{key:'away',label:t('status_away'),color:C_AW};
-  return{key:'available',label:t('status_available'),color:C_AV};
-}
-const _PRESENCE_OPTS=[
-  {key:'available',tk:'status_available',color:'var(--gr)',icon:'check-circle'},
-  {key:'away',tk:'status_away',color:'var(--or)',icon:'clock'},
-  {key:'dnd',tk:'status_dnd',color:'var(--rd)',icon:'x-circle'},
-  {key:'lunch',tk:'status_lunch',color:'#2dd4bf',icon:'coffee'},
-  {key:'btrip',tk:'status_btrip',color:'#3b82f6',icon:'users'},
-];
-function toggleStatusMenu(){
-  const m=document.getElementById('statusMenu');
-  if(m)m.style.display=(m.style.display==='none'||!m.style.display)?'block':'none';
-}
-async function setPresence(key){
-  const m=document.getElementById('statusMenu');if(m)m.style.display='none';
-  const today=new Date().toISOString().slice(0,10);
-  const{data:s}=await _db.from('shift_status').select('online,check_in,check_out,check_in_2,check_out_2,break_start,break_end,break_start_2,break_end_2,meeting_start').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
-  if(!s||!s.online){showToast(t('checkin')+' '+t('shift_word')+' 1','err');return;}
-  const onBreak1=s.break_start&&!s.break_end&&!s.check_out;
-  const onBreak2=s.break_start_2&&!s.break_end_2&&!s.check_out_2;
-  const activeShiftN=(s.check_in&&!s.check_out)?1:((s.check_in_2&&!s.check_out_2)?2:null);
-  if(key==='lunch'){ if(activeShiftN)doBreakStart(activeShiftN); return; }
-  if(key==='btrip'){ doMeetingStart(); return; }
-  if(key==='available'){
-    if(s.meeting_start){ doMeetingEnd(); return; }
-    if(onBreak1){ doBreakEnd(1); return; }
-    if(onBreak2){ doBreakEnd(2); return; }
-    await _db.from('shift_status').update({presence:null}).eq('agent_id',currentAgent.id).eq('date',today);
-  } else {
-    // away / dnd — manual override
-    await _db.from('shift_status').update({presence:key}).eq('agent_id',currentAgent.id).eq('date',today);
-  }
-  _cDel('myshift_today_'+currentAgent.id,'shift_today');
-  renderMyShift();
-}
 
 async function loadMyActivity(){
   const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent.id).order('time',{ascending:false}).limit(20).then(r=>r.data));
