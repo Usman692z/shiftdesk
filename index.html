@@ -467,7 +467,7 @@ async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await 
 const C={
   agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template',
   agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template',
-  shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2',
+  shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2,meeting_start',
   tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
   announce:'id,title,message,expires_at,created_at,dept,is_urgent',
@@ -574,6 +574,7 @@ const _T={
     entries:'entries',no_activity_recorded:'No check-in/out activity recorded yet',activity_log:'Activity Log',
     reviewed_by:'Reviewed by',day_word:'day',days_word:'days',morning:'Morning',evening:'Evening',expires:'Expires',
     action_word:'Action',all_word:'All',today_word:'Today',yesterday_word:'Yesterday',date_word:'Date',no_logs_match:'No activity matches these filters.',
+    start_meeting:'Start Meeting',end_meeting:'End Meeting',in_meeting:'In Meeting',meeting_time:'Meeting time',total_meeting_time:'Total meeting time',meeting_started_log:'Meeting Started',meeting_ended_log:'Meeting Ended',meetings_word:'Meetings',meeting_started_toast:'Meeting started',meeting_ended_toast:'Meeting ended',
     pending:'Pending',approved:'Approved',rejected:'Rejected',
     no_data:'No data found.',loading:'Loading...',
     approve:'Approve',reject:'Reject',
@@ -633,6 +634,7 @@ const _T={
     entries:'إدخالات',no_activity_recorded:'لا يوجد نشاط دخول/خروج مسجل بعد',activity_log:'سجل النشاط',
     reviewed_by:'تمت المراجعة بواسطة',day_word:'يوم',days_word:'يوم',morning:'صباحي',evening:'مسائي',expires:'ينتهي',
     action_word:'الإجراء',all_word:'الكل',today_word:'اليوم',yesterday_word:'أمس',date_word:'التاريخ',no_logs_match:'لا يوجد نشاط يطابق هذه الفلاتر.',
+    start_meeting:'بدء الاجتماع',end_meeting:'إنهاء الاجتماع',in_meeting:'في اجتماع',meeting_time:'وقت الاجتماع',total_meeting_time:'إجمالي وقت الاجتماعات',meeting_started_log:'بدأ الاجتماع',meeting_ended_log:'انتهى الاجتماع',meetings_word:'الاجتماعات',meeting_started_toast:'بدأ الاجتماع',meeting_ended_toast:'انتهى الاجتماع',
     pending:'قيد الانتظار',approved:'موافق عليه',rejected:'مرفوض',
     no_data:'لا توجد بيانات.',loading:'جارٍ التحميل...',
     approve:'موافقة',reject:'رفض',
@@ -726,7 +728,7 @@ function _syncShiftNow(){
   if(!currentAgent)return;
   if(currentPage!=='myshift'&&currentPage!=='mydashboard')return;
   // drop cached shift entries for this agent so the render refetches fresh
-  [..._cache.keys()].filter(k=>k.includes('myshift_today_'+currentAgent.id)||k.includes('mydash_shifts_'+currentAgent.id)).forEach(k=>_cache.delete(k));
+  [..._cache.keys()].filter(k=>k.includes('myshift_today_'+currentAgent.id)||k.includes('mydash_shifts_'+currentAgent.id)||k.includes('meetings_agent_'+currentAgent.id)||k.includes('mydash_meetings_'+currentAgent.id)).forEach(k=>_cache.delete(k));
   if(currentPage==='myshift')renderMyShift();
   else if(currentPage==='mydashboard')renderMyDashboard();
 }
@@ -1531,9 +1533,10 @@ async function renderDashboard(){
     const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
     const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
     const offP=100-activeP-idleP;
-    const statusDot=isOnline?(actStatus==='active'?_dot('var(--gr)'):_dot('var(--yl)')):_dot('#6b728e');
-    const statusLabel=isOnline?(actStatus==='active'?'Active':'Idle'):'Offline';
-    const statusColor=isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'var(--mu)';
+    const inMtg=isOnline&&!!s.meeting_start;
+    const statusDot=inMtg?_dot('var(--ac)'):(isOnline?(actStatus==='active'?_dot('var(--gr)'):_dot('var(--yl)')):_dot('#6b728e'));
+    const statusLabel=inMtg?t('in_meeting'):(isOnline?(actStatus==='active'?t('active_word'):t('idle')):t('offline'));
+    const statusColor=inMtg?'var(--ac)':(isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'var(--mu)');
     const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'}[a.country]||'';
 
     // Leave/Absent overlay card
@@ -2014,12 +2017,15 @@ async function renderMyDashboard(){
 
   // Load shift data, announcements, leave requests, tasks
   const aid=currentAgent.id;
-  const[rows,announcements,leaves,allTasks]=await Promise.all([
+  const[rows,announcements,leaves,allTasks,mtgRows]=await Promise.all([
     _q('mydash_shifts_'+aid+'_'+monthStr,20000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',aid).gte('date',monthStr+'-01').lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data)),
     _q('announcements',120000,()=>_db.from('announcements').select(C.announce).order('created_at',{ascending:false}).limit(5).then(r=>r.data)),
     _q('leaves_agent_approved_'+aid,60000,()=>_db.from('leave_requests').select('date_from,date_to').eq('agent_id',aid).eq('status','approved').then(r=>r.data)),
     _q('tasks_agent_status_'+aid,20000,()=>_db.from('tasks').select('status').eq('agent_id',aid).then(r=>r.data)),
+    _q('mydash_meetings_'+aid+'_'+monthStr,30000,()=>_db.from('meeting_logs').select('duration_min').eq('agent_id',aid).gte('date',monthStr+'-01').lte('date',monthStr+'-'+String(daysInMonth).padStart(2,'0')).then(r=>r.data||[])),
   ]);
+  const mtgMonthMin=(mtgRows||[]).reduce((a,m)=>a+(m.duration_min||0),0);
+  const mtgCount=(mtgRows||[]).length;
   const byDate={};(rows||[]).forEach(r=>{byDate[r.date]=r;});
   const leaveSet=new Set();
   (leaves||[]).forEach(l=>{
@@ -2177,6 +2183,17 @@ async function renderMyDashboard(){
       </div>
     </div>`;
   })()}
+
+  ${mtgCount>0?`<div class="card" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:38px;height:38px;border-radius:50%;background:rgba(108,99,255,.1);border:2px solid var(--ac);display:flex;align-items:center;justify-content:center">${_i('users',18)}</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--ac)">${t('total_meeting_time')}</div>
+        <div style="font-size:11px;color:var(--mu)">${mtgCount} ${t('meetings_word')} · ${monthName}</div>
+      </div>
+    </div>
+    <div style="font-size:20px;font-weight:800;color:var(--ac)">${Math.floor(mtgMonthMin/60)}h ${mtgMonthMin%60}m</div>
+  </div>`:''}
 
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -3469,9 +3486,10 @@ async function renderMyShift(){
   if(!currentAgent){return;}
   const c=document.getElementById('pageContent');
   const today=new Date().toISOString().slice(0,10);
-  const[s,announceBanner]=await Promise.all([
+  const[s,announceBanner,meetingLogs]=await Promise.all([
     _q('myshift_today_'+currentAgent.id,12000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle().then(r=>r.data)),
     _getAnnounceBanner(),
+    _q('meetings_agent_'+currentAgent.id,12000,()=>_db.from('meeting_logs').select('duration_min').eq('agent_id',currentAgent.id).eq('date',today).then(r=>r.data||[])),
   ]);
   const isIn=s?.online||false;
   if(isIn&&!isTracking)startTracking();
@@ -3516,6 +3534,13 @@ async function renderMyShift(){
   const breakUsedMin=Math.floor((completedBreakMs+(activeBreakStart?(Date.now()-new Date(activeBreakStart)):0))/60000);
   const breakLeftMin=BREAK_ALLOWANCE_MIN-breakUsedMin;
 
+  // ── Meeting state (separate from break; counts as work) ──
+  const meetingStart=(isIn&&s?.meeting_start)?s.meeting_start:null;
+  const inMeeting=!!meetingStart;
+  const onActiveShift=(s1In&&!s1Out)||(s2In&&!s2Out);
+  const meetingDoneMin=(meetingLogs||[]).reduce((a,m)=>a+(m.duration_min||0),0);
+  const meetingTotalMin=meetingDoneMin+(inMeeting?Math.floor((Date.now()-new Date(meetingStart))/60000):0);
+
   // ── Action buttons ────────────────────────────────────────────
   const breakBtn=(shiftN,onBrk)=>onBrk
     ?`<button onclick="doBreakEnd(${shiftN})" style="flex:1;padding:11px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--yl),#d97706);color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px">${_i('coffee')} ${t('end_break')}</button>`
@@ -3541,6 +3566,17 @@ async function renderMyShift(){
     </div>`;
   } else {
     actionBtn='';
+  }
+
+  // ── Meeting button (mutually exclusive with break) ──
+  let meetingBtn='';
+  if(onActiveShift){
+    if(inMeeting){
+      // In a meeting → only End Meeting (hide break/checkout to avoid mid-meeting actions)
+      actionBtn=`<button onclick="doMeetingEnd()" style="width:100%;padding:12px;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;border:none;font-family:var(--font);background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:4px">${_i('users')} ${t('end_meeting')}</button>`;
+    } else if(!onBreak){
+      meetingBtn=`<button onclick="doMeetingStart()" style="width:100%;padding:10px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;border:1px solid rgba(108,99,255,.4);font-family:var(--font);background:rgba(108,99,255,.08);color:var(--ac);display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:8px">${_i('users')} ${t('start_meeting')}</button>`;
+    }
   }
 
   // ── Build shift row ───────────────────────────────────────────
@@ -3602,7 +3638,16 @@ async function renderMyShift(){
     ${s1In?shiftRow(1,s1In,s1Out,lateInfo1,s1Mins,b1Start,b1End,b1Mins,s?.work_location):''}
     ${s2In?shiftRow(2,s2In,s2Out,null,s2Mins,b2Start,s2BreakEnd,b2Mins,s?.work_location_2):''}
     ${actionBtn}
+    ${meetingBtn}
   </div>
+
+  ${inMeeting?`<div id="meetingCard" data-start="${meetingStart}" data-done="${meetingDoneMin}" style="background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.3);border-radius:var(--r);padding:16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+    <span style="font-size:14px;font-weight:700;color:var(--ac);display:flex;align-items:center;gap:8px">${_i('users',16)} ${t('in_meeting')}</span>
+    <span id="meetingTimer" style="font-family:monospace;font-size:26px;font-weight:800;color:var(--ac)">00:00</span>
+  </div>`:(isIn&&meetingDoneMin>0?`<div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--r);padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+    <span style="font-size:13px;color:var(--mu);display:flex;align-items:center;gap:6px">${_i('users',14)} ${t('total_meeting_time')}</span>
+    <span style="font-size:14px;font-weight:700;color:var(--ac)">${fmtMins(meetingDoneMin)}</span>
+  </div>`:'')}
 
   ${onBreak?`<div id="breakCountdownCard" data-start="${activeBreakStart||''}" data-completed="${completedBreakMs}" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:var(--r);padding:18px 14px;margin-bottom:16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
     <div style="position:relative;width:170px;height:170px">
@@ -3624,7 +3669,23 @@ async function renderMyShift(){
 
   <div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('file-text')} ${t('recent_activity')}</div><div id="myActivityLog">${t('loading')}</div></div>`;
 
-  startClock();loadMyActivity();startBreakCountdown();
+  startClock();loadMyActivity();startBreakCountdown();startMeetingTimer();
+}
+
+let meetingTimerInterval=null;
+function startMeetingTimer(){
+  if(meetingTimerInterval)clearInterval(meetingTimerInterval);
+  const card=document.getElementById('meetingCard');
+  if(!card)return;
+  const startISO=card.dataset.start;
+  const el=document.getElementById('meetingTimer');
+  function tick(){
+    if(!document.getElementById('meetingCard')){clearInterval(meetingTimerInterval);return;}
+    const ms=Date.now()-new Date(startISO);
+    const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),sec=Math.floor((ms%60000)/1000);
+    if(el)el.textContent=(h>0?String(h).padStart(2,'0')+':':'')+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+  }
+  tick();meetingTimerInterval=setInterval(tick,1000);
 }
 
 let _pendingCheckInShift=1;
@@ -3656,11 +3717,16 @@ async function doCheckOut(shiftNum){
   let payload={online:false};
   if(shiftNum===1){payload.check_out=now;}
   else{payload.check_out_2=now;}
-  // Auto-close any open break so the break timer doesn't stay stuck after checkout
-  const{data:cur}=await _db.from('shift_status').select('break_start,break_end,break_start_2,break_end_2').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
+  // Auto-close any open break/meeting so timers don't stay stuck after checkout
+  const{data:cur}=await _db.from('shift_status').select('break_start,break_end,break_start_2,break_end_2,meeting_start').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
   if(cur){
     if(cur.break_start&&!cur.break_end)payload.break_end=now;
     if(cur.break_start_2&&!cur.break_end_2)payload.break_end_2=now;
+    if(cur.meeting_start){
+      const durMin=Math.max(0,Math.round((new Date(now)-new Date(cur.meeting_start))/60000));
+      await _db.from('meeting_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,start_time:cur.meeting_start,end_time:now,duration_min:durMin,date:today}).then(()=>{},()=>{});
+      payload.meeting_start=null;
+    }
   }
   const{error}=await _db.from('shift_status').update(payload).eq('agent_id',currentAgent.id).eq('date',today);
   if(error){showToast('Error: '+error.message,'err');return;}
@@ -3708,17 +3774,53 @@ async function doBreakEnd(shiftNum){
   }catch(e){showToast('Error: '+e.message,'err');}
 }
 
+// ── Meeting tracking (Phase 1) — separate from break, counts as work time ──
+async function doMeetingStart(){
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const now=new Date().toISOString();
+    const{error}=await _db.from('shift_status')
+      .update({meeting_start:now})
+      .eq('agent_id',currentAgent.id).eq('date',today);
+    if(error){showToast('Meeting error: '+error.message,'err');return;}
+    _cDel('myshift_today_'+currentAgent.id,'shift_today');
+    _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'meeting_start',detail:'Meeting Start',date:today,time:now}).then(()=>{},()=>{});
+    showToast(_i('users')+' '+t('meeting_started_toast'),'info');
+    renderMyShift();
+  }catch(e){showToast('Error: '+e.message,'err');}
+}
+async function doMeetingEnd(){
+  try{
+    const today=new Date().toISOString().slice(0,10);
+    const now=new Date().toISOString();
+    // read current meeting_start to compute duration
+    const{data:cur}=await _db.from('shift_status').select('meeting_start').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
+    const startISO=cur?.meeting_start;
+    if(startISO){
+      const durMin=Math.max(0,Math.round((new Date(now)-new Date(startISO))/60000));
+      await _db.from('meeting_logs').insert({agent_id:currentAgent.id,agent_name:currentAgent.name,dept:currentAgent.dept,start_time:startISO,end_time:now,duration_min:durMin,date:today}).then(()=>{},()=>{});
+    }
+    const{error}=await _db.from('shift_status')
+      .update({meeting_start:null})
+      .eq('agent_id',currentAgent.id).eq('date',today);
+    if(error){showToast('Meeting error: '+error.message,'err');return;}
+    _cDel('myshift_today_'+currentAgent.id,'shift_today','meetings_agent_'+currentAgent.id);
+    _db.from('activity_logs').insert({agent_id:currentAgent.id,action:'meeting_end',detail:'Meeting End',date:today,time:now}).then(()=>{},()=>{});
+    showToast(_i('check')+' '+t('meeting_ended_toast'),'ok');
+    renderMyShift();
+  }catch(e){showToast('Error: '+e.message,'err');}
+}
+
 async function loadMyActivity(){
   const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent.id).order('time',{ascending:false}).limit(20).then(r=>r.data));
   const el=document.getElementById('myActivityLog');if(!el)return;
   if(!logs?.length){el.innerHTML=`<div class="empty-state"><div class="icon">${_i('mail')}</div>${t('no_activity')}</div>`;return;}
-  const actionLabel={check_in:_i('check-circle',12)+' '+t('checked_in'),check_out:_i('x-circle',12)+' '+t('checked_out'),break_start:_i('coffee',12)+' '+t('break_started_log'),break_end:_i('check',12)+' '+t('break_ended_log')};
-  const actionDot={check_in:'dot-in',check_out:'dot-out',break_start:'dot-out',break_end:'dot-in'};
-  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(actionLabel[l.action]||l.action)+'</div><div class="activity-desc">'+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>').join('');
+  const actionDot={check_in:'dot-in',check_out:'dot-out',break_start:'dot-out',break_end:'dot-in',meeting_start:'dot-out',meeting_end:'dot-in'};
+  el.innerHTML=logs.map(l=>'<div class="activity-item"><div class="activity-dot '+(actionDot[l.action]||'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+_actLabel(l.action)+'</div><div class="activity-desc">'+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>').join('');
 }
 
 function _actLabel(action){
-  const m={check_in:_i('check-circle',12)+' '+t('checked_in'),check_out:_i('x-circle',12)+' '+t('checked_out'),break_start:_i('coffee',12)+' '+t('break_started_log'),break_end:_i('check',12)+' '+t('break_ended_log')};
+  const m={check_in:_i('check-circle',12)+' '+t('checked_in'),check_out:_i('x-circle',12)+' '+t('checked_out'),break_start:_i('coffee',12)+' '+t('break_started_log'),break_end:_i('check',12)+' '+t('break_ended_log'),meeting_start:_i('users',12)+' '+t('meeting_started_log'),meeting_end:_i('users',12)+' '+t('meeting_ended_log')};
   return m[action]||action;
 }
 
@@ -3754,6 +3856,8 @@ async function renderActivity(){
       <option value="check_out">${t('checkout')}</option>
       <option value="break_start">${t('break')}</option>
       <option value="break_end">${t('end_break')}</option>
+      <option value="meeting_start">${t('start_meeting')}</option>
+      <option value="meeting_end">${t('end_meeting')}</option>
     </select></div>
     <div class="form-group" style="margin:0"><label style="${lbl}">${t('date_word')}</label><input type="date" id="actDate" onchange="loadActivityLogs()" style="${ctrl}"></div>
     <button class="btn btn-sm" onclick="_actSetDate(0)" style="background:var(--s2);border:1px solid var(--b2);color:var(--tx)">${t('today_word')}</button>
