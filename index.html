@@ -1116,7 +1116,7 @@ let _realtimeDebounce={};
 let _renderThrottle={};
 function _renderPage(page){
   if(currentPage!==page)return;
-  if(page==='dashboard')renderDashboard();
+  if(page==='dashboard')_refreshDashboard();
   else if(page==='tasks')renderTasks();
   else if(page==='mytasks')renderMyTasks();
   else if(page==='tracking')renderTracking();
@@ -1133,7 +1133,7 @@ function _renderPage(page){
 }
 // Throttle: render at most once per interval (heavy live pages slower to avoid flicker)
 function _schedulePageRender(page){
-  const interval=(page==='dashboard'||page==='tracking'||page==='reports')?12000:1500;
+  const interval=page==='dashboard'?6000:((page==='tracking'||page==='reports')?12000:1500);
   const st=_renderThrottle[page]||{last:0,timer:null};
   const since=Date.now()-st.last;
   if(since>=interval){
@@ -1521,227 +1521,232 @@ async function fireOverBreakAlert(usedMin){
   showToast(_i('alert')+' '+t('break_over_title'),'err');
 }
 
+let _dashCtx=null;       // {agents, ts, tracking, leaveRecs, mtgMap, today}
+let _dashTab='All';
+let _dashSig='';
+
+function _dashFmtDur(m){return Math.floor(m/60)+'h '+(m%60)+'m';}
+function _dashBreakUsed(s){
+  const b1=s.break_end||(s.check_out&&s.break_start?s.check_out:null);
+  const b2=s.break_end_2||(s.check_out_2&&s.break_start_2?s.check_out_2:null);
+  const m1=(s.break_start&&b1)?Math.max(0,new Date(b1)-new Date(s.break_start)):0;
+  const m2=(s.break_start_2&&b2)?Math.max(0,new Date(b2)-new Date(s.break_start_2)):0;
+  const onB=(s.break_start&&!b1&&!s.check_out)?s.break_start:((s.break_start_2&&!b2&&!s.check_out_2)?s.break_start_2:null);
+  return Math.floor((m1+m2+(onB?Date.now()-new Date(onB):0))/60000);
+}
+// Compute all display parts for one agent from the current _dashCtx
+function _dashParts(a){
+  const ctx=_dashCtx;
+  const s=(ctx.ts||[]).find(x=>x.agent_id===a.id)||{};
+  const tr=(ctx.tracking||[]).find(x=>x.agent_id===a.id)||{};
+  const lr=(ctx.leaveRecs||[]).find(x=>x.agent_id===a.id)||null;
+  const isOnline=s.online||false;
+  const activeMins=Math.max(tr.live_active_min||0,tr.total_active_minutes||0);
+  const actStatus=tr.activity_status||'offline';
+  let shiftMins=0;
+  if(s.check_in){const end=s.check_out?new Date(s.check_out):new Date();shiftMins=Math.max(0,Math.floor((end-new Date(s.check_in))/60000));}
+  if(s.check_in_2){const end2=s.check_out_2?new Date(s.check_out_2):new Date();shiftMins+=Math.max(0,Math.floor((end2-new Date(s.check_in_2))/60000));}
+  const idleMins=Math.max(0,shiftMins-activeMins);
+  const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
+  const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
+  const offP=100-activeP-idleP;
+  const inMtg=isOnline&&!!s.meeting_start;
+  const statusLabel=inMtg?t('in_meeting'):(isOnline?(actStatus==='active'?t('active_word'):t('idle')):t('offline'));
+  const statusColor=inMtg?'var(--ac)':(isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'#6b728e');
+  const statusBg=inMtg?'rgba(108,99,255,.12)':(isOnline?(actStatus==='active'?'rgba(16,185,129,.12)':'rgba(251,191,36,.12)'):'rgba(100,100,120,.15)');
+  const statusBd=inMtg?'rgba(108,99,255,.3)':(isOnline?(actStatus==='active'?'rgba(16,185,129,.3)':'rgba(251,191,36,.3)'):'rgba(100,100,120,.3)');
+  const mtgMin=(ctx.mtgMap[a.id]||0)+(inMtg?Math.floor((Date.now()-new Date(s.meeting_start))/60000):0);
+  const brkUsed=_dashBreakUsed(s);
+  const locBadge=s.work_location?` <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${s.work_location==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.12)'};color:${s.work_location==='WFH'?'var(--ac)':'var(--gr)'};display:inline-flex;align-items:center;gap:3px">${s.work_location==='WFH'?_i('home',10)+' WFH':_i('building',10)+' Office'}</span>`:'';
+  const ciLine=s.check_in
+    ? _i('clock',11)+' '+fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now')+lateBadge(s.check_in,a.shift_start,a.timezone)+locBadge+(shiftMins>0?' <span style="color:var(--tx);font-weight:600">'+_dashFmtDur(shiftMins)+'</span>':'')
+    : _i('clock',11)+' Not checked in';
+  const barHtml=`${activeP>0?`<div style="width:${activeP}%;background:var(--gr)"></div>`:''}${idleP>0?`<div style="width:${idleP}%;background:var(--yl)"></div>`:''}${offP>0?`<div style="width:${offP}%;background:var(--s3)"></div>`:''}`;
+  const amHtml=`<span><span style="color:var(--gr);font-weight:600">${activeMins}m</span> active (${activeP}%)</span><span><span style="color:var(--yl);font-weight:600">${idleMins}m</span> idle</span>`;
+  const mbHtml=isOnline?`<span style="color:var(--ac);display:inline-flex;align-items:center;gap:3px">${_i('users',11)} ${mtgMin}m mtg</span><span style="color:${brkUsed>60?'var(--rd)':'var(--mu)'};display:inline-flex;align-items:center;gap:3px">${_i('coffee',11)} ${brkUsed}/${BREAK_ALLOWANCE_MIN}m break</span>`:'';
+  const devHtml=(isOnline&&s.device)?_deviceBadge(s.device):'';
+  const statusPill=`<span style="width:8px;height:8px;border-radius:50%;background:${statusColor};display:inline-block"></span> ${statusLabel}`;
+  return {s,lr,isOnline,statusColor,statusBg,statusBd,statusPill,devHtml,ciLine,barHtml,amHtml,mbHtml};
+}
+
+function _dashBuildCard(a){
+  const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'}[a.country]||'';
+  const dept=a.dept||'Other';
+  const p=_dashParts(a);
+  const nm=a.name.replace(/'/g,'');
+  // Leave / absent overlay card
+  if(p.lr){
+    const lr=p.lr;
+    const isLeave=lr.leave_type==='leave',isHoliday=lr.leave_type==='holiday';
+    const lColor=isLeave?'#38bdf8':isHoliday?'var(--ac)':'var(--rd)';
+    const lBg=isLeave?'rgba(56,189,248,.08)':isHoliday?'rgba(108,99,255,.08)':'rgba(244,63,94,.08)';
+    const lBorder=isLeave?'rgba(56,189,248,.3)':isHoliday?'rgba(108,99,255,.3)':'rgba(244,63,94,.3)';
+    const lIcon=isLeave?'☀️':isHoliday?'🎉':'⚠️';const lLabel=isLeave?'On Leave':isHoliday?'Holiday':'Absent';
+    return `<div class="dash-card" data-dept="${dept}" data-aid="${a.id}" style="background:${lBg};border:1px solid ${lBorder};border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:38px;height:38px;border-radius:50%;background:${lBg};border:2px solid ${lBorder};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${lIcon}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div><div style="font-size:11px;color:var(--mu)">${a.role||'Agent'}</div></div>
+        <div style="font-size:12px;font-weight:700;color:${lColor};background:${lBg};border:1px solid ${lBorder};padding:4px 10px;border-radius:20px;white-space:nowrap">${lIcon} ${lLabel}</div>
+      </div>
+      ${lr.note?`<div style="font-size:11px;color:var(--mu);font-style:italic">${_i('message-circle',11)} ${lr.note}</div>`:''}
+      <div style="display:flex;gap:6px">
+        <button onclick="openMarkLeaveModal('${a.id}','${nm}','${_dashCtx.today}')" style="flex:1;padding:6px 0;border-radius:8px;background:var(--s2);border:1px solid var(--b2);color:var(--mu);font-size:12px;cursor:pointer;font-family:var(--font)">${_i('edit',11)} Change</button>
+        <button onclick="removeAgentLeave('${a.id}','${nm}','${_dashCtx.today}')" style="flex:1;padding:6px 0;border-radius:8px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:var(--rd);font-size:12px;cursor:pointer;font-family:var(--font)">${_i('x',11)} Remove</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="dash-card" data-dept="${dept}" data-aid="${a.id}" style="background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:9px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-weight:700;color:#fff">${a.name.charAt(0).toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div>
+        <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:6px;flex-wrap:wrap">${a.role||'Agent'} <span id="dcdev_${a.id}">${p.devHtml}</span></div>
+      </div>
+      <div id="dcst_${a.id}" style="font-size:12px;font-weight:600;color:${p.statusColor};background:${p.statusBg};border:1px solid ${p.statusBd};padding:3px 9px;border-radius:20px;white-space:nowrap">${p.statusPill}</div>
+    </div>
+    <div id="dcci_${a.id}" style="font-size:11px;color:var(--mu)">${p.ciLine}</div>
+    <div>
+      <div id="dcbar_${a.id}" style="display:flex;border-radius:4px;overflow:hidden;height:8px;background:var(--s3)">${p.barHtml}</div>
+      <div id="dcam_${a.id}" style="display:flex;gap:12px;font-size:10px;color:var(--mu);margin-top:4px">${p.amHtml}</div>
+    </div>
+    <div id="dcmb_${a.id}" style="display:flex;gap:12px;font-size:10px;font-weight:600">${p.mbHtml}</div>
+    <div style="display:flex;gap:6px;margin-top:2px">
+      ${p.isOnline?`<button onclick="adminForceCheckout('${a.id}','${nm}')" style="flex:1;padding:5px 0;border-radius:8px;background:rgba(244,63,94,.15);border:1px solid rgba(244,63,94,.35);color:var(--rd);font-size:11px;cursor:pointer;font-family:var(--font);font-weight:700">${_i('x',11)} Check Out</button>`:''}
+      <button onclick="openMarkLeaveModal('${a.id}','${nm}','${_dashCtx.today}')" style="flex:1;padding:5px 0;border-radius:8px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:#38bdf8;font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600">${_i('sun',11)} Leave</button>
+      <button onclick="markAgentLeave('${a.id}','${nm}','absent','${_dashCtx.today}','')" style="flex:1;padding:5px 0;border-radius:8px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.25);color:var(--rd);font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600">${_i('x-circle',11)} Absent</button>
+    </div>
+  </div>`;
+}
+
+// Switch the active department tab (client-side; no re-fetch, no blink)
+function _dashSwitchTab(dept){
+  _dashTab=dept;
+  document.querySelectorAll('.dash-tab').forEach(el=>{
+    const on=el.dataset.dept===dept;
+    el.style.background=on?'var(--ac)':'var(--s2)';
+    el.style.color=on?'#fff':'var(--mu)';
+    el.style.borderColor=on?'var(--ac)':'var(--b2)';
+  });
+  document.querySelectorAll('.dash-card').forEach(c=>{
+    c.style.display=(dept==='All'||c.dataset.dept===dept)?'':'none';
+  });
+  _dashUpdateSummary();
+}
+
+// Per-tab summary (online/active/idle/offline) for the selected tab
+function _dashUpdateSummary(){
+  if(!_dashCtx)return;
+  const box=document.getElementById('dashTabSummary');if(!box)return;
+  const ctx=_dashCtx;
+  const list=(ctx.agents||[]).filter(a=>_dashTab==='All'||(a.dept||'Other')===_dashTab);
+  let online=0,active=0;
+  list.forEach(a=>{
+    const s=(ctx.ts||[]).find(x=>x.agent_id===a.id)||{};
+    const tr=(ctx.tracking||[]).find(x=>x.agent_id===a.id)||{};
+    if(s.online)online++;
+    if(tr.activity_status==='active')active++;
+  });
+  const total=list.length,idle=Math.max(0,online-active),offline=total-online;
+  const cell=(lbl,val,col)=>`<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:${col}">${val}</div><div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px">${lbl}</div></div>`;
+  box.innerHTML=cell('Total',total,'var(--ac)')+cell('Online',online,'var(--gr)')+cell('Active',active,'#22c55e')+cell('Idle',idle,'var(--yl)')+cell('Offline',offline,'var(--mu)');
+}
+
+// In-place refresh — update only changed values, no full DOM rebuild (no blink)
+async function _refreshDashboard(){
+  if(currentPage!=='dashboard'||!_dashCtx)return;
+  const today=_dashCtx.today;
+  const[ts,tracking,leaveRecs,mtg]=await Promise.all([
+    _db.from('shift_status').select(C.shift).eq('date',today).then(r=>r.data||[]),
+    _db.from('activity_tracking').select(C.tracking).eq('date',today).then(r=>r.data||[]),
+    _db.from('leave_records').select('agent_id,leave_type,note').eq('date',today).then(r=>r.data||[]),
+    _db.from('meeting_logs').select('agent_id,duration_min').eq('date',today).then(r=>r.data||[]),
+  ]);
+  let agents=_dashCtx.agents;
+  if(isManager&&managerDept){const ids=new Set(agents.map(a=>a.id));_dashCtx.ts=ts.filter(s=>ids.has(s.agent_id));_dashCtx.tracking=tracking.filter(x=>ids.has(x.agent_id));_dashCtx.leaveRecs=leaveRecs.filter(l=>ids.has(l.agent_id));}
+  else{_dashCtx.ts=ts;_dashCtx.tracking=tracking;_dashCtx.leaveRecs=leaveRecs;}
+  const mtgMap={};(mtg||[]).forEach(m=>{mtgMap[m.agent_id]=(mtgMap[m.agent_id]||0)+(m.duration_min||0);});
+  _dashCtx.mtgMap=mtgMap;
+  // If the leave-set changed, do a full rebuild (card structure differs)
+  const sig=(_dashCtx.leaveRecs||[]).map(l=>l.agent_id+':'+l.leave_type).sort().join(',');
+  if(sig!==_dashSig){renderDashboard();return;}
+  // In-place update each visible card's dynamic parts
+  agents.forEach(a=>{
+    const p=_dashParts(a);
+    const st=document.getElementById('dcst_'+a.id);
+    if(st){st.innerHTML=p.statusPill;st.style.color=p.statusColor;st.style.background=p.statusBg;st.style.borderColor=p.statusBd;}
+    const dv=document.getElementById('dcdev_'+a.id);if(dv)dv.innerHTML=p.devHtml;
+    const ci=document.getElementById('dcci_'+a.id);if(ci)ci.innerHTML=p.ciLine;
+    const bar=document.getElementById('dcbar_'+a.id);if(bar)bar.innerHTML=p.barHtml;
+    const am=document.getElementById('dcam_'+a.id);if(am)am.innerHTML=p.amHtml;
+    const mb=document.getElementById('dcmb_'+a.id);if(mb)mb.innerHTML=p.mbHtml;
+  });
+  // Update stat cards + summary
+  const online=(_dashCtx.ts||[]).filter(s=>s.online).length;
+  const activeNow=(_dashCtx.tracking||[]).filter(x=>x.activity_status==='active').length;
+  const total=agents.length;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('dashStatOnline',online);set('dashStatActive',activeNow);set('dashStatOffline',total-online);
+  _dashUpdateSummary();
+}
+
 async function renderDashboard(){
   const c=document.getElementById('pageContent');
-  c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
+  if(!_dashCtx)c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
   const today=new Date().toISOString().slice(0,10);
-  let[agents,ts,tracking,leaveRecs]=await Promise.all([
+  let[agents,ts,tracking,leaveRecs,mtg]=await Promise.all([
     _getAgents(),
-    _q('shift_today',15000,()=>_db.from('shift_status').select(C.shift).eq('date',today).then(r=>r.data)),
-    _q('tracking_today',10000,()=>_db.from('activity_tracking').select(C.tracking).eq('date',today).then(r=>r.data)),
+    _db.from('shift_status').select(C.shift).eq('date',today).then(r=>r.data||[]),
+    _db.from('activity_tracking').select(C.tracking).eq('date',today).then(r=>r.data||[]),
     _db.from('leave_records').select('agent_id,leave_type,note').eq('date',today).then(r=>r.data||[]),
+    _db.from('meeting_logs').select('agent_id,duration_min').eq('date',today).then(r=>r.data||[]),
   ]);
   if(isManager&&managerDept){
     agents=(agents||[]).filter(a=>a.dept===managerDept);
-    const agentIds=new Set(agents.map(a=>a.id));
-    ts=(ts||[]).filter(s=>agentIds.has(s.agent_id));
-    tracking=(tracking||[]).filter(t=>agentIds.has(t.agent_id));
-    leaveRecs=(leaveRecs||[]).filter(l=>agentIds.has(l.agent_id));
+    const ids=new Set(agents.map(a=>a.id));
+    ts=ts.filter(s=>ids.has(s.agent_id));tracking=tracking.filter(x=>ids.has(x.agent_id));leaveRecs=leaveRecs.filter(l=>ids.has(l.agent_id));
   } else if(isSubAdmin&&subAdminDepts.length){
     agents=(agents||[]).filter(a=>subAdminDepts.includes(a.dept));
-    const agentIds=new Set(agents.map(a=>a.id));
-    ts=(ts||[]).filter(s=>agentIds.has(s.agent_id));
-    tracking=(tracking||[]).filter(t=>agentIds.has(t.agent_id));
-    leaveRecs=(leaveRecs||[]).filter(l=>agentIds.has(l.agent_id));
+    const ids=new Set(agents.map(a=>a.id));
+    ts=ts.filter(s=>ids.has(s.agent_id));tracking=tracking.filter(x=>ids.has(x.agent_id));leaveRecs=leaveRecs.filter(l=>ids.has(l.agent_id));
   }
+  const mtgMap={};(mtg||[]).forEach(m=>{mtgMap[m.agent_id]=(mtgMap[m.agent_id]||0)+(m.duration_min||0);});
+  _dashCtx={agents:agents||[],ts,tracking,leaveRecs,mtgMap,today};
+  _dashSig=(leaveRecs||[]).map(l=>l.agent_id+':'+l.leave_type).sort().join(',');
+
   const total=agents?.length||0;
-  const online=ts?.filter(s=>s.online).length||0;
-  const activeNow=tracking?.filter(t=>t.activity_status==='active').length||0;
+  const online=ts.filter(s=>s.online).length;
+  const activeNow=tracking.filter(x=>x.activity_status==='active').length;
 
-  // ── Build one agent card ──────────────────────────────────────
-  function buildCard(a){
-    const s=ts?.find(x=>x.agent_id===a.id)||{};
-    const tr=tracking?.find(x=>x.agent_id===a.id)||{};
-    const lr=leaveRecs?.find(x=>x.agent_id===a.id)||null;
-    const isOnline=s.online||false;
-    const activeMins=Math.max(tr.live_active_min||0,tr.total_active_minutes||0);
-    const actStatus=tr.activity_status||'offline';
-    let shiftMins=0;
-    if(s.check_in){
-      const end=s.check_out?new Date(s.check_out):new Date();
-      shiftMins=Math.max(0,Math.floor((end-new Date(s.check_in))/60000));
-    }
-    if(s.check_in_2){
-      const end2=s.check_out_2?new Date(s.check_out_2):new Date();
-      shiftMins+=Math.max(0,Math.floor((end2-new Date(s.check_in_2))/60000));
-    }
-    const idleMins=Math.max(0,shiftMins-activeMins);
-    const activeP=shiftMins>0?Math.min(100,Math.round(activeMins/shiftMins*100)):0;
-    const idleP=shiftMins>0?Math.min(100-activeP,Math.round(idleMins/shiftMins*100)):0;
-    const offP=100-activeP-idleP;
-    const inMtg=isOnline&&!!s.meeting_start;
-    const statusDot=inMtg?_dot('var(--ac)'):(isOnline?(actStatus==='active'?_dot('var(--gr)'):_dot('var(--yl)')):_dot('#6b728e'));
-    const statusLabel=inMtg?t('in_meeting'):(isOnline?(actStatus==='active'?t('active_word'):t('idle')):t('offline'));
-    const statusColor=inMtg?'var(--ac)':(isOnline?(actStatus==='active'?'var(--gr)':'var(--yl)'):'var(--mu)');
-    const countryFlag={'Pakistan':'🇵🇰','Saudi Arabia':'🇸🇦'}[a.country]||'';
+  // Department tabs
+  const deptSet=[...new Set((agents||[]).map(a=>a.dept||'Other'))].sort();
+  if(_dashTab!=='All'&&!deptSet.includes(_dashTab))_dashTab='All';
+  const tabBtn=(d,label)=>{const on=_dashTab===d;return `<button class="dash-tab" data-dept="${d}" onclick="_dashSwitchTab('${d.replace(/'/g,"\\'")}')" style="padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap;background:${on?'var(--ac)':'var(--s2)'};color:${on?'#fff':'var(--mu)'};border:1px solid ${on?'var(--ac)':'var(--b2)'}">${label}</button>`;};
+  const tabsHtml=tabBtn('All','All ('+total+')')+deptSet.map(d=>tabBtn(d,d)).join('');
 
-    // Leave/Absent overlay card
-    if(lr){
-      const isLeave=lr.leave_type==='leave';
-      const isHoliday=lr.leave_type==='holiday';
-      const lColor=isLeave?'#38bdf8':isHoliday?'var(--ac)':'var(--rd)';
-      const lBg=isLeave?'rgba(56,189,248,.08)':isHoliday?'rgba(108,99,255,.08)':'rgba(244,63,94,.08)';
-      const lBorder=isLeave?'rgba(56,189,248,.3)':isHoliday?'rgba(108,99,255,.3)':'rgba(244,63,94,.3)';
-      const lIcon=isLeave?'☀️':isHoliday?'🎉':'⚠️';
-      const lLabel=isLeave?'On Leave':isHoliday?'Holiday':'Absent';
-      return `
-      <div style="background:${lBg};border:1px solid ${lBorder};border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px;position:relative">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:38px;height:38px;border-radius:50%;background:${lBg};border:2px solid ${lBorder};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${lIcon}</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div>
-            <div style="font-size:11px;color:var(--mu)">${a.role||'Agent'}</div>
-          </div>
-          <div style="font-size:12px;font-weight:700;color:${lColor};background:${lBg};border:1px solid ${lBorder};padding:4px 10px;border-radius:20px;white-space:nowrap">${lIcon} ${lLabel}</div>
-        </div>
-        ${lr.note?`<div style="font-size:11px;color:var(--mu);font-style:italic">${_i('message-circle',11)} ${lr.note}</div>`:''}
-        <div style="display:flex;gap:6px">
-          <button onclick="openMarkLeaveModal('${a.id}','${a.name.replace(/'/g,'')}','${today}')" style="flex:1;padding:6px 0;border-radius:8px;background:var(--s2);border:1px solid var(--b2);color:var(--mu);font-size:12px;cursor:pointer;font-family:var(--font)">${_i('edit',11)} Change</button>
-          <button onclick="removeAgentLeave('${a.id}','${a.name.replace(/'/g,'')}','${today}')" style="flex:1;padding:6px 0;border-radius:8px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.3);color:var(--rd);font-size:12px;cursor:pointer;font-family:var(--font)">${_i('x',11)} Remove</button>
-        </div>
-      </div>`;
-    }
-
-    return `
-    <div style="background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <!-- Avatar -->
-        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-weight:700;color:#fff">${a.name.charAt(0).toUpperCase()}</div>
-        <!-- Name + role -->
-        <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div>
-          <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:6px;flex-wrap:wrap">${a.role||'Agent'} ${(isOnline&&s.device)?_deviceBadge(s.device):''}</div>
-        </div>
-        <!-- Status pill -->
-        <div style="font-size:12px;font-weight:600;color:${statusColor};background:${isOnline?(actStatus==='active'?'rgba(16,185,129,.12)':'rgba(251,191,36,.12)'):'rgba(100,100,120,.15)'};border:1px solid ${isOnline?(actStatus==='active'?'rgba(16,185,129,.3)':'rgba(251,191,36,.3)'):'rgba(100,100,120,.3)'};padding:3px 9px;border-radius:20px;white-space:nowrap">${statusDot} ${statusLabel}</div>
-      </div>
-      <!-- Check-in time -->
-      <div style="font-size:11px;color:var(--mu)">
-        ${s.check_in?_i('clock',11)+' '+fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now')+lateBadge(s.check_in,a.shift_start,a.timezone)+(s.work_location?` <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${s.work_location==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.12)'};color:${s.work_location==='WFH'?'var(--ac)':'var(--gr)'};display:inline-flex;align-items:center;gap:3px">${s.work_location==='WFH'?_i('home',10)+' WFH':_i('building',10)+' Office'}</span>`:''):_i('clock',11)+' Not checked in'}
-        ${shiftMins>0?'<span style="margin-left:8px;color:var(--tx);font-weight:600">'+Math.floor(shiftMins/60)+'h '+shiftMins%60+'m</span>':''}
-      </div>
-      <!-- Activity bar -->
-      <div>
-        <div style="display:flex;border-radius:4px;overflow:hidden;height:8px;background:var(--s3)">
-          ${activeP>0?`<div style="width:${activeP}%;background:var(--gr)"></div>`:''}
-          ${idleP>0?`<div style="width:${idleP}%;background:var(--yl)"></div>`:''}
-          ${offP>0?`<div style="width:${offP}%;background:var(--s3)"></div>`:''}
-        </div>
-        <div style="display:flex;gap:12px;font-size:10px;color:var(--mu);margin-top:4px">
-          <span><span style="color:var(--gr);font-weight:600">${activeMins}m</span> active (${activeP}%)</span>
-          <span><span style="color:var(--yl);font-weight:600">${idleMins}m</span> idle</span>
-        </div>
-      </div>
-      <!-- Admin leave/absent buttons -->
-      <div style="display:flex;gap:6px;margin-top:2px">
-        <button onclick="openMarkLeaveModal('${a.id}','${a.name.replace(/'/g,'')}','${today}')" style="flex:1;padding:5px 0;border-radius:8px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:#38bdf8;font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600">${_i('sun',11)} Leave</button>
-        <button onclick="markAgentLeave('${a.id}','${a.name.replace(/'/g,'')}','absent','${today}','')" style="flex:1;padding:5px 0;border-radius:8px;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.25);color:var(--rd);font-size:11px;cursor:pointer;font-family:var(--font);font-weight:600">${_i('x-circle',11)} Absent</button>
-      </div>
-    </div>`;
-  }
-
-  // ── Group agents by department ────────────────────────────────
-  const _DEPT_PALETTE=['var(--ac)','var(--or)','var(--gr)','var(--yl)','#e879f9','#38bdf8','#fb7185','#a78bfa','#34d399','#f97316'];
-  const _deptColorCache={};
-  function _deptColor(name){if(!_deptColorCache[name]){let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))&0xffff;_deptColorCache[name]=_DEPT_PALETTE[h%_DEPT_PALETTE.length];}return _deptColorCache[name];}
-  const DEPT_COLOR={'Corporate':'var(--ac)','Retail':'var(--or)','Reseller':'var(--gr)'};
-  const DEPT_ICON={'Corporate':_i('building',12),'Retail':_i('upload',12),'Reseller':_i('award',12)};
-  const depts={};
-  (agents||[]).forEach(a=>{
-    const d=a.dept||'Other';
-    if(!depts[d])depts[d]=[];
-    depts[d].push(a);
-  });
-
-  const deptSections=Object.entries(depts).map(([dept,dagents])=>{
-    const dColor=DEPT_COLOR[dept]||_deptColor(dept);
-    const dIcon=DEPT_ICON[dept]||_i('users',12);
-    const dOnline=(dagents||[]).filter(a=>ts?.find(x=>x.agent_id===a.id)?.online).length;
-    const dActive=(dagents||[]).filter(a=>tracking?.find(x=>x.agent_id===a.id)?.activity_status==='active').length;
-    const cards=(dagents||[]).map(a=>buildCard(a)).join('');
-    return `
-    <div style="margin-bottom:28px">
-      <!-- Department Header -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:12px 16px;background:var(--s);border:1px solid var(--b);border-radius:var(--rl);border-left:4px solid ${dColor}">
-        <span style="font-size:20px">${dIcon}</span>
-        <div style="flex:1">
-          <div style="font-size:15px;font-weight:800;color:${dColor}">${dept}</div>
-          <div style="font-size:11px;color:var(--mu)">${dagents.length} agents total</div>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <span style="font-size:12px;color:var(--gr);font-weight:600;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px">${_dot('var(--gr)')} ${dOnline} online</span>
-          <span style="font-size:12px;color:var(--yl);font-weight:600;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);padding:3px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:4px">${_i('zap',12)} ${dActive} active</span>
-        </div>
-      </div>
-      <!-- Agent cards grid -->
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;padding-left:4px">
-        ${cards}
-      </div>
-    </div>`;
-  }).join('');
+  // Agent cards (all in one grid; tabs show/hide via data-dept)
+  const cards=(agents||[]).map(a=>_dashBuildCard(a)).join('');
 
   c.innerHTML=`
-  <!-- Stats row -->
-  <div class="stats-grid" style="margin-bottom:20px">
+  <div class="stats-grid" style="margin-bottom:18px">
     <div class="stat-card"><div class="stat-num" style="color:var(--ac)">${total}</div><div class="stat-label">Total Agents</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--gr)">${online}</div><div class="stat-label">Online Now</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--yl)">${activeNow}</div><div class="stat-label">Active Now</div></div>
-    <div class="stat-card"><div class="stat-num" style="color:var(--mu)">${total-online}</div><div class="stat-label">Offline</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--gr)" id="dashStatOnline">${online}</div><div class="stat-label">Online Now</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:#22c55e" id="dashStatActive">${activeNow}</div><div class="stat-label">Active Now</div></div>
+    <div class="stat-card"><div class="stat-num" style="color:var(--mu)" id="dashStatOffline">${total-online}</div><div class="stat-label">Offline</div></div>
   </div>
+  <!-- Department tabs -->
+  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px">${tabsHtml}</div>
+  <!-- Selected-tab summary -->
+  <div id="dashTabSummary" class="card" style="margin-bottom:16px;display:flex;justify-content:space-around;align-items:center;padding:14px"></div>
   <!-- Legend -->
-  <div style="display:flex;gap:16px;margin-bottom:20px;font-size:12px;color:var(--mu);align-items:center">
+  <div style="display:flex;gap:16px;margin-bottom:14px;font-size:12px;color:var(--mu);align-items:center;flex-wrap:wrap">
     <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--gr);display:inline-block"></span> Active</span>
     <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--yl);display:inline-block"></span> Idle</span>
     <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:var(--s3);display:inline-block"></span> No data</span>
   </div>
-  <!-- Department summary -->
-  ${(()=>{
-    if(!agents?.length)return '';
-    const onlineSet=new Set((ts||[]).filter(s=>s.online).map(s=>s.agent_id));
-    const activeSet=new Set((tracking||[]).filter(t=>t.activity_status==='active').map(t=>t.agent_id));
-    const map={};
-    agents.forEach(a=>{
-      const d=a.dept||'No Department';
-      if(!map[d])map[d]={total:0,online:0,active:0};
-      map[d].total++;
-      if(onlineSet.has(a.id))map[d].online++;
-      if(activeSet.has(a.id))map[d].active++;
-    });
-    const depts=Object.keys(map).sort();
-    const rows=depts.map(d=>{
-      const m=map[d];const off=m.total-m.online;
-      return `<tr>
-        <td style="padding:9px 14px;font-weight:600">${d}</td>
-        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--ac)">${m.total}</td>
-        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--gr)">${m.online}</td>
-        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--yl)">${m.active}</td>
-        <td style="padding:9px 14px;text-align:center;font-weight:700;color:var(--mu)">${off}</td>
-      </tr>`;
-    }).join('');
-    return `<div class="card" style="margin-bottom:20px;padding:0">
-      <div class="card-title" style="margin:0;padding:14px 16px 0;display:flex;align-items:center;gap:6px">${_i('building')} Department Breakdown</div>
-      <div class="table-wrap"><table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px">
-        <thead><tr style="border-bottom:1px solid var(--b2)">
-          <th style="padding:9px 14px;text-align:left;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Department</th>
-          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Total</th>
-          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Online</th>
-          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Active</th>
-          <th style="padding:9px 14px;text-align:center;color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.5px">Offline</th>
-        </tr></thead>
-        <tbody>${rows}
-          <tr style="border-top:2px solid var(--b2)">
-            <td style="padding:9px 14px;font-weight:800">All</td>
-            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--ac)">${total}</td>
-            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--gr)">${online}</td>
-            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--yl)">${activeNow}</td>
-            <td style="padding:9px 14px;text-align:center;font-weight:800;color:var(--mu)">${total-online}</td>
-          </tr>
-        </tbody>
-      </table></div>
-    </div>`;
-  })()}
-  <!-- Departments -->
-  ${deptSections||`<div class="empty-state"><div class="icon">${_i('users')}</div>No agents found</div>`}`;
+  <!-- Agent grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px">${cards||`<div class="empty-state"><div class="icon">${_i('users')}</div>No agents found</div>`}</div>`;
+
+  _dashSwitchTab(_dashTab);
 }
 
 // ── Leave / Absent management ─────────────────────────────────
@@ -2047,7 +2052,43 @@ async function resetAgentPassword(agentId,name){
   if(newPass.length<6){showToast('Password must be at least 6 characters','err');return;}
   const{error}=await _db.from('agents').update({pw:await hashPw(newPass)}).eq('id',agentId);
   if(error){showToast('Error: '+error.message,'err');return;}
-  showToast(_i('check')+' Password updated for '+name,'ok');
+  // Email the new password to the agent
+  const{data:ag}=await _db.from('agents').select('email,dept,shift_start,shift_end').eq('id',agentId).maybeSingle();
+  if(ag?.email){
+    fetch('https://lasnonlixtvmarubbegf.supabase.co/functions/v1/send-welcome-email',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_ANON},
+      body:JSON.stringify({name,email:ag.email,pw:newPass,dept:ag.dept,shift_start:ag.shift_start,shift_end:ag.shift_end,reset:true})
+    }).catch(()=>{});
+    showToast(_i('check')+' Password updated & emailed to '+name,'ok');
+  } else {
+    showToast(_i('check')+' Password updated for '+name+' (no email on file)','ok');
+  }
+}
+
+// Admin force check-out — ends an agent's shift (closes break/meeting too)
+async function adminForceCheckout(agentId,name){
+  if(!confirm('Force check out '+name+'? This will end their shift now.'))return;
+  const today=new Date().toISOString().slice(0,10);
+  const now=new Date().toISOString();
+  const{data:cur}=await _db.from('shift_status').select('check_in,check_out,check_in_2,check_out_2,break_start,break_end,break_start_2,break_end_2,meeting_start').eq('agent_id',agentId).eq('date',today).maybeSingle();
+  if(!cur||(!cur.check_in&&!cur.check_in_2)){showToast(name+' is not checked in today','err');return;}
+  const payload={online:false};
+  if(cur.check_in&&!cur.check_out)payload.check_out=now;
+  if(cur.check_in_2&&!cur.check_out_2)payload.check_out_2=now;
+  if(cur.break_start&&!cur.break_end)payload.break_end=now;
+  if(cur.break_start_2&&!cur.break_end_2)payload.break_end_2=now;
+  if(cur.meeting_start){
+    const dept=(_dashCtx?.agents||[]).find(a=>a.id===agentId)?.dept||null;
+    const durMin=Math.max(0,Math.round((new Date(now)-new Date(cur.meeting_start))/60000));
+    await _db.from('meeting_logs').insert({agent_id:agentId,agent_name:name,dept,start_time:cur.meeting_start,end_time:now,duration_min:durMin,date:today}).then(()=>{},()=>{});
+    payload.meeting_start=null;
+  }
+  const{error}=await _db.from('shift_status').update(payload).eq('agent_id',agentId).eq('date',today);
+  if(error){showToast('Error: '+error.message,'err');return;}
+  _db.from('activity_logs').insert({agent_id:agentId,action:'check_out',detail:'Force Check Out by Admin',date:today,time:now}).then(()=>{},()=>{});
+  _cDel('shift_today');
+  showToast(_i('check')+' '+name+' checked out by admin','ok');
+  renderDashboard();
 }
 
 // ── AGENT DASHBOARD ──────────────────────────────────────────────
