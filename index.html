@@ -1113,6 +1113,37 @@ function navTo(page){
 }
 
 let _realtimeDebounce={};
+let _renderThrottle={};
+function _renderPage(page){
+  if(currentPage!==page)return;
+  if(page==='dashboard')renderDashboard();
+  else if(page==='tasks')renderTasks();
+  else if(page==='mytasks')renderMyTasks();
+  else if(page==='tracking')renderTracking();
+  else if(page==='activity')renderActivity();
+  else if(page==='myshift')renderMyShift();
+  else if(page==='agents')renderAgents();
+  else if(page==='mydashboard')renderMyDashboard();
+  else if(page==='myleave')renderMyLeave();
+  else if(page==='leaves')renderAdminLeaves();
+  else if(page==='announce')renderAnnouncements();
+  else if(page==='myannounce')renderMyAnnouncements();
+  else if(page==='chat')renderChat();
+  else if(page==='reports')renderReports();
+}
+// Throttle: render at most once per interval (heavy live pages slower to avoid flicker)
+function _schedulePageRender(page){
+  const interval=(page==='dashboard'||page==='tracking'||page==='reports')?12000:1500;
+  const st=_renderThrottle[page]||{last:0,timer:null};
+  const since=Date.now()-st.last;
+  if(since>=interval){
+    st.last=Date.now();
+    _renderPage(page);
+  } else if(!st.timer){
+    st.timer=setTimeout(()=>{st.timer=null;st.last=Date.now();_renderPage(page);},interval-since);
+  }
+  _renderThrottle[page]=st;
+}
 function startRealtime(page){
   if(realtimeChannel){_db.removeChannel(realtimeChannel);realtimeChannel=null;}
   const watchMap={
@@ -1153,24 +1184,9 @@ function startRealtime(page){
       if(table==='leave_requests'){_cDel('leaves_all','leaves_agent_'+(currentAgent?.id||''));}
       if(table==='messages'){_cDel('chat_msgs_'+(chatRecipient||''));}
       if(table==='activity_logs'){_cDel('logs_agent_'+(currentAgent?.id||''),'logs_all');}
-      // Debounce re-render (800ms)
-      clearTimeout(_realtimeDebounce[page]);
-      _realtimeDebounce[page]=setTimeout(()=>{ // 1200ms debounce
-        if(currentPage!==page)return;
-        if(page==='dashboard')renderDashboard();
-        else if(page==='tasks')renderTasks();
-        else if(page==='mytasks')renderMyTasks();
-        else if(page==='tracking')renderTracking();
-        else if(page==='activity')renderActivity();
-        else if(page==='myshift')renderMyShift();
-        else if(page==='agents')renderAgents();
-        else if(page==='mydashboard')renderMyDashboard();
-        else if(page==='myleave')renderMyLeave();
-        else if(page==='leaves')renderAdminLeaves();
-        else if(page==='announce')renderAnnouncements();
-        else if(page==='myannounce')renderMyAnnouncements();
-        else if(page==='chat')renderChat();
-      },1200);
+      // Throttle re-render. Heavy live pages (dashboard/tracking/reports) get many
+      // updates from 30+ agents — re-render at most once every 12s to stop flicker.
+      _schedulePageRender(page);
     });
   });
   realtimeChannel.subscribe();
