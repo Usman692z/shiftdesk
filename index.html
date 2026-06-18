@@ -1645,7 +1645,7 @@ function _dashUpdateSummary(){
     const s=(ctx.ts||[]).find(x=>x.agent_id===a.id)||{};
     const tr=(ctx.tracking||[]).find(x=>x.agent_id===a.id)||{};
     if(s.online)online++;
-    if(tr.activity_status==='active')active++;
+    if(s.online&&tr.activity_status==='active')active++;
   });
   const total=list.length,idle=Math.max(0,online-active),offline=total-online;
   const cell=(lbl,val,col)=>`<div style="text-align:center"><div style="font-size:20px;font-weight:800;color:${col}">${val}</div><div style="font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.5px">${lbl}</div></div>`;
@@ -1682,8 +1682,9 @@ async function _refreshDashboard(){
     const mb=document.getElementById('dcmb_'+a.id);if(mb)mb.innerHTML=p.mbHtml;
   });
   // Update stat cards + summary
-  const online=(_dashCtx.ts||[]).filter(s=>s.online).length;
-  const activeNow=(_dashCtx.tracking||[]).filter(x=>x.activity_status==='active').length;
+  const _onlineSet=new Set((_dashCtx.ts||[]).filter(s=>s.online).map(s=>s.agent_id));
+  const online=_onlineSet.size;
+  const activeNow=(_dashCtx.tracking||[]).filter(x=>x.activity_status==='active'&&_onlineSet.has(x.agent_id)).length;
   const total=agents.length;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('dashStatOnline',online);set('dashStatActive',activeNow);set('dashStatOffline',total-online);
@@ -1715,8 +1716,10 @@ async function renderDashboard(){
   _dashSig=(leaveRecs||[]).map(l=>l.agent_id+':'+l.leave_type).sort().join(',');
 
   const total=agents?.length||0;
-  const online=ts.filter(s=>s.online).length;
-  const activeNow=tracking.filter(x=>x.activity_status==='active').length;
+  const _onlineSet=new Set(ts.filter(s=>s.online).map(s=>s.agent_id));
+  const online=_onlineSet.size;
+  // Active must be online (checked in) — ignore stale 'active' rows for checked-out agents
+  const activeNow=tracking.filter(x=>x.activity_status==='active'&&_onlineSet.has(x.agent_id)).length;
 
   // Department tabs
   const deptSet=[...new Set((agents||[]).map(a=>a.dept||'Other'))].sort();
