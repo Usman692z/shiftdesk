@@ -210,6 +210,7 @@ tr:hover td{background:var(--b)}
     <div class="logo" style="display:flex;align-items:center;gap:10px"><img src="logo.svg" width="34" height="34" style="border-radius:8px;flex-shrink:0" alt=""/><div><h2 style="margin:0">ShiftDesk</h2><small>Workforce System</small></div></div>
     <nav class="nav" id="sideNav"></nav>
     <div class="sidebar-user">
+      <div id="sidebarStatus" style="margin-bottom:10px;display:none"></div>
       <div class="sidebar-user-name" id="sideUserName">—</div>
       <div class="sidebar-user-role" id="sideUserRole">—</div>
       <button class="sidebar-logout" onclick="logout()" id="logoutBtn">Logout</button>
@@ -888,6 +889,7 @@ function showApp(){
   startChatPolling();
   startBgPolling();
   navTo((isAdmin||isManager||isSubAdmin)?'dashboard':'myshift');
+  refreshSidebarStatus();
   // Check for desktop app update
   if(window.__SHIFTDESK_DESKTOP__)checkDesktopUpdate();
 }
@@ -1136,6 +1138,12 @@ function startRealtime(page){
   tables.forEach(table=>{
     realtimeChannel.on('postgres_changes',{event:'*',schema:'public',table},(payload)=>{
       if(currentPage!==page)return;
+      // On the agent's own pages, ignore other agents' shift changes so the page
+      // doesn't keep re-rendering/resetting whenever anyone else checks in/out.
+      if(table==='shift_status'&&(page==='myshift'||page==='mydashboard')){
+        const aid=payload.new?.agent_id||payload.old?.agent_id;
+        if(aid&&currentAgent&&aid!==currentAgent.id)return;
+      }
       // Invalidate relevant cache on realtime push
       if(table==='shift_status'){_cDel('shift_today','myshift_today_'+(currentAgent?.id||''));}
       if(table==='activity_tracking'){_cDel('tracking_today');}
@@ -3638,7 +3646,7 @@ async function renderMyShift(){
         <div style="color:var(--mu);font-size:12px">${currentAgent.email||''}</div>
       </div>
       <div style="margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <span class="badge ${isIn?'badge-online':'badge-offline'}" style="display:inline-flex;align-items:center;gap:4px">${isIn?_dot('var(--gr)')+' '+t('online'):_dot('#6b728e')+' '+t('offline')}</span>
+        ${_actionDropdownHTML(s,'myShiftActMenu','down','right')}
         ${isIn?'<span class="badge" id="trackingBadge" style="background:rgba(251,191,36,.15);color:var(--yl);border:1px solid rgba(251,191,36,.3);display:inline-flex;align-items:center;gap:4px">'+_dot('var(--yl)')+' '+t('idle')+'</span>':''}
       </div>
     </div>
@@ -3692,7 +3700,7 @@ async function renderMyShift(){
 
   <div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">${_i('file-text')} ${t('recent_activity')}</div><div id="myActivityLog">${t('loading')}</div></div>`;
 
-  startClock();loadMyActivity();startBreakCountdown();startMeetingTimer();
+  startClock();loadMyActivity();startBreakCountdown();startMeetingTimer();refreshSidebarStatus();
 }
 
 let meetingTimerInterval=null;
@@ -3834,6 +3842,69 @@ async function doMeetingEnd(){
   }catch(e){showToast('Error: '+e.message,'err');}
 }
 
+// ── Shift action dropdown (shown on My Shift + sidebar) ──
+// Derives current status + the valid next actions from a shift_status row.
+function _shiftStatusInfo(s){
+  const s1In=s?.check_in,s1Out=s?.check_out,s2In=s?.check_in_2,s2Out=s?.check_out_2;
+  const onBreak1=s?.break_start&&!s?.break_end&&!s1Out;
+  const onBreak2=s?.break_start_2&&!s?.break_end_2&&!s2Out;
+  const inMtg=s?.online&&s?.meeting_start;
+  const GR='var(--gr)',YL='var(--yl)',RD='var(--rd)',AC='var(--ac)',OFF='#6b728e';
+  if(inMtg)   return {label:t('in_meeting'),  color:AC, actions:[{act:'endmeeting',label:t('end_meeting'),color:AC}]};
+  if(onBreak1)return {label:t('on_break_badge'),color:YL,actions:[{act:'endbreak1',label:t('end_break'),color:YL}]};
+  if(onBreak2)return {label:t('on_break_badge'),color:YL,actions:[{act:'endbreak2',label:t('end_break'),color:YL}]};
+  if(s1In&&!s1Out)return {label:t('online'),color:GR,actions:[{act:'break1',label:t('break'),color:YL},{act:'meeting',label:t('start_meeting'),color:AC},{act:'checkout1',label:t('checkout'),color:RD}]};
+  if(s2In&&!s2Out)return {label:t('online'),color:GR,actions:[{act:'break2',label:t('break'),color:YL},{act:'meeting',label:t('start_meeting'),color:AC},{act:'checkout2',label:t('checkout'),color:RD}]};
+  if(s1In&&s1Out&&!s2In)return {label:t('offline'),color:OFF,actions:[{act:'checkin2',label:t('checkin'),color:GR}]};
+  return {label:t('offline'),color:OFF,actions:[{act:'checkin1',label:t('checkin'),color:GR}]};
+}
+// pos: 'down' (My Shift) or 'up' (sidebar). align: 'right' or 'left'.
+function _actionDropdownHTML(s,menuId,pos,align){
+  const info=_shiftStatusInfo(s);
+  const vert=pos==='up'?'bottom:calc(100% + 6px)':'top:calc(100% + 6px)';
+  const horiz=align==='left'?'left:0':'right:0';
+  return `<div style="position:relative">
+    <button onclick="toggleActionMenu('${menuId}')" style="display:inline-flex;align-items:center;gap:7px;background:${info.color}1a;border:1px solid ${info.color}55;color:${info.color};border-radius:20px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)"><span style="width:10px;height:10px;border-radius:50%;background:${info.color};display:inline-block"></span>${info.label} <span style="font-size:10px;opacity:.8">▾</span></button>
+    <div id="${menuId}" class="action-menu" style="display:none;position:absolute;${horiz};${vert};z-index:60;background:var(--s);border:1px solid var(--b2);border-radius:var(--r);box-shadow:0 12px 30px rgba(0,0,0,.45);min-width:180px;overflow:hidden">
+      ${info.actions.map(a=>`<button onclick="shiftAction('${a.act}')" style="display:flex;align-items:center;gap:9px;width:100%;text-align:start;padding:11px 13px;background:transparent;border:none;border-bottom:1px solid var(--b);color:var(--tx);font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font)" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='transparent'"><span style="width:10px;height:10px;border-radius:50%;background:${a.color};display:inline-block;flex-shrink:0"></span>${a.label}</button>`).join('')}
+    </div>
+  </div>`;
+}
+function closeActionMenus(){document.querySelectorAll('.action-menu').forEach(m=>{m.style.display='none';});}
+function toggleActionMenu(id){
+  const m=document.getElementById(id);if(!m)return;
+  const show=m.style.display!=='block';
+  closeActionMenus();
+  m.style.display=show?'block':'none';
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.action-menu')&&!e.target.closest('[onclick*="toggleActionMenu"]'))closeActionMenus();
+});
+function shiftAction(act){
+  closeActionMenus();
+  if(currentPage!=='myshift')navTo('myshift');
+  if(act==='checkin1')doCheckIn(1);
+  else if(act==='checkin2')doCheckIn(2);
+  else if(act==='checkout1')doCheckOut(1);
+  else if(act==='checkout2')doCheckOut(2);
+  else if(act==='break1')doBreakStart(1);
+  else if(act==='break2')doBreakStart(2);
+  else if(act==='endbreak1')doBreakEnd(1);
+  else if(act==='endbreak2')doBreakEnd(2);
+  else if(act==='meeting')doMeetingStart();
+  else if(act==='endmeeting')doMeetingEnd();
+}
+// Sidebar status pill (regular agents only) — fetches today's row and renders the dropdown
+async function refreshSidebarStatus(){
+  const box=document.getElementById('sidebarStatus');
+  if(!box)return;
+  if(isAdmin||isManager||isSubAdmin||!currentAgent){box.innerHTML='';box.style.display='none';return;}
+  box.style.display='';
+  const today=new Date().toISOString().slice(0,10);
+  let s=null;
+  try{const{data}=await _db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();s=data;}catch(e){}
+  box.innerHTML=_actionDropdownHTML(s,'sideActMenu','up','left');
+}
 
 async function loadMyActivity(){
   const logs=await _q('logs_agent_'+currentAgent.id,20000,()=>_db.from('activity_logs').select(C.logs).eq('agent_id',currentAgent.id).order('time',{ascending:false}).limit(20).then(r=>r.data));
