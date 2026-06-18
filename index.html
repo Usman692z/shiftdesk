@@ -480,7 +480,7 @@ async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await 
 const C={
   agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days',
   agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template,off_days',
-  shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2,meeting_start',
+  shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2,meeting_start,device',
   tracking:'agent_id,date,total_active_minutes,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
   announce:'id,title,message,expires_at,created_at,dept,is_urgent',
@@ -1594,7 +1594,7 @@ async function renderDashboard(){
         <!-- Name + role -->
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div>
-          <div style="font-size:11px;color:var(--mu)">${a.role||'Agent'}</div>
+          <div style="font-size:11px;color:var(--mu);display:flex;align-items:center;gap:6px;flex-wrap:wrap">${a.role||'Agent'} ${(isOnline&&s.device)?_deviceBadge(s.device):''}</div>
         </div>
         <!-- Status pill -->
         <div style="font-size:12px;font-weight:600;color:${statusColor};background:${isOnline?(actStatus==='active'?'rgba(16,185,129,.12)':'rgba(251,191,36,.12)'):'rgba(100,100,120,.15)'};border:1px solid ${isOnline?(actStatus==='active'?'rgba(16,185,129,.3)':'rgba(251,191,36,.3)'):'rgba(100,100,120,.3)'};padding:3px 9px;border-radius:20px;white-space:nowrap">${statusDot} ${statusLabel}</div>
@@ -3724,11 +3724,23 @@ function doCheckIn(shiftNum){
   _pendingCheckInShift=shiftNum||1;
   document.getElementById('locationModal').classList.add('open');
 }
+// Detect where the agent is using the app from: desktop app, mobile browser, or web (PC browser)
+function _deviceType(){
+  if(window.__SHIFTDESK_DESKTOP__)return 'desktop';
+  if(/Android|iPhone|iPad|iPod|Mobile|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent||''))return 'mobile';
+  return 'web';
+}
+function _deviceBadge(dev){
+  const map={desktop:{icon:'🖥️',label:'Desktop',color:'var(--ac)'},mobile:{icon:'📱',label:'Mobile',color:'#2dd4bf'},web:{icon:'💻',label:'Web',color:'#6b728e'}};
+  const d=map[dev];if(!d)return '';
+  return `<span style="font-size:10px;font-weight:700;color:${d.color};background:${d.color}1a;border:1px solid ${d.color}44;border-radius:20px;padding:1px 7px;display:inline-flex;align-items:center;gap:3px">${d.icon} ${d.label}</span>`;
+}
+
 async function confirmCheckIn(location){
   document.getElementById('locationModal').classList.remove('open');
   const shiftNum=_pendingCheckInShift;
   const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
-  let payload={agent_id:currentAgent.id,date:today,online:true};
+  let payload={agent_id:currentAgent.id,date:today,online:true,device:_deviceType()};
   if(shiftNum===1){payload.check_in=now;payload.work_location=location;}
   else{payload.check_in_2=now;payload.work_location_2=location;}
   const{error}=await _db.from('shift_status').upsert(payload,{onConflict:'agent_id,date'});
