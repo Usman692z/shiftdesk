@@ -1526,6 +1526,7 @@ let _dashTab='All';
 let _dashSig='';
 
 function _dashFmtDur(m){return Math.floor(m/60)+'h '+(m%60)+'m';}
+function _tzTag(tz){const c=tz==='Asia/Riyadh'?'KSA':(tz==='Asia/Karachi'?'PK':'');return c?` <span style="font-size:9px;font-weight:700;color:var(--mu);letter-spacing:.5px;background:var(--s3);border:1px solid var(--b2);border-radius:6px;padding:0 4px">${c}</span>`:'';}
 function _dashBreakUsed(s){
   const b1=s.break_end||(s.check_out&&s.break_start?s.check_out:null);
   const b2=s.break_end_2||(s.check_out_2&&s.break_start_2?s.check_out_2:null);
@@ -1559,7 +1560,7 @@ function _dashParts(a){
   const brkUsed=_dashBreakUsed(s);
   const locBadge=s.work_location?` <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${s.work_location==='WFH'?'rgba(108,99,255,.15)':'rgba(16,185,129,.12)'};color:${s.work_location==='WFH'?'var(--ac)':'var(--gr)'};display:inline-flex;align-items:center;gap:3px">${s.work_location==='WFH'?_i('home',10)+' WFH':_i('building',10)+' Office'}</span>`:'';
   const ciLine=s.check_in
-    ? _i('clock',11)+' '+fmtTime(s.check_in)+' → '+(s.check_out?fmtTime(s.check_out):'now')+lateBadge(s.check_in,a.shift_start,a.timezone)+locBadge+(shiftMins>0?' <span style="color:var(--tx);font-weight:600">'+_dashFmtDur(shiftMins)+'</span>':'')
+    ? _i('clock',11)+' '+fmtTime(s.check_in,a.timezone)+_tzTag(a.timezone)+' → '+(s.check_out?fmtTime(s.check_out,a.timezone):'now')+lateBadge(s.check_in,a.shift_start,a.timezone)+locBadge+(shiftMins>0?' <span style="color:var(--tx);font-weight:600">'+_dashFmtDur(shiftMins)+'</span>':'')
     : _i('clock',11)+' Not checked in';
   const barHtml=`${activeP>0?`<div style="width:${activeP}%;background:var(--gr)"></div>`:''}${idleP>0?`<div style="width:${idleP}%;background:var(--yl)"></div>`:''}${offP>0?`<div style="width:${offP}%;background:var(--s3)"></div>`:''}`;
   const amHtml=`<span><span style="color:var(--gr);font-weight:600">${activeMins}m</span> active (${activeP}%)</span><span><span style="color:var(--yl);font-weight:600">${idleMins}m</span> idle</span>`;
@@ -4002,7 +4003,7 @@ async function renderActivity(){
   }
 
   // ── Admin / Manager / Sub-admin view: with filters ──
-  let agents=await _getAgents('id,name,dept');
+  let agents=await _getAgents('id,name,dept,timezone');
   if(isManager&&managerDept)agents=(agents||[]).filter(a=>a.dept===managerDept);
   else if(isSubAdmin&&subAdminDepts.length)agents=(agents||[]).filter(a=>subAdminDepts.includes(a.dept));
   window._actAgentMap={};(agents||[]).forEach(a=>{window._actAgentMap[a.id]=a;});
@@ -4071,7 +4072,7 @@ async function loadActivityLogs(){
     if(dept&&map[l.agent_id].dept!==dept)return false;
     return true;
   });
-  box.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">'+_i('file-text')+' '+t('activity_log')+' ('+logs.length+' '+t('entries')+')</div>'+(!logs.length?'<div class="empty-state"><div class="icon">'+_i('mail')+'</div>'+t('no_logs_match')+'</div>':logs.map(l=>{const ag=map[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(ag?'<b>'+ag.name+'</b> — ':'')+_actLabel(l.action)+'</div><div class="activity-desc">'+(ag?(ag.dept||'')+' • ':'')+fmtDate(l.time)+'</div></div><div class="activity-time">'+fmtTime(l.time)+'</div></div>';}).join(''))+'</div>';
+  box.innerHTML='<div class="card"><div class="card-title" style="display:flex;align-items:center;gap:6px">'+_i('file-text')+' '+t('activity_log')+' ('+logs.length+' '+t('entries')+')</div>'+(!logs.length?'<div class="empty-state"><div class="icon">'+_i('mail')+'</div>'+t('no_logs_match')+'</div>':logs.map(l=>{const ag=map[l.agent_id];return'<div class="activity-item"><div class="activity-dot '+(l.action==='check_in'?'dot-in':'dot-out')+'"></div><div class="activity-info"><div class="activity-name">'+(ag?'<b>'+ag.name+'</b> — ':'')+_actLabel(l.action)+'</div><div class="activity-desc">'+(ag?(ag.dept||'')+' • ':'')+fmtDate(l.time,ag?.timezone)+'</div></div><div class="activity-time">'+fmtTime(l.time,ag?.timezone)+'</div></div>';}).join(''))+'</div>';
 }
 
 // ── ACTIVITY TRACKING ────────────────────────────────────────
@@ -4156,7 +4157,7 @@ async function renderTracking(){
           const sh=shifts?.find(x=>x.agent_id===a.id);
           const activeMins=Math.max(t?.live_active_min||0,t?.total_active_minutes||0);
           const status=t?.activity_status||'offline';
-          const lastSeen=t?.last_seen?new Date(t.last_seen).toLocaleTimeString('en-US',{hour12:true,hour:'2-digit',minute:'2-digit'}):'—';
+          const lastSeen=t?.last_seen?_getFmts(a.timezone||'Asia/Karachi').t.format(new Date(t.last_seen)):'—';
           const statusColor=status==='active'?'badge-online':status==='idle'?'':'badge-offline';
           const statusLabel=status==='active'?_dot('var(--gr)')+' Active':status==='idle'?_dot('var(--yl)')+' Idle':_dot('#6b728e')+' Offline';
           // Late check-in status
@@ -4624,8 +4625,8 @@ async function doBulkImport(){
 
 const _fmtCache={};
 function _getFmts(tz){if(!_fmtCache[tz])_fmtCache[tz]={t:new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12:true,hour:'2-digit',minute:'2-digit'}),d:new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'})};return _fmtCache[tz];}
-function fmtTime(ts){if(!ts)return '—';try{const tz=currentAgent?.timezone||'Asia/Karachi';return _getFmts(tz).t.format(new Date(ts));}catch{return ts.slice(11,16);}}
-function fmtDate(ts){if(!ts)return '—';try{return _getFmts(currentAgent?.timezone||'Asia/Karachi').d.format(new Date(ts));}catch{return ts.slice(0,10);}}
+function fmtTime(ts,tz){if(!ts)return '—';try{const z=tz||currentAgent?.timezone||'Asia/Karachi';return _getFmts(z).t.format(new Date(ts));}catch{return ts.slice(11,16);}}
+function fmtDate(ts,tz){if(!ts)return '—';try{return _getFmts(tz||currentAgent?.timezone||'Asia/Karachi').d.format(new Date(ts));}catch{return ts.slice(0,10);}}
 function calcHours(i,o){if(!i||!o)return '—';const d=(new Date(o)-new Date(i))/3600000;return d.toFixed(1)+'h';}
 function showToast(msg,type='ok'){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast toast-'+(type==='ok'?'ok':type==='err'?'err':'info');t.innerHTML=(type==='ok'?_i('check'):type==='err'?_i('x'):_i('info'))+' '+msg;c.appendChild(t);setTimeout(()=>t.remove(),4000);}
 
@@ -4928,8 +4929,8 @@ async function loadReportData(){
       <td><b>${r.agent.name}</b></td>
       <td><span style="font-size:11px;color:var(--mu)">${r.agent.dept||'—'}</span></td>
       <td style="font-family:monospace;font-size:12px">${r.shift.date||'—'}</td>
-      <td style="font-family:monospace;font-size:12px;color:var(--gr)">${r.shift.check_in?fmtTime(r.shift.check_in):'—'}</td>
-      <td style="font-family:monospace;font-size:12px;color:var(--rd)">${r.shift.check_out?fmtTime(r.shift.check_out):'—'}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--gr)">${r.shift.check_in?fmtTime(r.shift.check_in,r.agent.timezone):'—'}</td>
+      <td style="font-family:monospace;font-size:12px;color:var(--rd)">${r.shift.check_out?fmtTime(r.shift.check_out,r.agent.timezone):'—'}</td>
       <td style="font-weight:600">${hours!=='—'?hours+'h':'—'}</td>
       <td><span style="color:var(--gr);font-weight:600">${Math.max(r.tr.live_active_min||0,r.tr.total_active_minutes||0)}m</span></td>
       <td>${liHtml}</td>
