@@ -1523,6 +1523,7 @@ async function fireOverBreakAlert(usedMin){
 
 let _dashCtx=null;       // {agents, ts, tracking, leaveRecs, mtgMap, today}
 let _dashTab='All';
+let _dashStatus='all';
 let _dashSig='';
 
 function _dashFmtDur(m){return Math.floor(m/60)+'h '+(m%60)+'m';}
@@ -1567,7 +1568,8 @@ function _dashParts(a){
   const mbHtml=isOnline?`<span style="color:var(--ac);display:inline-flex;align-items:center;gap:3px">${_i('users',11)} ${mtgMin}m mtg</span><span style="color:${brkUsed>60?'var(--rd)':'var(--mu)'};display:inline-flex;align-items:center;gap:3px">${_i('coffee',11)} ${brkUsed}/${BREAK_ALLOWANCE_MIN}m break</span>`:'';
   const devHtml=(isOnline&&s.device)?_deviceBadge(s.device):'';
   const statusPill=`<span style="width:8px;height:8px;border-radius:50%;background:${statusColor};display:inline-block"></span> ${statusLabel}`;
-  return {s,lr,isOnline,statusColor,statusBg,statusBd,statusPill,devHtml,ciLine,barHtml,amHtml,mbHtml};
+  const statusKey=lr?'leave':(!isOnline?'offline':((actStatus==='active'||inMtg)?'active':'idle'));
+  return {s,lr,isOnline,statusKey,statusColor,statusBg,statusBd,statusPill,devHtml,ciLine,barHtml,amHtml,mbHtml};
 }
 
 function _dashBuildCard(a){
@@ -1583,7 +1585,7 @@ function _dashBuildCard(a){
     const lBg=isLeave?'rgba(56,189,248,.08)':isHoliday?'rgba(108,99,255,.08)':'rgba(244,63,94,.08)';
     const lBorder=isLeave?'rgba(56,189,248,.3)':isHoliday?'rgba(108,99,255,.3)':'rgba(244,63,94,.3)';
     const lIcon=isLeave?'☀️':isHoliday?'🎉':'⚠️';const lLabel=isLeave?'On Leave':isHoliday?'Holiday':'Absent';
-    return `<div class="dash-card" data-dept="${dept}" data-aid="${a.id}" style="background:${lBg};border:1px solid ${lBorder};border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px">
+    return `<div class="dash-card" data-dept="${dept}" data-aid="${a.id}" data-status="${p.statusKey}" style="background:${lBg};border:1px solid ${lBorder};border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:10px">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:38px;height:38px;border-radius:50%;background:${lBg};border:2px solid ${lBorder};display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${lIcon}</div>
         <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name} ${countryFlag}</div><div style="font-size:11px;color:var(--mu)">${a.role||'Agent'}</div></div>
@@ -1596,7 +1598,7 @@ function _dashBuildCard(a){
       </div>
     </div>`;
   }
-  return `<div class="dash-card" data-dept="${dept}" data-aid="${a.id}" style="background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:9px">
+  return `<div class="dash-card" data-dept="${dept}" data-aid="${a.id}" data-status="${p.statusKey}" style="background:var(--s2);border:1px solid var(--b);border-radius:var(--rl);padding:14px;display:flex;flex-direction:column;gap:9px">
     <div style="display:flex;align-items:center;gap:10px">
       <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;font-weight:700;color:#fff">${a.name.charAt(0).toUpperCase()}</div>
       <div style="flex:1;min-width:0">
@@ -1619,6 +1621,14 @@ function _dashBuildCard(a){
   </div>`;
 }
 
+// Apply both the department tab and the status filter (client-side; no blink)
+function _dashApplyFilters(){
+  document.querySelectorAll('.dash-card').forEach(c=>{
+    const deptOk=(_dashTab==='All'||c.dataset.dept===_dashTab);
+    const statOk=(_dashStatus==='all'||c.dataset.status===_dashStatus);
+    c.style.display=(deptOk&&statOk)?'':'none';
+  });
+}
 // Switch the active department tab (client-side; no re-fetch, no blink)
 function _dashSwitchTab(dept){
   _dashTab=dept;
@@ -1628,10 +1638,19 @@ function _dashSwitchTab(dept){
     el.style.color=on?'#fff':'var(--mu)';
     el.style.borderColor=on?'var(--ac)':'var(--b2)';
   });
-  document.querySelectorAll('.dash-card').forEach(c=>{
-    c.style.display=(dept==='All'||c.dataset.dept===dept)?'':'none';
-  });
+  _dashApplyFilters();
   _dashUpdateSummary();
+}
+// Switch the status filter (All / Active / Idle / Offline)
+function _dashSwitchStatus(stat){
+  _dashStatus=stat;
+  document.querySelectorAll('.dash-statf').forEach(el=>{
+    const on=el.dataset.stat===stat;
+    el.style.background=on?'var(--ac)':'var(--s2)';
+    el.style.color=on?'#fff':'var(--mu)';
+    el.style.borderColor=on?'var(--ac)':'var(--b2)';
+  });
+  _dashApplyFilters();
 }
 
 // Per-tab summary (online/active/idle/offline) for the selected tab
@@ -1680,7 +1699,9 @@ async function _refreshDashboard(){
     const bar=document.getElementById('dcbar_'+a.id);if(bar)bar.innerHTML=p.barHtml;
     const am=document.getElementById('dcam_'+a.id);if(am)am.innerHTML=p.amHtml;
     const mb=document.getElementById('dcmb_'+a.id);if(mb)mb.innerHTML=p.mbHtml;
+    const card=document.querySelector('.dash-card[data-aid="'+a.id+'"]');if(card)card.dataset.status=p.statusKey;
   });
+  _dashApplyFilters();
   // Update stat cards + summary
   const _onlineSet=new Set((_dashCtx.ts||[]).filter(s=>s.online).map(s=>s.agent_id));
   const online=_onlineSet.size;
@@ -1727,6 +1748,10 @@ async function renderDashboard(){
   const tabBtn=(d,label)=>{const on=_dashTab===d;return `<button class="dash-tab" data-dept="${d}" onclick="_dashSwitchTab('${d.replace(/'/g,"\\'")}')" style="padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap;background:${on?'var(--ac)':'var(--s2)'};color:${on?'#fff':'var(--mu)'};border:1px solid ${on?'var(--ac)':'var(--b2)'}">${label}</button>`;};
   const tabsHtml=tabBtn('All','All ('+total+')')+deptSet.map(d=>tabBtn(d,d)).join('');
 
+  // Status filter chips
+  const statBtn=(s,label,col)=>{const on=_dashStatus===s;return `<button class="dash-statf" data-stat="${s}" onclick="_dashSwitchStatus('${s}')" style="padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);white-space:nowrap;display:inline-flex;align-items:center;gap:5px;background:${on?'var(--ac)':'var(--s2)'};color:${on?'#fff':'var(--mu)'};border:1px solid ${on?'var(--ac)':'var(--b2)'}">${col?`<span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block"></span>`:''}${label}</button>`;};
+  const statHtml=statBtn('all','All','')+statBtn('active','Active','var(--gr)')+statBtn('idle','Idle','var(--yl)')+statBtn('offline','Offline','#6b728e');
+
   // Agent cards (all in one grid; tabs show/hide via data-dept)
   const cards=(agents||[]).map(a=>_dashBuildCard(a)).join('');
 
@@ -1738,7 +1763,9 @@ async function renderDashboard(){
     <div class="stat-card"><div class="stat-num" style="color:var(--mu)" id="dashStatOffline">${total-online}</div><div class="stat-label">Offline</div></div>
   </div>
   <!-- Department tabs -->
-  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:14px">${tabsHtml}</div>
+  <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px">${tabsHtml}</div>
+  <!-- Status filter -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${statHtml}</div>
   <!-- Selected-tab summary -->
   <div id="dashTabSummary" class="card" style="margin-bottom:16px;display:flex;justify-content:space-around;align-items:center;padding:14px"></div>
   <!-- Legend -->
