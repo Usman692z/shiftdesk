@@ -588,6 +588,7 @@ const _T={
     reviewed_by:'Reviewed by',day_word:'day',days_word:'days',morning:'Morning',evening:'Evening',expires:'Expires',
     action_word:'Action',all_word:'All',today_word:'Today',yesterday_word:'Yesterday',date_word:'Date',no_logs_match:'No activity matches these filters.',
     start_meeting:'Start Meeting',end_meeting:'End Meeting',in_meeting:'In Meeting',meeting_time:'Meeting time',total_meeting_time:'Total meeting time',meeting_started_log:'Meeting Started',meeting_ended_log:'Meeting Ended',meetings_word:'Meetings',meeting_started_toast:'Meeting started',meeting_ended_toast:'Meeting ended',
+    nudge_title:'Use the Desktop App',nudge_msg:'For accurate activity tracking, please use the ShiftDesk desktop app on your computer.',download_desktop:'Download Desktop App',
     pending:'Pending',approved:'Approved',rejected:'Rejected',
     no_data:'No data found.',loading:'Loading...',
     approve:'Approve',reject:'Reject',
@@ -648,6 +649,7 @@ const _T={
     reviewed_by:'تمت المراجعة بواسطة',day_word:'يوم',days_word:'يوم',morning:'صباحي',evening:'مسائي',expires:'ينتهي',
     action_word:'الإجراء',all_word:'الكل',today_word:'اليوم',yesterday_word:'أمس',date_word:'التاريخ',no_logs_match:'لا يوجد نشاط يطابق هذه الفلاتر.',
     start_meeting:'بدء الاجتماع',end_meeting:'إنهاء الاجتماع',in_meeting:'في اجتماع',meeting_time:'وقت الاجتماع',total_meeting_time:'إجمالي وقت الاجتماعات',meeting_started_log:'بدأ الاجتماع',meeting_ended_log:'انتهى الاجتماع',meetings_word:'الاجتماعات',meeting_started_toast:'بدأ الاجتماع',meeting_ended_toast:'انتهى الاجتماع',
+    nudge_title:'استخدم تطبيق سطح المكتب',nudge_msg:'لتتبع النشاط بدقة، يرجى استخدام تطبيق ShiftDesk لسطح المكتب على جهازك.',download_desktop:'تنزيل تطبيق سطح المكتب',
     pending:'قيد الانتظار',approved:'موافق عليه',rejected:'مرفوض',
     no_data:'لا توجد بيانات.',loading:'جارٍ التحميل...',
     approve:'موافقة',reject:'رفض',
@@ -2814,7 +2816,7 @@ async function renderEmailReports(){
         <input type="time" id="erSendTime" value="${sendTime}" onchange="window._erSave()" style="width:100%;padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s2);color:var(--tx);font-size:13px;font-family:var(--font)">
       </div>
       <div><label style="font-size:12px;color:var(--mu);display:block;margin-bottom:5px">Sender email</label>
-        <div style="padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s3);color:var(--mu);font-size:13px">${_i('mail',13)} csu.east@tracking.me</div>
+        <div style="padding:8px 10px;border-radius:var(--r);border:1px solid var(--b2);background:var(--s3);color:var(--mu);font-size:13px">${_i('mail',13)} analytics@tracking.me</div>
       </div>
     </div>
     <label style="font-size:12px;color:var(--mu);display:block;margin-bottom:8px">Include in email</label>
@@ -3725,6 +3727,7 @@ async function renderMyShift(){
 
   c.innerHTML=`
   ${announceBanner}
+  ${_deviceNudge()}
   <div class="card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;gap:16px">
       <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
@@ -3812,6 +3815,22 @@ function doCheckIn(shiftNum){
   _pendingCheckInShift=shiftNum||1;
   document.getElementById('locationModal').classList.add('open');
 }
+// Nudge web/mobile agents to use the desktop app (system-wide tracking)
+let _nudgeDismissed=false;
+function dismissNudge(){_nudgeDismissed=true;const b=document.getElementById('deviceNudge');if(b)b.remove();}
+function _deviceNudge(){
+  if(window.__SHIFTDESK_DESKTOP__||isAdmin||isManager||isSubAdmin||_nudgeDismissed)return '';
+  return `<div id="deviceNudge" style="background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.3);border-left:3px solid var(--ac);border-radius:var(--r);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <span style="font-size:22px">🖥️</span>
+    <div style="flex:1;min-width:180px">
+      <div style="font-weight:700;font-size:13px;color:var(--ac)">${t('nudge_title')}</div>
+      <div style="font-size:12px;color:var(--mu);margin-top:2px">${t('nudge_msg')}</div>
+    </div>
+    <a href="https://github.com/Usman692z/shiftdesk/releases/download/v1.0.15/ShiftDesk.Setup.1.0.15.exe" style="background:var(--ac);color:#fff;padding:8px 14px;border-radius:var(--r);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:5px">${_i('download',13)} ${t('download_desktop')}</a>
+    <button onclick="dismissNudge()" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px" title="Dismiss">×</button>
+  </div>`;
+}
+
 // Detect where the agent is using the app from: desktop app, mobile browser, or web (PC browser)
 function _deviceType(){
   if(window.__SHIFTDESK_DESKTOP__)return 'desktop';
