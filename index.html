@@ -1079,7 +1079,9 @@ function buildNav(){
   ];
   const items=isAdmin
     ?[{id:'dashboard',label:t('dashboard')},{id:'agents',label:t('agents')},{id:'tasks',label:t('tasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'tracking',label:t('tracking')},{id:'activity',label:t('activity')},{id:'reports',label:t('reports')},{id:'dailyreport',label:t('dailyreport')},{id:'emailreports',label:t('emailreports')},{id:'help',label:t('help')}]
-    :(isManager||isSubAdmin)
+    :isManager
+    ?[{id:'myshift',label:t('myshift')},{id:'dashboard',label:t('dashboard')},{id:'tasks',label:t('tasks')},{id:'mytasks',label:t('mytasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'mydashboard',label:t('mydashboard')},{id:'dailyreport',label:t('dailyreport')},{id:'myleave',label:t('myleave')},{id:'activity',label:t('activity')},{id:'help',label:t('help')}]
+    :isSubAdmin
     ?[{id:'dashboard',label:t('dashboard')},{id:'agents',label:t('agents')},{id:'tasks',label:t('tasks')},{id:'leaves',label:t('leaves')},{id:'announce',label:t('announce')},{id:'dailyreport',label:t('dailyreport')},{id:'help',label:t('help')}]
     :[...allAgentPages.map(p=>({...p,label:t(p.id)||p.label})),{id:'help',label:t('help')}];
   document.getElementById('sideNav').innerHTML=items.map(i=>`<div class="nav-item" id="nav_${i.id}" onclick="navTo('${i.id}')"><span class="nav-icon">${_SVG[i.id]||''}</span><span class="nav-label">${i.label}</span>${i.id==='chat'?'<span class="chat-unread" id="chatUnreadBadge"></span>':(i.id==='announce'||i.id==='myannounce')?'<span class="chat-unread" id="announceUnreadBadge"></span>':''}</div>`).join('');
@@ -1110,7 +1112,7 @@ function navTo(page){
   else if(page==='myannounce'){clearAnnounceUnread();renderMyAnnouncements();}
   else if(page==='chat'){clearChatUnread();renderChat();}
   else if(page==='help')renderHelp();
-  else if(page==='dailyreport'){if(isAdmin||isManager||isSubAdmin)renderAdminDailyReports();else renderAgentDailyReport();}
+  else if(page==='dailyreport'){if(isAdmin||isSubAdmin)renderAdminDailyReports();else renderAgentDailyReport();}
   else if(page==='emailreports')renderEmailReports();
 }
 
@@ -3246,9 +3248,15 @@ async function openAnnounceModal(){
   // populate dept checkboxes
   const box=document.getElementById('aDeptChecks');
   box.innerHTML='<span style="color:var(--mu);font-size:13px">Loading...</span>';
-  const agents=await _getAgents('dept');
-  const depts=[...new Set((agents||[]).map(a=>a.dept).filter(Boolean))].sort();
-  box.innerHTML=depts.map(d=>`<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 10px;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);font-size:13px"><input type="checkbox" class="aDeptCk" value="${d}" style="accent-color:var(--ac);width:14px;height:14px"> ${d}</label>`).join('');
+  let depts;
+  if(isManager&&managerDept){
+    // Manager can only announce to their own department
+    depts=[managerDept];
+  } else {
+    const agents=await _getAgents('dept');
+    depts=[...new Set((agents||[]).map(a=>a.dept).filter(Boolean))].sort();
+  }
+  box.innerHTML=depts.map(d=>`<label style="display:flex;align-items:center;gap:6px;cursor:${isManager?'default':'pointer'};padding:5px 10px;background:var(--s3);border:1px solid var(--b2);border-radius:var(--r);font-size:13px"><input type="checkbox" class="aDeptCk" value="${d}" ${isManager?'checked disabled':''} style="accent-color:var(--ac);width:14px;height:14px"> ${d}</label>`).join('');
   const urg=document.getElementById('aUrgent');if(urg)urg.checked=false;
   document.getElementById('announceModal').classList.add('open');
 }
@@ -3262,9 +3270,11 @@ async function saveAnnouncement(){
   if(!message){errEl.textContent='Message required';errEl.classList.add('show');return;}
   const btn=document.getElementById('saveAnnounceBtn');btn.disabled=true;btn.textContent='Posting...';
   const checkedDepts=[...document.querySelectorAll('.aDeptCk:checked')].map(c=>c.value);
-  const dept=checkedDepts.length?checkedDepts.join(','):null;
+  // Managers can only announce to their own department
+  const dept=(isManager&&managerDept)?managerDept:(checkedDepts.length?checkedDepts.join(','):null);
   const is_urgent=document.getElementById('aUrgent')?.checked||false;
-  const{error}=await _db.from('announcements').insert({title,message,expires_at,created_by:'Admin',dept,is_urgent});
+  const createdBy=isAdmin?'Admin':(currentAgent?.name||'Manager');
+  const{error}=await _db.from('announcements').insert({title,message,expires_at,created_by:createdBy,dept,is_urgent});
   btn.disabled=false;btn.textContent='Post Announcement';
   if(error){errEl.textContent=error.message;errEl.classList.add('show');return;}
   _cDel('announcements');
@@ -3406,7 +3416,8 @@ async function renderAdminLeaves(){
 
 async function reviewLeave(id,status){
   const{data:lv,error:le}=await _db.from('leave_requests').select('agent_id').eq('id',id).maybeSingle();
-  const{error}=await _db.from('leave_requests').update({status,reviewed_by:'Admin',reviewed_at:new Date().toISOString()}).eq('id',id);
+  const reviewer=isAdmin?'Admin':(currentAgent?.name||'Manager');
+  const{error}=await _db.from('leave_requests').update({status,reviewed_by:reviewer,reviewed_at:new Date().toISOString()}).eq('id',id);
   if(error){showToast('Error: '+error.message,'err');return;}
   _cDel('leaves_all');
   if(lv?.agent_id)_cDel('leaves_agent_approved_'+lv.agent_id,'leaves_agent_'+lv.agent_id);
@@ -4309,7 +4320,10 @@ async function openTaskModal(mode){
   } else {
     if(agentRow)agentRow.style.display='';
     const agents=await _getAgents('id,name,dept');
-    const list=agents||[];
+    let list=agents||[];
+    // Managers/sub-admins can only assign within their own department(s)
+    if(isManager&&managerDept)list=list.filter(a=>a.dept===managerDept);
+    else if(isSubAdmin&&subAdminDepts.length)list=list.filter(a=>subAdminDepts.includes(a.dept));
     sel.innerHTML='<option value="">Select Agent</option>'+list.map(a=>`<option value="${a.id}" data-name="${a.name}" data-dept="${a.dept||''}">${a.name} (${a.dept||'—'})</option>`).join('');
   }
 
