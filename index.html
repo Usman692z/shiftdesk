@@ -247,6 +247,16 @@ tr:hover td{background:var(--b)}
         <label style="flex:1;min-width:44px;text-align:center;cursor:pointer;text-transform:none;letter-spacing:0;font-size:12px;font-weight:600;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:8px 4px;color:var(--tx)"><input type="checkbox" class="offDayCk" value="6" style="display:block;margin:0 auto 4px;accent-color:var(--ac)">Sat</label>
       </div>
     </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:var(--tx)">
+        <input type="checkbox" id="mAutoCheckout" onchange="document.getElementById('mAutoCheckoutTimeRow').style.display=this.checked?'':'none'" style="width:16px;height:16px;accent-color:var(--ac)">
+        <span>⏱️ Auto Check-Out <span style="font-size:11px;color:var(--mu);font-weight:400">(check out automatically if the agent forgets)</span></span>
+      </label>
+      <div id="mAutoCheckoutTimeRow" style="display:none;margin-top:8px">
+        <label style="font-size:11px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Auto check-out at (agent's local time)</label>
+        <input type="time" id="mAutoCheckoutTime" value="18:30" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--r);padding:9px 12px;color:var(--tx);font-size:13px;font-family:var(--font);outline:none">
+      </div>
+    </div>
     <div class="form-group"><label>Report Template</label><select id="mReportTemplate"><option value="data_team">Daily Report — Data Team</option><option value="customer_support">Daily Report — Customer Support Team</option><option value="retail_manager">Daily Report — Retail Manager</option></select></div>
     <div class="form-group"><label>Access Level</label><select id="mType" onchange="onTypeChange(this.value)"><option value="regular">User (Agent)</option><option value="manager">Manager (Single Dept)</option><option value="subadmin">Sub Admin (Multi Dept)</option><option value="admin">Admin (Full Access)</option></select></div>
     <!-- Sub Admin dept checkboxes -->
@@ -478,8 +488,8 @@ async function _q(k,ttl,fn){const c=_cGet(k);if(c!==null)return c;const r=await 
 
 // ── Column selects (no select('*') — fetch only what we need) ────────────
 const C={
-  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days',
-  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template,off_days',
+  agents:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days,auto_checkout,auto_checkout_time',
+  agents_full:'id,name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,pw,report_template,off_days,auto_checkout,auto_checkout_time',
   shift:'agent_id,date,online,check_in,check_out,break_start,break_end,work_location,check_in_2,check_out_2,break_start_2,break_end_2,work_location_2,meeting_start,device',
   tracking:'agent_id,date,total_active_minutes,live_active_min,activity_status,last_seen',
   tasks:'id,agent_id,task,status,priority,date,done,remark,assigned_by_id,assigned_by_name',
@@ -1941,6 +1951,9 @@ async function openAddAgent(){
   await onTypeChange('regular');
   setPermCheckboxes('myshift,mytasks,activity,assign_task');
   setOffDays('5');
+  const _ac=document.getElementById('mAutoCheckout');if(_ac)_ac.checked=false;
+  const _act=document.getElementById('mAutoCheckoutTime');if(_act)_act.value='18:30';
+  const _acr=document.getElementById('mAutoCheckoutTimeRow');if(_acr)_acr.style.display='none';
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--rd);font-weight:400">*required</span>';
   document.getElementById('modalTitle').innerHTML=_i('plus')+' Add New Agent';
   document.getElementById('agentModalErr').classList.remove('show');
@@ -1966,6 +1979,9 @@ async function openEditAgent(id){
   if(a.type==='subadmin')setSubAdminDepts(a.permissions||'');
   else setPermCheckboxes(a.permissions||'myshift,mytasks,activity');
   setOffDays(a.off_days||'5');
+  const _ac=document.getElementById('mAutoCheckout');if(_ac)_ac.checked=!!a.auto_checkout;
+  const _act=document.getElementById('mAutoCheckoutTime');if(_act)_act.value=a.auto_checkout_time||'18:30';
+  const _acr=document.getElementById('mAutoCheckoutTimeRow');if(_acr)_acr.style.display=a.auto_checkout?'':'none';
   document.querySelector('#mPassGroup label').innerHTML='Password <span style="color:var(--mu);font-weight:400">(leave blank to keep current)</span>';
   document.getElementById('modalTitle').innerHTML=_i('edit')+' Edit Agent';
   document.getElementById('agentModalErr').classList.remove('show');
@@ -2008,12 +2024,14 @@ async function saveAgent(){
   if(!editingAgentId&&!pw){errEl.textContent='Password is required for new agents';errEl.classList.add('show');return;}
   // Weekly off days (comma-separated day numbers; default Friday if none picked)
   const off_days=Array.from(document.querySelectorAll('.offDayCk:checked')).map(c=>c.value).join(',')||'5';
+  const auto_checkout=document.getElementById('mAutoCheckout')?.checked||false;
+  const auto_checkout_time=auto_checkout?(document.getElementById('mAutoCheckoutTime')?.value||'18:30'):null;
   const btn=document.getElementById('saveAgentBtn');btn.disabled=true;btn.textContent='Saving...';
   try{
     if(!editingAgentId){
       // Add new agent directly to agents table — no Supabase Auth needed
       const report_template=document.getElementById('mReportTemplate').value||'data_team';
-      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days,pw:await hashPw(pw)};
+      const agentData={id:crypto.randomUUID(),name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days,auto_checkout,auto_checkout_time,pw:await hashPw(pw)};
       const{error:de}=await _db.from('agents').insert(agentData);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
       _cDel('agents_list_'+C.agents,'agents_list_'+C.agents_full,'agents_list_id,name,dept','agents_list_id,name,dept,type','agents_list_id,name,dept,country,shift_start,timezone','agents_list_id,name,dept,shift_start,timezone');
@@ -2025,7 +2043,7 @@ async function saveAgent(){
       showToast(_i('check')+' Agent added: '+name,'ok');
     }else{
       const report_template=document.getElementById('mReportTemplate').value||'data_team';
-      const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days};
+      const updateData={name,email,dept,role,country,timezone,shift_start,shift_end,type,permissions,report_template,off_days,auto_checkout,auto_checkout_time};
       if(pw)updateData.pw=await hashPw(pw);
       const{error:de}=await _db.from('agents').update(updateData).eq('id',editingAgentId);
       if(de){errEl.textContent='Error: '+de.message;errEl.classList.add('show');btn.disabled=false;btn.textContent='Save Agent';return;}
