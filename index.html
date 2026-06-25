@@ -1557,7 +1557,8 @@ function _dashParts(a){
   const tr=(ctx.tracking||[]).find(x=>x.agent_id===a.id)||{};
   const lr=(ctx.leaveRecs||[]).find(x=>x.agent_id===a.id)||null;
   const isOnline=s.online||false;
-  const activeMins=Math.max(tr.live_active_min||0,tr.total_active_minutes||0);
+  const hasCheckedInToday=!!(s.check_in||s.check_in_2);
+  const activeMins=hasCheckedInToday?Math.max(tr.live_active_min||0,tr.total_active_minutes||0):0;
   const actStatus=tr.activity_status||'offline';
   let shiftMins=0;
   if(s.check_in){const end=s.check_out?new Date(s.check_out):new Date();shiftMins=Math.max(0,Math.floor((end-new Date(s.check_in))/60000));}
