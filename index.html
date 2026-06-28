@@ -1458,10 +1458,11 @@ function stopPolling(){
 function startClock(){
   if(clockInterval)clearInterval(clockInterval);
   // Cache formatter objects — new Intl each tick is expensive
-  let _tz='',_timeFmt=null,_dateFmt=null;
+  // Live header clock always shows the device's own local time (not the agent's
+  // configured profile timezone) so it matches what the agent sees on their PC.
+  const _timeFmt=new Intl.DateTimeFormat('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const _dateFmt=new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric'});
   function tick(){
-    const tz=currentAgent?.timezone||'Asia/Karachi';
-    if(tz!==_tz){_tz=tz;_timeFmt=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});_dateFmt=new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'short',month:'short',day:'numeric'});}
     const now=new Date();
     const t=_timeFmt.format(now);
     const el=document.getElementById('liveClock');if(el)el.textContent=_dateFmt.format(now)+' '+t;
