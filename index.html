@@ -3638,10 +3638,19 @@ async function renderMyShift(){
   if(!currentAgent){return;}
   const c=document.getElementById('pageContent');
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:currentAgent.timezone||'Asia/Karachi'}).format(new Date());
+  const _yesterday=(()=>{const d=new Date();d.setDate(d.getDate()-1);return new Intl.DateTimeFormat('en-CA',{timeZone:currentAgent.timezone||'Asia/Karachi'}).format(d);})();
+  const _loadShift=async()=>{
+    const{data:d}=await _db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
+    if(d){_activeShiftDate=d.date;return d;}
+    // No row for today — check yesterday for an open (midnight-crossing) shift
+    const{data:y}=await _db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',_yesterday).eq('online',true).maybeSingle();
+    if(y){_activeShiftDate=y.date;return y;}
+    _activeShiftDate=today;return null;
+  };
   const[s,announceBanner,meetingLogs]=await Promise.all([
-    _q('myshift_today_'+currentAgent.id,12000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle().then(r=>r.data).then(d=>{_activeShiftDate=d?.date||today;return d;})),
+    _q('myshift_today_'+currentAgent.id,12000,_loadShift),
     _getAnnounceBanner(),
-    _q('meetings_agent_'+currentAgent.id,12000,()=>_db.from('meeting_logs').select('duration_min').eq('agent_id',currentAgent.id).eq('date',today).then(r=>r.data||[])),
+    _q('meetings_agent_'+currentAgent.id,12000,()=>_db.from('meeting_logs').select('duration_min').eq('agent_id',currentAgent.id).eq('date',_activeShiftDate||today).then(r=>r.data||[])),
   ]);
   const isIn=s?.online||false;
   if(isIn&&!isTracking)startTracking();
