@@ -696,7 +696,7 @@ function setLang(lang){
   if(typeof buildNav==='function')buildNav();
   if(typeof navTo==='function'&&currentPage)navTo(currentPage);
 }
-let currentUser=null,currentAgent=null,isAdmin=false,isManager=false,managerDept='',isSubAdmin=false,subAdminDepts=[],editingAgentId=null,clockInterval=null;
+let currentUser=null,currentAgent=null,isAdmin=false,isManager=false,managerDept='',isSubAdmin=false,subAdminDepts=[],editingAgentId=null,clockInterval=null,_activeShiftDate=null;
 let lastActivityTime=Date.now(),trackingInterval=null,isTracking=false;
 let currentPage='',realtimeChannel=null,_chatPollInterval=null,_bgPollInterval=null,_lastMsgTime=null;
 const ADMIN_EMAILS=['admin@shiftdesk.online','usmansiddique692@gmail.com','admin@tracking.me'];
@@ -3639,7 +3639,7 @@ async function renderMyShift(){
   const c=document.getElementById('pageContent');
   const today=new Date().toISOString().slice(0,10);
   const[s,announceBanner,meetingLogs]=await Promise.all([
-    _q('myshift_today_'+currentAgent.id,12000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle().then(r=>r.data)),
+    _q('myshift_today_'+currentAgent.id,12000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle().then(r=>r.data).then(d=>{_activeShiftDate=d?.date||today;return d;})),
     _getAnnounceBanner(),
     _q('meetings_agent_'+currentAgent.id,12000,()=>_db.from('meeting_logs').select('duration_min').eq('agent_id',currentAgent.id).eq('date',today).then(r=>r.data||[])),
   ]);
@@ -3894,7 +3894,7 @@ async function confirmCheckIn(location){
 
 async function doCheckOut(shiftNum){
   shiftNum=shiftNum||1;
-  const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
+  const today=_activeShiftDate||new Date().toISOString().slice(0,10);const now=new Date().toISOString();
   let payload={online:false};
   if(shiftNum===1){payload.check_out=now;}
   else{payload.check_out_2=now;}
@@ -3920,7 +3920,7 @@ async function doCheckOut(shiftNum){
 async function doBreakStart(shiftNum){
   try{
     shiftNum=shiftNum||1;
-    const today=new Date().toISOString().slice(0,10);
+    const today=_activeShiftDate||new Date().toISOString().slice(0,10);
     const now=new Date().toISOString();
     const col=shiftNum===1?'break_start':'break_start_2';
     const endCol=shiftNum===1?'break_end':'break_end_2';
@@ -3940,7 +3940,7 @@ async function doBreakStart(shiftNum){
 async function doBreakEnd(shiftNum){
   try{
     shiftNum=shiftNum||1;
-    const today=new Date().toISOString().slice(0,10);
+    const today=_activeShiftDate||new Date().toISOString().slice(0,10);
     const now=new Date().toISOString();
     const col=shiftNum===1?'break_end':'break_end_2';
     const{error}=await _db.from('shift_status')
@@ -3958,7 +3958,7 @@ async function doBreakEnd(shiftNum){
 // ── Meeting tracking (Phase 1) — separate from break, counts as work time ──
 async function doMeetingStart(){
   try{
-    const today=new Date().toISOString().slice(0,10);
+    const today=_activeShiftDate||new Date().toISOString().slice(0,10);
     const now=new Date().toISOString();
     const{error}=await _db.from('shift_status')
       .update({meeting_start:now})
@@ -3972,7 +3972,7 @@ async function doMeetingStart(){
 }
 async function doMeetingEnd(){
   try{
-    const today=new Date().toISOString().slice(0,10);
+    const today=_activeShiftDate||new Date().toISOString().slice(0,10);
     const now=new Date().toISOString();
     // read current meeting_start to compute duration
     const{data:cur}=await _db.from('shift_status').select('meeting_start').eq('agent_id',currentAgent.id).eq('date',today).maybeSingle();
