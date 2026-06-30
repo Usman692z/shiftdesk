@@ -3637,7 +3637,7 @@ async function sendMessage(){
 async function renderMyShift(){
   if(!currentAgent){return;}
   const c=document.getElementById('pageContent');
-  const today=new Date().toISOString().slice(0,10);
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:currentAgent.timezone||'Asia/Karachi'}).format(new Date());
   const[s,announceBanner,meetingLogs]=await Promise.all([
     _q('myshift_today_'+currentAgent.id,12000,()=>_db.from('shift_status').select(C.shift).eq('agent_id',currentAgent.id).eq('date',today).maybeSingle().then(r=>r.data).then(d=>{_activeShiftDate=d?.date||today;return d;})),
     _getAnnounceBanner(),
