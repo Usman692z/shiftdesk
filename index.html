@@ -3877,7 +3877,7 @@ function _deviceBadge(dev){
 async function confirmCheckIn(location){
   document.getElementById('locationModal').classList.remove('open');
   const shiftNum=_pendingCheckInShift;
-  const today=new Date().toISOString().slice(0,10);const now=new Date().toISOString();
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:currentAgent.timezone||'Asia/Karachi'}).format(new Date());const now=new Date().toISOString();
   let payload={agent_id:currentAgent.id,date:today,online:true,device:_deviceType()};
   if(shiftNum===1){payload.check_in=now;payload.work_location=location;}
   else{payload.check_in_2=now;payload.work_location_2=location;}
