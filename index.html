@@ -1731,7 +1731,7 @@ async function _refreshDashboard(){
 async function renderDashboard(){
   const c=document.getElementById('pageContent');
   if(!_dashCtx)c.innerHTML='<div class="loading-wrap"><div class="spinner"></div>Loading...</div>';
-  const today=new Date().toISOString().slice(0,10);
+  const today=new Intl.DateTimeFormat('en-CA',{timeZone:currentAgent?.timezone||'Asia/Karachi'}).format(new Date());
   let[agents,ts,tracking,leaveRecs,mtg]=await Promise.all([
     _getAgents(),
     _db.from('shift_status').select(C.shift).eq('date',today).then(r=>r.data||[]),
