@@ -4249,10 +4249,13 @@ async function renderTracking(){
           const lastSeen=t?.last_seen?_getFmts(a.timezone||'Asia/Karachi').t.format(new Date(t.last_seen)):'—';
           const statusColor=status==='active'?'badge-online':status==='idle'?'':'badge-offline';
           const statusLabel=status==='active'?_dot('var(--gr)')+' Active':status==='idle'?_dot('var(--yl)')+' Idle':_dot('#6b728e')+' Offline';
-          // Late check-in status
+          // Late check-in status — if shift is complete show done, not early/late
           const li=sh?.check_in?getCheckinStatus(sh.check_in,a.shift_start,a.timezone):null;
+          const shiftComplete=!!(sh?.check_out||(sh?.check_in_2&&sh?.check_out_2));
           let ciStatusHtml='<span style="color:var(--mu);font-size:12px">— not checked in</span>';
-          if(li){
+          if(shiftComplete){
+            ciStatusHtml='<span style="color:var(--gr);font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:3px">'+_i('check-circle',12)+' Complete</span>';
+          } else if(li){
             if(li.status==='late')ciStatusHtml='<span style="color:var(--yl);font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:3px">'+_i('alert',12)+' Late +'+li.diff+'m</span><br><span style="font-size:11px;color:var(--mu)">Shift: '+a.shift_start+' • Grace: 15m</span>';
             else if(li.status==='ontime')ciStatusHtml='<span style="color:var(--gr);font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:3px">'+_i('check',12)+' On Time</span><br><span style="font-size:11px;color:var(--mu)">Checked in within grace period</span>';
             else ciStatusHtml='<span style="color:var(--gr);font-weight:600;font-size:12px;display:inline-flex;align-items:center;gap:3px">'+_dot('var(--gr)')+' Early +'+li.diff+'m</span>';
